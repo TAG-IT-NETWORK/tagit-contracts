@@ -429,4 +429,168 @@ contract TAGITCoreTest is Test {
         (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.ACTIVATED), "State should be ACTIVATED");
     }
+
+    // ============================================
+    // CLAIM TESTS (CRITICAL - OWNERSHIP TRANSFER)
+    // ============================================
+
+    /**
+     * @notice Test successful claim of activated asset by end consumer
+     * @dev Should transition ACTIVATED → CLAIMED, transfer ownership
+     */
+    function test_claim_success() public {
+        // Setup: Mint, bind, and activate asset
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
+        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        tagitCore.activate(tokenId);
+        vm.stopPrank();
+
+        // Consumer claims the asset
+        vm.prank(manufacturer);
+        tagitCore.claim(tokenId, user1);
+
+        // Verify asset state changed to CLAIMED
+        (address owner, uint64 timestamp, TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        assertEq(uint8(state), uint8(TAGITCore.State.CLAIMED), "State should be CLAIMED");
+        assertEq(owner, user1, "Asset owner should be updated to user1");
+        assertGt(timestamp, 0, "Timestamp should be updated");
+
+        // Verify ERC721 ownership transferred
+        assertEq(tagitCore.ownerOf(tokenId), user1, "ERC721 owner should be user1");
+    }
+
+    /**
+     * @notice Test claim reverts when token does not exist
+     * @dev Should revert with TokenNotFound error
+     */
+    function test_claim_revert_tokenNotFound() public {
+        uint256 nonExistentTokenId = 999;
+
+        vm.prank(manufacturer);
+        vm.expectRevert(abi.encodeWithSelector(TAGITCore.TokenNotFound.selector, nonExistentTokenId));
+        tagitCore.claim(nonExistentTokenId, user1);
+    }
+
+    /**
+     * @notice Test claim reverts when asset is not in ACTIVATED state
+     * @dev Should revert with InvalidState error
+     */
+    function test_claim_revert_invalidState() public {
+        // Mint and bind asset (but don't activate)
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(user1, METADATA_1);
+        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        vm.stopPrank();
+
+        // Try to claim (state is BOUND, not ACTIVATED)
+        vm.prank(manufacturer);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TAGITCore.InvalidState.selector,
+                tokenId,
+                TAGITCore.State.BOUND,
+                TAGITCore.State.ACTIVATED
+            )
+        );
+        tagitCore.claim(tokenId, user2);
+    }
+
+    /**
+     * @notice Test claim reverts when new owner is zero address
+     * @dev Should revert with ZeroAddress error
+     */
+    function test_claim_revert_zeroAddress() public {
+        // Setup: Mint, bind, and activate asset
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
+        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        tagitCore.activate(tokenId);
+        vm.stopPrank();
+
+        // Try to claim to zero address
+        vm.prank(manufacturer);
+        vm.expectRevert(TAGITCore.ZeroAddress.selector);
+        tagitCore.claim(tokenId, address(0));
+    }
+
+    /**
+     * @notice Test claim properly updates both internal and ERC721 ownership
+     * @dev Critical security test: verify ownership transfer is complete
+     */
+    function test_claim_updatesOwnership() public {
+        // Setup: Mint, bind, and activate asset
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
+        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        tagitCore.activate(tokenId);
+
+        // Verify initial ownership
+        assertEq(tagitCore.ownerOf(tokenId), manufacturer, "Initial ERC721 owner should be manufacturer");
+        (address assetOwner, , , , ) = tagitCore.getAsset(tokenId);
+        assertEq(assetOwner, manufacturer, "Initial asset owner should be manufacturer");
+
+        // Claim asset
+        tagitCore.claim(tokenId, user1);
+        vm.stopPrank();
+
+        // Verify final ownership (both internal and ERC721)
+        assertEq(tagitCore.ownerOf(tokenId), user1, "Final ERC721 owner should be user1");
+        (address finalAssetOwner, , , , ) = tagitCore.getAsset(tokenId);
+        assertEq(finalAssetOwner, user1, "Final asset owner should be user1");
+    }
+
+    /**
+     * @notice Test claim emits correct event
+     * @dev Should emit StateChanged event
+     */
+    function test_claim_emitsEvent() public {
+        // Setup: Mint, bind, and activate asset
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
+        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        tagitCore.activate(tokenId);
+
+        // Expect StateChanged event
+        vm.expectEmit(true, false, false, true);
+        emit StateChanged(
+            tokenId,
+            TAGITCore.State.ACTIVATED,
+            TAGITCore.State.CLAIMED,
+            manufacturer
+        );
+
+        // Claim asset
+        tagitCore.claim(tokenId, user1);
+        vm.stopPrank();
+    }
+
+    /**
+     * @notice Fuzz test: claim with random valid addresses
+     * @dev Should succeed for any non-zero address on activated asset
+     */
+    function testFuzz_claim(address to, address claimer, bytes32 metadata, bytes32 tagHash) public {
+        // Assume valid parameters
+        vm.assume(to != address(0));
+        vm.assume(to.code.length == 0);
+        vm.assume(claimer != address(0));
+        vm.assume(claimer.code.length == 0);
+        vm.assume(tagHash != bytes32(0));
+
+        // Setup: Mint, bind, and activate asset
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(to, metadata);
+        tagitCore.bindTag(tokenId, tagHash);
+        tagitCore.activate(tokenId);
+        vm.stopPrank();
+
+        // Claim asset
+        vm.prank(to);
+        tagitCore.claim(tokenId, claimer);
+
+        // Verify state and ownership
+        (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        assertEq(uint8(state), uint8(TAGITCore.State.CLAIMED), "State should be CLAIMED");
+        assertEq(tagitCore.ownerOf(tokenId), claimer, "ERC721 owner should be claimer");
+    }
 }
