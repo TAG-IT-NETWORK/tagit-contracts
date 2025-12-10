@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
 /**
  * @title TAGITCore
  * @author TAG IT Network <dev@tagit.network>
@@ -19,7 +22,7 @@ pragma solidity ^0.8.20;
  * Security: All state-changing functions must follow Checks-Effects-Interactions pattern
  * and include ReentrancyGuard. BIDGES capability checks enforce zero-trust access control.
  */
-contract TAGITCore {
+contract TAGITCore is ERC721, ReentrancyGuard {
     // ============================================
     // STATE MACHINE
     // ============================================
@@ -159,4 +162,125 @@ contract TAGITCore {
         uint256 indexed tokenId,
         bytes32 indexed tagHash
     );
+
+    // ============================================
+    // STORAGE
+    // ============================================
+
+    /// @notice Mapping from token ID to Asset metadata
+    mapping(uint256 => Asset) private _assets;
+
+    /// @notice Mapping from NFC tag hash to token ID (prevents duplicate binding)
+    mapping(bytes32 => uint256) private _tagToToken;
+
+    /// @notice Counter for next token ID (starts at 1)
+    uint256 private _nextTokenId;
+
+    /// @notice Total number of assets minted
+    uint256 private _totalSupply;
+
+    // ============================================
+    // CONSTRUCTOR
+    // ============================================
+
+    /**
+     * @notice Initialize TAGITCore contract
+     * @dev Sets ERC721 name and symbol, initializes token counter
+     */
+    constructor() ERC721("TAG IT Digital Twin", "TAGIT") {
+        _nextTokenId = 1; // Start token IDs at 1 (0 reserved for "none")
+    }
+
+    // ============================================
+    // CORE FUNCTIONS
+    // ============================================
+
+    /**
+     * @notice Mint a new Digital Twin NFT representing a physical asset
+     * @dev Creates NFT in MINTED state. Tag binding happens separately via bindTag().
+     *      Follows Checks-Effects-Interactions pattern for security.
+     * @param to Initial owner address (typically manufacturer)
+     * @param metadata IPFS hash or metadata identifier for the asset
+     * @return tokenId The ID of the newly minted token
+     * @custom:security ReentrancyGuard prevents reentrancy attacks
+     * @custom:security Zero address check prevents burning on mint
+     * @custom:emits AssetMinted, StateChanged
+     */
+    function mint(address to, bytes32 metadata)
+        external
+        nonReentrant
+        returns (uint256 tokenId)
+    {
+        // ============================================
+        // CHECKS
+        // ============================================
+        if (to == address(0)) revert ZeroAddress();
+
+        // ============================================
+        // EFFECTS
+        // ============================================
+        tokenId = _nextTokenId++;
+        _totalSupply++;
+
+        // Create asset in MINTED state
+        _assets[tokenId] = Asset({
+            owner: to,
+            timestamp: uint64(block.timestamp),
+            state: State.MINTED,
+            flags: 0,
+            reserved: 0
+        });
+
+        // Mint ERC721 token
+        _mint(to, tokenId);
+
+        // ============================================
+        // INTERACTIONS
+        // ============================================
+        emit AssetMinted(tokenId, to, metadata);
+        emit StateChanged(tokenId, State.NONE, State.MINTED, msg.sender);
+    }
+
+    // ============================================
+    // VIEW FUNCTIONS
+    // ============================================
+
+    /**
+     * @notice Get asset metadata for a token
+     * @param tokenId The token ID to query
+     * @return owner Current owner address
+     * @return timestamp Last state change timestamp
+     * @return state Current lifecycle state
+     * @return flags Bit flags (reserved for future use)
+     * @return reserved Reserved field (future metadata)
+     * @custom:security Returns memory copy, cannot modify storage directly
+     */
+    function getAsset(uint256 tokenId)
+        external
+        view
+        returns (
+            address owner,
+            uint64 timestamp,
+            State state,
+            uint8 flags,
+            uint16 reserved
+        )
+    {
+        Asset memory asset = _assets[tokenId];
+        return (
+            asset.owner,
+            asset.timestamp,
+            asset.state,
+            asset.flags,
+            asset.reserved
+        );
+    }
+
+    /**
+     * @notice Get total number of assets minted
+     * @return Total supply of Digital Twin NFTs
+     */
+    function totalSupply() external view returns (uint256) {
+        return _totalSupply;
+    }
 }
