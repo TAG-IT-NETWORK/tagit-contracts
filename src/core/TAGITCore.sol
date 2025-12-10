@@ -433,6 +433,61 @@ contract TAGITCore is ERC721, ReentrancyGuard {
         emit StateChanged(tokenId, State.CLAIMED, State.FLAGGED, msg.sender);
     }
 
+    /**
+     * @notice Resolve AIRP recovery and return asset to rightful owner
+     * @dev CRITICAL: This function transfers both internal state AND ERC721 ownership.
+     *      Asset must be in FLAGGED state. This is the ONLY backward state transition.
+     *      Follows Checks-Effects-Interactions pattern STRICTLY for security.
+     * @param tokenId The asset token ID to resolve
+     * @param newOwner Address of the rightful owner (recovery recipient)
+     * @custom:security ReentrancyGuard prevents reentrancy attacks
+     * @custom:security State validation ensures only flagged assets can be resolved
+     * @custom:security Zero address check prevents accidental burns
+     * @custom:security ALL state changes occur BEFORE ERC721 transfer
+     * @custom:security In production, requires CAP_RECOVERY_APPROVE capability
+     * @custom:emits StateChanged
+     */
+    function resolve(uint256 tokenId, address newOwner)
+        external
+        nonReentrant
+    {
+        // ============================================
+        // CHECKS
+        // ============================================
+        Asset storage asset = _assets[tokenId];
+
+        // Verify token exists (owner will be address(0) if not minted)
+        if (asset.owner == address(0)) revert TokenNotFound(tokenId);
+
+        // Verify asset is in FLAGGED state (can only resolve flagged assets)
+        if (asset.state != State.FLAGGED) {
+            revert InvalidState(tokenId, asset.state, State.FLAGGED);
+        }
+
+        // Verify new owner is not zero address (prevent accidental burns)
+        if (newOwner == address(0)) revert ZeroAddress();
+
+        // ============================================
+        // EFFECTS (ALL state changes BEFORE transfer)
+        // ============================================
+        address previousOwner = asset.owner;
+
+        // Update asset state to CLAIMED (recovery success)
+        asset.state = State.CLAIMED;
+        asset.timestamp = uint64(block.timestamp);
+        asset.owner = newOwner;
+
+        // ============================================
+        // INTERACTIONS (External calls LAST)
+        // ============================================
+        // Transfer ERC721 token ownership
+        // NOTE: This must happen AFTER all state changes per Checks-Effects-Interactions
+        _transfer(previousOwner, newOwner, tokenId);
+
+        // Emit state change event
+        emit StateChanged(tokenId, State.FLAGGED, State.CLAIMED, msg.sender);
+    }
+
     // ============================================
     // VIEW FUNCTIONS
     // ============================================

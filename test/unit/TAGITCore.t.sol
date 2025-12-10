@@ -711,4 +711,142 @@ contract TAGITCoreTest is Test {
         (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.FLAGGED), "State should be FLAGGED");
     }
+
+    // ============================================
+    // RESOLVE TESTS (AIRP Recovery: FLAGGED → CLAIMED)
+    // ============================================
+
+    /**
+     * @notice Test successful AIRP recovery resolution
+     * @dev Tests the ONLY backward state transition (FLAGGED → CLAIMED)
+     */
+    function test_resolve_success() public {
+        // Setup: Full lifecycle to FLAGGED
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
+        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        tagitCore.activate(tokenId);
+        tagitCore.claim(tokenId, user1);
+        tagitCore.flag(tokenId);
+        vm.stopPrank();
+
+        // Resolve to rightful owner (recovery success)
+        vm.prank(manufacturer);
+        tagitCore.resolve(tokenId, user2);
+
+        // Verify asset state changed to CLAIMED
+        (address assetOwner, uint64 timestamp, TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        assertEq(uint8(state), uint8(TAGITCore.State.CLAIMED), "State should be CLAIMED");
+        assertEq(assetOwner, user2, "Owner should be updated to new owner");
+        assertGt(timestamp, 0, "Timestamp should be updated");
+
+        // Verify ERC721 ownership transferred
+        assertEq(tagitCore.ownerOf(tokenId), user2, "ERC721 owner should be new owner");
+    }
+
+    /**
+     * @notice Test resolve reverts on non-existent token
+     */
+    function test_resolve_revert_tokenNotFound() public {
+        uint256 nonExistentTokenId = 999;
+
+        vm.prank(manufacturer);
+        vm.expectRevert(abi.encodeWithSelector(TAGITCore.TokenNotFound.selector, nonExistentTokenId));
+        tagitCore.resolve(nonExistentTokenId, user1);
+    }
+
+    /**
+     * @notice Test resolve reverts if asset not in FLAGGED state
+     */
+    function test_resolve_revert_invalidState() public {
+        // Create asset in CLAIMED state (not FLAGGED)
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(user1, METADATA_1);
+        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        tagitCore.activate(tokenId);
+        tagitCore.claim(tokenId, user1);
+        vm.stopPrank();
+
+        // Try to resolve non-flagged asset
+        vm.prank(manufacturer);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TAGITCore.InvalidState.selector,
+                tokenId,
+                TAGITCore.State.CLAIMED,
+                TAGITCore.State.FLAGGED
+            )
+        );
+        tagitCore.resolve(tokenId, user2);
+    }
+
+    /**
+     * @notice Test resolve reverts on zero address
+     */
+    function test_resolve_revert_zeroAddress() public {
+        // Setup: Full lifecycle to FLAGGED
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
+        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        tagitCore.activate(tokenId);
+        tagitCore.claim(tokenId, user1);
+        tagitCore.flag(tokenId);
+        vm.stopPrank();
+
+        // Try to resolve to zero address
+        vm.prank(manufacturer);
+        vm.expectRevert(abi.encodeWithSelector(TAGITCore.ZeroAddress.selector));
+        tagitCore.resolve(tokenId, address(0));
+    }
+
+    /**
+     * @notice Test resolve emits StateChanged event
+     */
+    function test_resolve_emitsEvent() public {
+        // Setup: Full lifecycle to FLAGGED
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
+        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        tagitCore.activate(tokenId);
+        tagitCore.claim(tokenId, user1);
+        tagitCore.flag(tokenId);
+        vm.stopPrank();
+
+        // Expect StateChanged event
+        vm.expectEmit(true, true, true, true);
+        emit StateChanged(tokenId, TAGITCore.State.FLAGGED, TAGITCore.State.CLAIMED, manufacturer);
+
+        // Resolve asset
+        vm.prank(manufacturer);
+        tagitCore.resolve(tokenId, user2);
+    }
+
+    /**
+     * @notice Fuzz test for resolve function
+     * @dev Tests with random addresses and metadata
+     */
+    function testFuzz_resolve(address to, address recoveryOwner, bytes32 metadata, bytes32 tagHash) public {
+        // Assumptions (same as claim fuzz)
+        vm.assume(to != address(0));
+        vm.assume(to.code.length == 0);
+        vm.assume(recoveryOwner != address(0));
+        vm.assume(recoveryOwner.code.length == 0);
+        vm.assume(tagHash != bytes32(0));
+
+        // Full lifecycle to FLAGGED
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(manufacturer, metadata);
+        tagitCore.bindTag(tokenId, tagHash);
+        tagitCore.activate(tokenId);
+        tagitCore.claim(tokenId, to);
+        tagitCore.flag(tokenId);
+        tagitCore.resolve(tokenId, recoveryOwner);
+        vm.stopPrank();
+
+        // Verify final state
+        (address assetOwner, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        assertEq(uint8(state), uint8(TAGITCore.State.CLAIMED), "State should be CLAIMED");
+        assertEq(assetOwner, recoveryOwner, "Owner should be recovery owner");
+        assertEq(tagitCore.ownerOf(tokenId), recoveryOwner, "ERC721 owner should be recovery owner");
+    }
 }
