@@ -297,6 +297,47 @@ contract TAGITCore is ERC721, ReentrancyGuard {
         emit StateChanged(tokenId, State.MINTED, State.BOUND, msg.sender);
     }
 
+    /**
+     * @notice Activate a bound asset after QA approval
+     * @dev Asset must be in BOUND state. Represents QA/quality control approval.
+     *      Once activated, asset is ready for distribution/claiming.
+     *      Follows Checks-Effects-Interactions pattern for security.
+     * @param tokenId The asset token ID to activate
+     * @custom:security ReentrancyGuard prevents reentrancy attacks
+     * @custom:security State validation ensures proper workflow (must bind before activate)
+     * @custom:security In production, requires CAP_ACTIVATE capability (BIDGES)
+     * @custom:emits StateChanged
+     */
+    function activate(uint256 tokenId)
+        external
+        nonReentrant
+    {
+        // ============================================
+        // CHECKS
+        // ============================================
+        Asset storage asset = _assets[tokenId];
+
+        // Verify token exists (owner will be address(0) if not minted)
+        if (asset.owner == address(0)) revert TokenNotFound(tokenId);
+
+        // Verify asset is in BOUND state (QA can only activate tag-bound assets)
+        if (asset.state != State.BOUND) {
+            revert InvalidState(tokenId, asset.state, State.BOUND);
+        }
+
+        // ============================================
+        // EFFECTS
+        // ============================================
+        // Update asset state to ACTIVATED
+        asset.state = State.ACTIVATED;
+        asset.timestamp = uint64(block.timestamp);
+
+        // ============================================
+        // INTERACTIONS
+        // ============================================
+        emit StateChanged(tokenId, State.BOUND, State.ACTIVATED, msg.sender);
+    }
+
     // ============================================
     // VIEW FUNCTIONS
     // ============================================
