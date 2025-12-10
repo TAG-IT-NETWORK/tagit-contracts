@@ -593,4 +593,122 @@ contract TAGITCoreTest is Test {
         assertEq(uint8(state), uint8(TAGITCore.State.CLAIMED), "State should be CLAIMED");
         assertEq(tagitCore.ownerOf(tokenId), claimer, "ERC721 owner should be claimer");
     }
+
+    // ============================================
+    // FLAG TESTS (Lost/Stolen/Recall)
+    // ============================================
+
+    /**
+     * @notice Test successful flagging of claimed asset
+     * @dev Should transition CLAIMED → FLAGGED, emit event
+     */
+    function test_flag_success() public {
+        // Setup: Full lifecycle to CLAIMED
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
+        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        tagitCore.activate(tokenId);
+        tagitCore.claim(tokenId, user1);
+        vm.stopPrank();
+
+        // Flag asset (lost/stolen/recall)
+        vm.prank(manufacturer);
+        tagitCore.flag(tokenId);
+
+        // Verify asset state changed to FLAGGED
+        (, uint64 timestamp, TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        assertEq(uint8(state), uint8(TAGITCore.State.FLAGGED), "State should be FLAGGED");
+        assertGt(timestamp, 0, "Timestamp should be updated");
+    }
+
+    /**
+     * @notice Test flag reverts when token does not exist
+     * @dev Should revert with TokenNotFound error
+     */
+    function test_flag_revert_tokenNotFound() public {
+        uint256 nonExistentTokenId = 999;
+
+        vm.prank(manufacturer);
+        vm.expectRevert(abi.encodeWithSelector(TAGITCore.TokenNotFound.selector, nonExistentTokenId));
+        tagitCore.flag(nonExistentTokenId);
+    }
+
+    /**
+     * @notice Test flag reverts when asset is not in CLAIMED state
+     * @dev Should revert with InvalidState error
+     */
+    function test_flag_revert_invalidState() public {
+        // Mint and bind asset (not yet claimed)
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(user1, METADATA_1);
+        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        tagitCore.activate(tokenId);
+        vm.stopPrank();
+
+        // Try to flag (state is ACTIVATED, not CLAIMED)
+        vm.prank(manufacturer);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TAGITCore.InvalidState.selector,
+                tokenId,
+                TAGITCore.State.ACTIVATED,
+                TAGITCore.State.CLAIMED
+            )
+        );
+        tagitCore.flag(tokenId);
+    }
+
+    /**
+     * @notice Test flag emits correct event
+     * @dev Should emit StateChanged event
+     */
+    function test_flag_emitsEvent() public {
+        // Setup: Full lifecycle to CLAIMED
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
+        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        tagitCore.activate(tokenId);
+        tagitCore.claim(tokenId, user1);
+        vm.stopPrank();
+
+        // Expect StateChanged event
+        vm.expectEmit(true, false, false, true);
+        emit StateChanged(
+            tokenId,
+            TAGITCore.State.CLAIMED,
+            TAGITCore.State.FLAGGED,
+            manufacturer
+        );
+
+        // Flag asset
+        vm.prank(manufacturer);
+        tagitCore.flag(tokenId);
+    }
+
+    /**
+     * @notice Fuzz test: flag with random claimed assets
+     * @dev Should succeed for any claimed asset
+     */
+    function testFuzz_flag(address to, bytes32 metadata, bytes32 tagHash) public {
+        // Assume valid parameters
+        vm.assume(to != address(0));
+        vm.assume(to.code.length == 0);
+        vm.assume(tagHash != bytes32(0));
+
+        // Setup: Full lifecycle to CLAIMED
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(to, metadata);
+        tagitCore.bindTag(tokenId, tagHash);
+        tagitCore.activate(tokenId);
+        tagitCore.claim(tokenId, user1);
+        vm.stopPrank();
+
+        // Flag asset
+        vm.prank(manufacturer);
+        tagitCore.flag(tokenId);
+
+        // Verify state
+        (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        assertEq(uint8(state), uint8(TAGITCore.State.FLAGGED), "State should be FLAGGED");
+    }
 }

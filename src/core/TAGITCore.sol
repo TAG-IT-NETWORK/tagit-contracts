@@ -393,6 +393,46 @@ contract TAGITCore is ERC721, ReentrancyGuard {
         emit StateChanged(tokenId, State.ACTIVATED, State.CLAIMED, msg.sender);
     }
 
+    /**
+     * @notice Flag asset as lost, stolen, or subject to recall
+     * @dev Asset must be in CLAIMED state. Initiates AIRP recovery protocol.
+     *      Follows Checks-Effects-Interactions pattern for security.
+     * @param tokenId The asset token ID to flag
+     * @custom:security ReentrancyGuard prevents reentrancy attacks
+     * @custom:security State validation ensures only claimed assets can be flagged
+     * @custom:security In production, requires CAP_FLAG capability
+     * @custom:emits StateChanged
+     */
+    function flag(uint256 tokenId)
+        external
+        nonReentrant
+    {
+        // ============================================
+        // CHECKS
+        // ============================================
+        Asset storage asset = _assets[tokenId];
+
+        // Verify token exists (owner will be address(0) if not minted)
+        if (asset.owner == address(0)) revert TokenNotFound(tokenId);
+
+        // Verify asset is in CLAIMED state (can only flag consumer-owned assets)
+        if (asset.state != State.CLAIMED) {
+            revert InvalidState(tokenId, asset.state, State.CLAIMED);
+        }
+
+        // ============================================
+        // EFFECTS
+        // ============================================
+        // Update asset state to FLAGGED
+        asset.state = State.FLAGGED;
+        asset.timestamp = uint64(block.timestamp);
+
+        // ============================================
+        // INTERACTIONS
+        // ============================================
+        emit StateChanged(tokenId, State.CLAIMED, State.FLAGGED, msg.sender);
+    }
+
     // ============================================
     // VIEW FUNCTIONS
     // ============================================
