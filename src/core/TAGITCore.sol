@@ -173,6 +173,9 @@ contract TAGITCore is ERC721, ReentrancyGuard {
     /// @notice Mapping from NFC tag hash to token ID (prevents duplicate binding)
     mapping(bytes32 => uint256) private _tagToToken;
 
+    /// @notice Mapping from token ID to NFC tag hash (for reverse lookup)
+    mapping(uint256 => bytes32) private _tokenToTag;
+
     /// @notice Counter for next token ID (starts at 1)
     uint256 private _nextTokenId;
 
@@ -241,6 +244,59 @@ contract TAGITCore is ERC721, ReentrancyGuard {
         emit StateChanged(tokenId, State.NONE, State.MINTED, msg.sender);
     }
 
+    /**
+     * @notice Cryptographically bind an NFC tag to a minted asset
+     * @dev Tag binding is irreversible. Asset must be in MINTED state.
+     *      Tag hash must be unique across all assets.
+     *      Follows Checks-Effects-Interactions pattern for security.
+     * @param tokenId The asset token ID to bind
+     * @param tagHash Keccak256 hash of the NFC tag UID
+     * @custom:security ReentrancyGuard prevents reentrancy attacks
+     * @custom:security Tag uniqueness enforced via _tagToToken mapping
+     * @custom:security State validation prevents re-binding
+     * @custom:emits TagBound, StateChanged
+     */
+    function bindTag(uint256 tokenId, bytes32 tagHash)
+        external
+        nonReentrant
+    {
+        // ============================================
+        // CHECKS
+        // ============================================
+        Asset storage asset = _assets[tokenId];
+
+        // Verify token exists (owner will be address(0) if not minted)
+        if (asset.owner == address(0)) revert TokenNotFound(tokenId);
+
+        // Verify asset is in MINTED state (can only bind tags to freshly minted assets)
+        if (asset.state != State.MINTED) {
+            revert InvalidState(tokenId, asset.state, State.MINTED);
+        }
+
+        // Verify tag hash is not zero
+        if (tagHash == bytes32(0)) revert InvalidTagHash();
+
+        // Verify tag is not already bound to another asset
+        if (_tagToToken[tagHash] != 0) revert TagAlreadyBound(tagHash);
+
+        // ============================================
+        // EFFECTS
+        // ============================================
+        // Update asset state to BOUND
+        asset.state = State.BOUND;
+        asset.timestamp = uint64(block.timestamp);
+
+        // Store bidirectional tag mappings
+        _tagToToken[tagHash] = tokenId;
+        _tokenToTag[tokenId] = tagHash;
+
+        // ============================================
+        // INTERACTIONS
+        // ============================================
+        emit TagBound(tokenId, tagHash);
+        emit StateChanged(tokenId, State.MINTED, State.BOUND, msg.sender);
+    }
+
     // ============================================
     // VIEW FUNCTIONS
     // ============================================
@@ -282,5 +338,25 @@ contract TAGITCore is ERC721, ReentrancyGuard {
      */
     function totalSupply() external view returns (uint256) {
         return _totalSupply;
+    }
+
+    /**
+     * @notice Get token ID bound to a specific NFC tag
+     * @param tagHash The NFC tag hash to query
+     * @return tokenId The token ID bound to this tag (0 if not bound)
+     * @custom:security Returns 0 for unbound tags (safe default)
+     */
+    function getTokenByTag(bytes32 tagHash) external view returns (uint256) {
+        return _tagToToken[tagHash];
+    }
+
+    /**
+     * @notice Get NFC tag hash bound to a specific token
+     * @param tokenId The token ID to query
+     * @return tagHash The tag hash bound to this token (bytes32(0) if not bound)
+     * @custom:security Returns zero hash for unbound tokens (safe default)
+     */
+    function getTagByToken(uint256 tokenId) external view returns (bytes32) {
+        return _tokenToTag[tokenId];
     }
 }
