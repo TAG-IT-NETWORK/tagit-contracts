@@ -488,6 +488,49 @@ contract TAGITCore is ERC721, ReentrancyGuard {
         emit StateChanged(tokenId, State.FLAGGED, State.CLAIMED, msg.sender);
     }
 
+    /**
+     * @notice Recycle asset at end-of-life
+     * @dev Asset must be in CLAIMED or FLAGGED state. This is a terminal state - no transitions out.
+     *      Ownership is NOT transferred (asset remains with current owner).
+     *      Follows Checks-Effects-Interactions pattern for security.
+     * @param tokenId The asset token ID to recycle
+     * @custom:security ReentrancyGuard prevents reentrancy attacks
+     * @custom:security State validation ensures only claimed or flagged assets can be recycled
+     * @custom:security Terminal state - RECYCLED has no outbound transitions
+     * @custom:security In production, requires CAP_RECYCLE capability
+     * @custom:emits StateChanged
+     */
+    function recycle(uint256 tokenId)
+        external
+        nonReentrant
+    {
+        // ============================================
+        // CHECKS
+        // ============================================
+        Asset storage asset = _assets[tokenId];
+
+        // Verify token exists (owner will be address(0) if not minted)
+        if (asset.owner == address(0)) revert TokenNotFound(tokenId);
+
+        // Verify asset is in CLAIMED or FLAGGED state (can only recycle end-of-lifecycle assets)
+        State currentState = asset.state;
+        if (currentState != State.CLAIMED && currentState != State.FLAGGED) {
+            revert InvalidState(tokenId, currentState, State.CLAIMED);
+        }
+
+        // ============================================
+        // EFFECTS
+        // ============================================
+        // Update asset state to RECYCLED (terminal state)
+        asset.state = State.RECYCLED;
+        asset.timestamp = uint64(block.timestamp);
+
+        // ============================================
+        // INTERACTIONS
+        // ============================================
+        emit StateChanged(tokenId, currentState, State.RECYCLED, msg.sender);
+    }
+
     // ============================================
     // VIEW FUNCTIONS
     // ============================================

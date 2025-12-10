@@ -849,4 +849,150 @@ contract TAGITCoreTest is Test {
         assertEq(assetOwner, recoveryOwner, "Owner should be recovery owner");
         assertEq(tagitCore.ownerOf(tokenId), recoveryOwner, "ERC721 owner should be recovery owner");
     }
+
+    // ============================================
+    // RECYCLE TESTS (End-of-Life: CLAIMED/FLAGGED → RECYCLED)
+    // ============================================
+
+    /**
+     * @notice Test successful recycling from CLAIMED state
+     * @dev Tests terminal state transition (CLAIMED → RECYCLED)
+     */
+    function test_recycle_success_fromClaimed() public {
+        // Setup: Full lifecycle to CLAIMED
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
+        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        tagitCore.activate(tokenId);
+        tagitCore.claim(tokenId, user1);
+        vm.stopPrank();
+
+        // Recycle asset (end-of-life)
+        vm.prank(manufacturer);
+        tagitCore.recycle(tokenId);
+
+        // Verify asset state changed to RECYCLED
+        (address assetOwner, uint64 timestamp, TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        assertEq(uint8(state), uint8(TAGITCore.State.RECYCLED), "State should be RECYCLED");
+        assertEq(assetOwner, user1, "Owner should remain unchanged");
+        assertGt(timestamp, 0, "Timestamp should be updated");
+    }
+
+    /**
+     * @notice Test successful recycling from FLAGGED state
+     * @dev Tests terminal state transition (FLAGGED → RECYCLED)
+     */
+    function test_recycle_success_fromFlagged() public {
+        // Setup: Full lifecycle to FLAGGED
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
+        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        tagitCore.activate(tokenId);
+        tagitCore.claim(tokenId, user1);
+        tagitCore.flag(tokenId);
+        vm.stopPrank();
+
+        // Recycle flagged asset (unrecoverable)
+        vm.prank(manufacturer);
+        tagitCore.recycle(tokenId);
+
+        // Verify asset state changed to RECYCLED
+        (address assetOwner, uint64 timestamp, TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        assertEq(uint8(state), uint8(TAGITCore.State.RECYCLED), "State should be RECYCLED");
+        assertEq(assetOwner, user1, "Owner should remain unchanged");
+        assertGt(timestamp, 0, "Timestamp should be updated");
+    }
+
+    /**
+     * @notice Test recycle reverts on non-existent token
+     */
+    function test_recycle_revert_tokenNotFound() public {
+        uint256 nonExistentTokenId = 999;
+
+        vm.prank(manufacturer);
+        vm.expectRevert(abi.encodeWithSelector(TAGITCore.TokenNotFound.selector, nonExistentTokenId));
+        tagitCore.recycle(nonExistentTokenId);
+    }
+
+    /**
+     * @notice Test recycle reverts if asset not in CLAIMED or FLAGGED state
+     */
+    function test_recycle_revert_invalidState() public {
+        // Create asset in MINTED state (not CLAIMED or FLAGGED)
+        vm.prank(manufacturer);
+        uint256 tokenId = tagitCore.mint(user1, METADATA_1);
+
+        // Try to recycle non-claimed/non-flagged asset
+        vm.prank(manufacturer);
+        vm.expectRevert();
+        tagitCore.recycle(tokenId);
+    }
+
+    /**
+     * @notice Test recycle emits StateChanged event from CLAIMED
+     */
+    function test_recycle_emitsEvent_fromClaimed() public {
+        // Setup: Full lifecycle to CLAIMED
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
+        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        tagitCore.activate(tokenId);
+        tagitCore.claim(tokenId, user1);
+        vm.stopPrank();
+
+        // Expect StateChanged event
+        vm.expectEmit(true, true, true, true);
+        emit StateChanged(tokenId, TAGITCore.State.CLAIMED, TAGITCore.State.RECYCLED, manufacturer);
+
+        // Recycle asset
+        vm.prank(manufacturer);
+        tagitCore.recycle(tokenId);
+    }
+
+    /**
+     * @notice Test recycle emits StateChanged event from FLAGGED
+     */
+    function test_recycle_emitsEvent_fromFlagged() public {
+        // Setup: Full lifecycle to FLAGGED
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
+        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        tagitCore.activate(tokenId);
+        tagitCore.claim(tokenId, user1);
+        tagitCore.flag(tokenId);
+        vm.stopPrank();
+
+        // Expect StateChanged event
+        vm.expectEmit(true, true, true, true);
+        emit StateChanged(tokenId, TAGITCore.State.FLAGGED, TAGITCore.State.RECYCLED, manufacturer);
+
+        // Recycle asset
+        vm.prank(manufacturer);
+        tagitCore.recycle(tokenId);
+    }
+
+    /**
+     * @notice Fuzz test for recycle function
+     * @dev Tests with random addresses and metadata
+     */
+    function testFuzz_recycle(address to, bytes32 metadata, bytes32 tagHash) public {
+        // Assumptions
+        vm.assume(to != address(0));
+        vm.assume(to.code.length == 0);
+        vm.assume(tagHash != bytes32(0));
+
+        // Full lifecycle to CLAIMED, then recycle
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(manufacturer, metadata);
+        tagitCore.bindTag(tokenId, tagHash);
+        tagitCore.activate(tokenId);
+        tagitCore.claim(tokenId, to);
+        tagitCore.recycle(tokenId);
+        vm.stopPrank();
+
+        // Verify final state
+        (address assetOwner, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        assertEq(uint8(state), uint8(TAGITCore.State.RECYCLED), "State should be RECYCLED");
+        assertEq(assetOwner, to, "Owner should remain unchanged");
+    }
 }
