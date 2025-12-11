@@ -3,6 +3,10 @@ pragma solidity ^0.8.20;
 
 import {Test, console2} from "@forge-std/Test.sol";
 import {TAGITCore} from "../../src/core/TAGITCore.sol";
+import {TAGITAccess} from "../../src/access/TAGITAccess.sol";
+import {IdentityBadge} from "../../src/access/IdentityBadge.sol";
+import {CapabilityBadge} from "../../src/access/CapabilityBadge.sol";
+import {ITAGITAccess} from "../../src/interfaces/ITAGITAccess.sol";
 
 /**
  * @title TAGITCoreTest
@@ -11,6 +15,9 @@ import {TAGITCore} from "../../src/core/TAGITCore.sol";
  */
 contract TAGITCoreTest is Test {
     TAGITCore public tagitCore;
+    TAGITAccess public tagitAccess;
+    IdentityBadge public identityBadge;
+    CapabilityBadge public capabilityBadge;
 
     // Test accounts
     address public owner;
@@ -36,9 +43,31 @@ contract TAGITCoreTest is Test {
         user1 = makeAddr("user1");
         user2 = makeAddr("user2");
 
+        // Deploy badge contracts
+        identityBadge = new IdentityBadge();
+        capabilityBadge = new CapabilityBadge();
+
+        // Deploy TAGITAccess facade
+        tagitAccess = new TAGITAccess();
+        tagitAccess.setIdentityBadge(address(identityBadge));
+        tagitAccess.setCapabilityBadge(address(capabilityBadge));
+
         // Deploy TAGITCore contract
         vm.prank(owner);
         tagitCore = new TAGITCore();
+
+        // Set up access controller (as owner)
+        vm.prank(owner);
+        tagitCore.setAccessController(address(tagitAccess));
+
+        // Grant all 7 capabilities to manufacturer
+        capabilityBadge.grantCapability(manufacturer, uint256(tagitCore.MINTER_CAPABILITY()));
+        capabilityBadge.grantCapability(manufacturer, uint256(tagitCore.BINDER_CAPABILITY()));
+        capabilityBadge.grantCapability(manufacturer, uint256(tagitCore.ACTIVATOR_CAPABILITY()));
+        capabilityBadge.grantCapability(manufacturer, uint256(tagitCore.CLAIMER_CAPABILITY()));
+        capabilityBadge.grantCapability(manufacturer, uint256(tagitCore.FLAGGER_CAPABILITY()));
+        capabilityBadge.grantCapability(manufacturer, uint256(tagitCore.RESOLVER_CAPABILITY()));
+        capabilityBadge.grantCapability(manufacturer, uint256(tagitCore.RECYCLER_CAPABILITY()));
     }
 
     // ============================================
@@ -584,8 +613,8 @@ contract TAGITCoreTest is Test {
         tagitCore.activate(tokenId);
         vm.stopPrank();
 
-        // Claim asset
-        vm.prank(to);
+        // Claim asset (manufacturer has CLAIMER_CAPABILITY)
+        vm.prank(manufacturer);
         tagitCore.claim(tokenId, claimer);
 
         // Verify state and ownership
@@ -994,5 +1023,164 @@ contract TAGITCoreTest is Test {
         (address assetOwner, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.RECYCLED), "State should be RECYCLED");
         assertEq(assetOwner, to, "Owner should remain unchanged");
+    }
+
+    // ============================================
+    // BIDGES ACCESS CONTROL INTEGRATION TESTS
+    // ============================================
+
+    /**
+     * @notice Test mint reverts for unauthorized caller (no MINTER_CAPABILITY)
+     */
+    function test_mint_revert_unauthorized() public {
+        vm.prank(user1); // user1 has no MINTER_CAPABILITY
+        vm.expectRevert(); // Expect MissingCapability revert
+        tagitCore.mint(user1, METADATA_1);
+    }
+
+    /**
+     * @notice Test bindTag reverts for unauthorized caller (no BINDER_CAPABILITY)
+     */
+    function test_bindTag_revert_unauthorized() public {
+        // Setup: mint asset as manufacturer
+        vm.prank(manufacturer);
+        uint256 tokenId = tagitCore.mint(user1, METADATA_1);
+
+        // Try to bind tag as unauthorized user
+        vm.prank(user1); // user1 has no BINDER_CAPABILITY
+        vm.expectRevert(); // Expect MissingCapability revert
+        tagitCore.bindTag(tokenId, TAG_HASH_1);
+    }
+
+    /**
+     * @notice Test activate reverts for unauthorized caller (no ACTIVATOR_CAPABILITY)
+     */
+    function test_activate_revert_unauthorized() public {
+        // Setup: mint and bind as manufacturer
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(user1, METADATA_1);
+        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        vm.stopPrank();
+
+        // Try to activate as unauthorized user
+        vm.prank(user1); // user1 has no ACTIVATOR_CAPABILITY
+        vm.expectRevert(); // Expect MissingCapability revert
+        tagitCore.activate(tokenId);
+    }
+
+    /**
+     * @notice Test claim reverts for unauthorized caller (no CLAIMER_CAPABILITY)
+     */
+    function test_claim_revert_unauthorized() public {
+        // Setup: mint, bind, and activate as manufacturer
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
+        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        tagitCore.activate(tokenId);
+        vm.stopPrank();
+
+        // Try to claim as unauthorized user
+        vm.prank(user1); // user1 has no CLAIMER_CAPABILITY
+        vm.expectRevert(); // Expect MissingCapability revert
+        tagitCore.claim(tokenId, user2);
+    }
+
+    /**
+     * @notice Test flag reverts for unauthorized caller (no FLAGGER_CAPABILITY)
+     */
+    function test_flag_revert_unauthorized() public {
+        // Setup: full lifecycle to CLAIMED
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
+        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        tagitCore.activate(tokenId);
+        tagitCore.claim(tokenId, user1);
+        vm.stopPrank();
+
+        // Try to flag as unauthorized user
+        vm.prank(user1); // user1 has no FLAGGER_CAPABILITY
+        vm.expectRevert(); // Expect MissingCapability revert
+        tagitCore.flag(tokenId);
+    }
+
+    /**
+     * @notice Test resolve reverts for unauthorized caller (no RESOLVER_CAPABILITY)
+     */
+    function test_resolve_revert_unauthorized() public {
+        // Setup: full lifecycle to FLAGGED
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
+        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        tagitCore.activate(tokenId);
+        tagitCore.claim(tokenId, user1);
+        tagitCore.flag(tokenId);
+        vm.stopPrank();
+
+        // Try to resolve as unauthorized user
+        vm.prank(user1); // user1 has no RESOLVER_CAPABILITY
+        vm.expectRevert(); // Expect MissingCapability revert
+        tagitCore.resolve(tokenId, user2);
+    }
+
+    /**
+     * @notice Test recycle reverts for unauthorized caller (no RECYCLER_CAPABILITY)
+     */
+    function test_recycle_revert_unauthorized() public {
+        // Setup: full lifecycle to CLAIMED
+        vm.startPrank(manufacturer);
+        uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
+        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        tagitCore.activate(tokenId);
+        tagitCore.claim(tokenId, user1);
+        vm.stopPrank();
+
+        // Try to recycle as unauthorized user
+        vm.prank(user1); // user1 has no RECYCLER_CAPABILITY
+        vm.expectRevert(); // Expect MissingCapability revert
+        tagitCore.recycle(tokenId);
+    }
+
+    /**
+     * @notice Test that capability bypass works when accessController is address(0)
+     */
+    function test_capabilityBypass_whenNoAccessController() public {
+        // Deploy new TAGITCore without access controller
+        vm.prank(owner);
+        TAGITCore bypassCore = new TAGITCore();
+        // NOTE: We do NOT set access controller, it remains address(0)
+
+        // Any account should be able to call functions (bypass mode)
+        vm.prank(user1); // user1 has no capabilities, but should work in bypass mode
+        uint256 tokenId = bypassCore.mint(user1, METADATA_1);
+
+        vm.prank(user1);
+        bypassCore.bindTag(tokenId, TAG_HASH_1);
+
+        vm.prank(user1);
+        bypassCore.activate(tokenId);
+
+        // Verify success
+        (, , TAGITCore.State state, , ) = bypassCore.getAsset(tokenId);
+        assertEq(uint8(state), uint8(TAGITCore.State.ACTIVATED), "State should be ACTIVATED in bypass mode");
+    }
+
+    /**
+     * @notice Test that capabilities can be revoked mid-flow
+     */
+    function test_capabilityRevocation() public {
+        // Grant MINTER_CAPABILITY to user1
+        capabilityBadge.grantCapability(user1, uint256(tagitCore.MINTER_CAPABILITY()));
+
+        // user1 can mint
+        vm.prank(user1);
+        tagitCore.mint(user1, METADATA_1);
+
+        // Revoke capability
+        capabilityBadge.revokeCapability(user1, uint256(tagitCore.MINTER_CAPABILITY()));
+
+        // user1 can no longer mint
+        vm.prank(user1);
+        vm.expectRevert(); // Expect MissingCapability revert
+        tagitCore.mint(user1, METADATA_2);
     }
 }

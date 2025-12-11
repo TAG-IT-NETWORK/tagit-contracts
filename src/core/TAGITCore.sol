@@ -2,7 +2,9 @@
 pragma solidity ^0.8.20;
 
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {ITAGITAccess} from "../interfaces/ITAGITAccess.sol";
 
 /**
  * @title TAGITCore
@@ -22,7 +24,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
  * Security: All state-changing functions must follow Checks-Effects-Interactions pattern
  * and include ReentrancyGuard. BIDGES capability checks enforce zero-trust access control.
  */
-contract TAGITCore is ERC721, ReentrancyGuard {
+contract TAGITCore is ERC721, Ownable, ReentrancyGuard {
     // ============================================
     // STATE MACHINE
     // ============================================
@@ -41,6 +43,23 @@ contract TAGITCore is ERC721, ReentrancyGuard {
         FLAGGED,    // 5 - Lost/stolen/recall initiated
         RECYCLED    // 6 - End of life, permanently retired
     }
+
+    // ============================================
+    // BIDGES CAPABILITIES (Access Control)
+    // ============================================
+
+    /**
+     * @notice Capability constants for BIDGES access control
+     * @dev Each lifecycle function requires a specific capability from TAGITAccess
+     * @custom:security Capabilities are derived using keccak256 for gas efficiency
+     */
+    bytes32 public constant MINTER_CAPABILITY = keccak256("MINTER");
+    bytes32 public constant BINDER_CAPABILITY = keccak256("BINDER");
+    bytes32 public constant ACTIVATOR_CAPABILITY = keccak256("ACTIVATOR");
+    bytes32 public constant CLAIMER_CAPABILITY = keccak256("CLAIMER");
+    bytes32 public constant FLAGGER_CAPABILITY = keccak256("FLAGGER");
+    bytes32 public constant RESOLVER_CAPABILITY = keccak256("RESOLVER");
+    bytes32 public constant RECYCLER_CAPABILITY = keccak256("RECYCLER");
 
     // ============================================
     // DATA STRUCTURES
@@ -121,8 +140,27 @@ contract TAGITCore is ERC721, ReentrancyGuard {
     error InvalidTagHash();
 
     // ============================================
+    // CUSTOM ERRORS (Additional for Access Control)
+    // ============================================
+
+    /**
+     * @notice Invalid access controller address
+     */
+    error InvalidAccessController();
+
+    // ============================================
     // EVENTS
     // ============================================
+
+    /**
+     * @notice Emitted when access controller is updated
+     * @param previousController Previous access controller address
+     * @param newController New access controller address
+     */
+    event AccessControllerUpdated(
+        address indexed previousController,
+        address indexed newController
+    );
 
     /**
      * @notice Emitted when new asset NFT is minted
@@ -167,6 +205,10 @@ contract TAGITCore is ERC721, ReentrancyGuard {
     // STORAGE
     // ============================================
 
+    /// @notice TAGITAccess controller for BIDGES capability checks
+    /// @dev If address(0), capability checks are bypassed (backward compatibility)
+    ITAGITAccess public accessController;
+
     /// @notice Mapping from token ID to Asset metadata
     mapping(uint256 => Asset) private _assets;
 
@@ -188,10 +230,46 @@ contract TAGITCore is ERC721, ReentrancyGuard {
 
     /**
      * @notice Initialize TAGITCore contract
-     * @dev Sets ERC721 name and symbol, initializes token counter
+     * @dev Sets ERC721 name and symbol, initializes Ownable, initializes token counter
      */
-    constructor() ERC721("TAG IT Digital Twin", "TAGIT") {
+    constructor() ERC721("TAG IT Digital Twin", "TAGIT") Ownable(msg.sender) {
         _nextTokenId = 1; // Start token IDs at 1 (0 reserved for "none")
+        // accessController starts as address(0) - capability checks bypassed until set
+    }
+
+    // ============================================
+    // ACCESS CONTROL
+    // ============================================
+
+    /**
+     * @notice Set the TAGITAccess controller for capability checks
+     * @dev Only owner can update. Setting to address(0) disables capability checks.
+     * @param controller Address of the TAGITAccess controller (can be address(0))
+     * @custom:security Only owner can call
+     * @custom:security Allows address(0) to disable checks for backward compatibility
+     * @custom:emits AccessControllerUpdated
+     */
+    function setAccessController(address controller) external onlyOwner {
+        address previousController = address(accessController);
+        accessController = ITAGITAccess(controller);
+        emit AccessControllerUpdated(previousController, controller);
+    }
+
+    /**
+     * @notice Modifier to require specific capability from msg.sender
+     * @dev Checks capability via TAGITAccess. Bypasses check if accessController is address(0).
+     * @param capability The capability ID required (e.g., MINTER_CAPABILITY)
+     * @custom:security Zero-trust: Explicitly checks capability via accessController
+     * @custom:security Bypass: If accessController == address(0), skip check (backward compatibility)
+     */
+    modifier requiresCapability(bytes32 capability) {
+        // Bypass capability checks if accessController not set (backward compatibility)
+        if (address(accessController) != address(0)) {
+            // Delegate capability check to TAGITAccess
+            // Will revert with MissingCapability if check fails
+            accessController.requireCapability(msg.sender, uint256(capability));
+        }
+        _;
     }
 
     // ============================================
@@ -212,6 +290,7 @@ contract TAGITCore is ERC721, ReentrancyGuard {
     function mint(address to, bytes32 metadata)
         external
         nonReentrant
+        requiresCapability(MINTER_CAPABILITY)
         returns (uint256 tokenId)
     {
         // ============================================
@@ -259,6 +338,7 @@ contract TAGITCore is ERC721, ReentrancyGuard {
     function bindTag(uint256 tokenId, bytes32 tagHash)
         external
         nonReentrant
+        requiresCapability(BINDER_CAPABILITY)
     {
         // ============================================
         // CHECKS
@@ -311,6 +391,7 @@ contract TAGITCore is ERC721, ReentrancyGuard {
     function activate(uint256 tokenId)
         external
         nonReentrant
+        requiresCapability(ACTIVATOR_CAPABILITY)
     {
         // ============================================
         // CHECKS
@@ -355,6 +436,7 @@ contract TAGITCore is ERC721, ReentrancyGuard {
     function claim(uint256 tokenId, address newOwner)
         external
         nonReentrant
+        requiresCapability(CLAIMER_CAPABILITY)
     {
         // ============================================
         // CHECKS
@@ -406,6 +488,7 @@ contract TAGITCore is ERC721, ReentrancyGuard {
     function flag(uint256 tokenId)
         external
         nonReentrant
+        requiresCapability(FLAGGER_CAPABILITY)
     {
         // ============================================
         // CHECKS
@@ -450,6 +533,7 @@ contract TAGITCore is ERC721, ReentrancyGuard {
     function resolve(uint256 tokenId, address newOwner)
         external
         nonReentrant
+        requiresCapability(RESOLVER_CAPABILITY)
     {
         // ============================================
         // CHECKS
@@ -503,6 +587,7 @@ contract TAGITCore is ERC721, ReentrancyGuard {
     function recycle(uint256 tokenId)
         external
         nonReentrant
+        requiresCapability(RECYCLER_CAPABILITY)
     {
         // ============================================
         // CHECKS
