@@ -1,0 +1,44 @@
+{
+  "network": "OP Sepolia",
+  "chainId": 11155420,
+  "deployedAt": "2024-12-17T22:57:00Z",
+  "deployer": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D",
+  "contracts": {
+    "IdentityBadge": {
+      "address": "0xB3f757FCa307a7FebA5CA210Cd7D840EC69990e8",
+      "type": "ERC-5192 Soulbound",
+      "description": "Soulbound identity badges (WHO someone is)"
+    },
+    "CapabilityBadge": {
+      "address": "0xFa7E212eEc6E9214c9dDE5bd29C9E1e4eF0894B6",
+      "type": "ERC-1155",
+      "description": "Transferable capability tokens (WHAT someone can do)"
+    },
+    "TAGITAccess": {
+      "address": "0xf7eFefc59EB154040Db4C9c2aD9417Ddb10b4936",
+      "type": "BIDGES Facade",
+      "description": "Access control controller combining badges"
+    },
+    "TAGITCore": {
+      "address": "0x6a58eE8f2d50D981b1793868C550727B9c58FbA6",
+      "type": "ERC-721",
+      "description": "Digital Twin NFT with lifecycle state machine"
+    }
+  },
+  "configuration": {
+    "TAGITAccess.identityBadge": "0xB3f757FCa307a7FebA5CA210Cd7D840EC69990e8",
+    "TAGITAccess.capabilityBadge": "0xFa7E212eEc6E9214c9dDE5bd29C9E1e4eF0894B6",
+    "TAGITCore.accessController": "0xf7eFefc59EB154040Db4C9c2aD9417Ddb10b4936"
+  },
+  "blockExplorer": {
+    "url": "https://sepolia-optimism.etherscan.io",
+    "links": {
+      "IdentityBadge": "https://sepolia-optimism.etherscan.io/address/0xB3f757FCa307a7FebA5CA210Cd7D840EC69990e8",
+      "CapabilityBadge": "https://sepolia-optimism.etherscan.io/address/0xFa7E212eEc6E9214c9dDE5bd29C9E1e4eF0894B6",
+      "TAGITAccess": "https://sepolia-optimism.etherscan.io/address/0xf7eFefc59EB154040Db4C9c2aD9417Ddb10b4936",
+      "TAGITCore": "https://sepolia-optimism.etherscan.io/address/0x6a58eE8f2d50D981b1793868C550727B9c58FbA6"
+    },
+    "verified": true,
+    "verifiedAt": "2024-12-17T23:05:00Z"
+  }
+}
