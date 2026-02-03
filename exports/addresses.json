@@ -1,0 +1,74 @@
+{
+  "networks": {
+    "op-sepolia": {
+      "chainId": 11155420,
+      "name": "OP Sepolia",
+      "rpcUrl": "https://sepolia.optimism.io",
+      "blockExplorer": "https://sepolia-optimism.etherscan.io",
+      "contracts": {
+        "TAGITCore": "0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe",
+        "TAGITAccess": "0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9",
+        "IdentityBadge": "0x26F2EBb84664EF1eF8554e15777EBEc6611256A6",
+        "CapabilityBadge": "0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505"
+      },
+      "nistImplementations": {
+        "TAGITRecovery": "0x6138a80c06A5e6a3CB6cc491A3a2c4DF4adD1600",
+        "TAGITPaymaster": "0x4339c46D63231063250834D9b3fa4E51FdB8026e",
+        "TAGITTreasury": "0xf6f5e2e03f6e28aE9Dc17bCc814a0cf758c887c9",
+        "TAGITPrograms": "0xe78DB7702FF5190DAc2F3E09213Ff84bF9efE32b",
+        "TAGITStaking": "0x12EE464e32a683f813fDb478e6C8e68E3d63d781",
+        "TAGITAccount": "0xC159FDec7a8fDc0d98571C89c342e28bB405e682",
+        "TAGITAccountFactory": "0x8D27B612a9D3e45d51D2234B2f4e03dCC5ca844b",
+        "CCIPAdapter": "0x8dA6D7ffCD4cc0F2c9FfD6411CeD7C9c573C9E88"
+      },
+      "nistProxies": {
+        "TAGITRecovery": "0x17c0af6B37aBD06587303f1695a06A668F8A5A8c",
+        "TAGITPaymaster": "0x670DC1C7821E0A717CFf5Cc949B05EC01b532104",
+        "TAGITTreasury": "0x841B07Ad929CCC589446e29Aa0C4Dd1639B48674",
+        "TAGITPrograms": "0x4d1007eB4823a5a13905A0361478C339421ce4C9",
+        "TAGITStaking": "0xe500CDfbA693CE1f39A6F05CfB4614971370Ee93",
+        "TAGITAccountFactory": "0x0ECe601E24789409C87010E064F88d584b051d68",
+        "CCIPAdapter": "0x76C375716bE762EEcb4860D06bB051735e6fb3FA"
+      },
+      "deployedAt": "2026-01-08T00:00:00Z",
+      "nistControls": {
+        "IR-4": "CircuitBreaker in Recovery, Paymaster",
+        "AC-7": "RateLimiter in Recovery, Staking, CCIP",
+        "SI-4": "DrainDetector in Paymaster, Treasury, Programs",
+        "SC-8": "ReplayProtection in CCIPAdapter",
+        "AU-3": "Session events in TAGITAccount"
+      }
+    },
+    "op-mainnet": {
+      "chainId": 10,
+      "name": "OP Mainnet",
+      "rpcUrl": "https://mainnet.optimism.io",
+      "blockExplorer": "https://optimistic.etherscan.io",
+      "contracts": {
+        "TAGITCore": null,
+        "TAGITAccess": null,
+        "IdentityBadge": null,
+        "CapabilityBadge": null
+      },
+      "deployedAt": null
+    }
+  },
+  "stateEnum": {
+    "NONE": 0,
+    "MINTED": 1,
+    "BOUND": 2,
+    "ACTIVATED": 3,
+    "CLAIMED": 4,
+    "FLAGGED": 5,
+    "RECYCLED": 6
+  },
+  "capabilityIds": {
+    "MINTER": 100,
+    "BINDER": 101,
+    "ACTIVATOR": 102,
+    "CLAIMER": 103,
+    "FLAGGER": 104,
+    "RESOLVER": 105,
+    "RECYCLER": 106
+  }
+}

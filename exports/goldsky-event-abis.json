@@ -1,0 +1,220 @@
+{
+  "network": "optimism-sepolia",
+  "chainId": 11155420,
+  "deploymentBlock": 37959311,
+  "contracts": {
+    "TAGITCore": {
+      "address": "0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe",
+      "startBlock": 37959312,
+      "events": [
+        {
+          "type": "event",
+          "name": "AccessControllerUpdated",
+          "inputs": [
+            {"name": "previousController", "type": "address", "indexed": true},
+            {"name": "newController", "type": "address", "indexed": true}
+          ],
+          "anonymous": false
+        },
+        {
+          "type": "event",
+          "name": "AssetMinted",
+          "inputs": [
+            {"name": "tokenId", "type": "uint256", "indexed": true},
+            {"name": "to", "type": "address", "indexed": true},
+            {"name": "metadata", "type": "bytes32", "indexed": false}
+          ],
+          "anonymous": false
+        },
+        {
+          "type": "event",
+          "name": "StateChanged",
+          "inputs": [
+            {"name": "tokenId", "type": "uint256", "indexed": true},
+            {"name": "from", "type": "uint8", "indexed": false},
+            {"name": "to", "type": "uint8", "indexed": false},
+            {"name": "actor", "type": "address", "indexed": false}
+          ],
+          "anonymous": false
+        },
+        {
+          "type": "event",
+          "name": "TagBound",
+          "inputs": [
+            {"name": "tokenId", "type": "uint256", "indexed": true},
+            {"name": "tagHash", "type": "bytes32", "indexed": true}
+          ],
+          "anonymous": false
+        },
+        {
+          "type": "event",
+          "name": "Transfer",
+          "inputs": [
+            {"name": "from", "type": "address", "indexed": true},
+            {"name": "to", "type": "address", "indexed": true},
+            {"name": "tokenId", "type": "uint256", "indexed": true}
+          ],
+          "anonymous": false
+        },
+        {
+          "type": "event",
+          "name": "CircuitTripped",
+          "inputs": [
+            {"name": "timestamp", "type": "uint256", "indexed": true},
+            {"name": "count", "type": "uint256", "indexed": false},
+            {"name": "threshold", "type": "uint256", "indexed": false},
+            {"name": "cooldownEnds", "type": "uint256", "indexed": false}
+          ],
+          "anonymous": false
+        },
+        {
+          "type": "event",
+          "name": "CircuitReset",
+          "inputs": [
+            {"name": "timestamp", "type": "uint256", "indexed": true},
+            {"name": "previousCooldownEnds", "type": "uint256", "indexed": false}
+          ],
+          "anonymous": false
+        },
+        {
+          "type": "event",
+          "name": "RateLimitHit",
+          "inputs": [
+            {"name": "user", "type": "address", "indexed": true},
+            {"name": "count", "type": "uint256", "indexed": false},
+            {"name": "lockedUntil", "type": "uint256", "indexed": false}
+          ],
+          "anonymous": false
+        }
+      ]
+    },
+    "TAGITAccess": {
+      "address": "0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9",
+      "startBlock": 37959312,
+      "events": [
+        {
+          "type": "event",
+          "name": "CapabilityBadgeUpdated",
+          "inputs": [
+            {"name": "previousBadge", "type": "address", "indexed": true},
+            {"name": "newBadge", "type": "address", "indexed": true}
+          ],
+          "anonymous": false
+        },
+        {
+          "type": "event",
+          "name": "IdentityBadgeUpdated",
+          "inputs": [
+            {"name": "previousBadge", "type": "address", "indexed": true},
+            {"name": "newBadge", "type": "address", "indexed": true}
+          ],
+          "anonymous": false
+        },
+        {
+          "type": "event",
+          "name": "OwnershipTransferred",
+          "inputs": [
+            {"name": "previousOwner", "type": "address", "indexed": true},
+            {"name": "newOwner", "type": "address", "indexed": true}
+          ],
+          "anonymous": false
+        }
+      ]
+    },
+    "IdentityBadge": {
+      "address": "0x26F2EBb84664EF1eF8554e15777EBEc6611256A6",
+      "startBlock": 37959311,
+      "events": [
+        {
+          "type": "event",
+          "name": "IdentityGranted",
+          "inputs": [
+            {"name": "account", "type": "address", "indexed": true},
+            {"name": "badgeId", "type": "uint256", "indexed": true},
+            {"name": "tokenId", "type": "uint256", "indexed": false}
+          ],
+          "anonymous": false
+        },
+        {
+          "type": "event",
+          "name": "IdentityRevoked",
+          "inputs": [
+            {"name": "account", "type": "address", "indexed": true},
+            {"name": "badgeId", "type": "uint256", "indexed": true},
+            {"name": "tokenId", "type": "uint256", "indexed": false}
+          ],
+          "anonymous": false
+        },
+        {
+          "type": "event",
+          "name": "Locked",
+          "inputs": [
+            {"name": "tokenId", "type": "uint256", "indexed": false},
+            {"name": "locked", "type": "bool", "indexed": false}
+          ],
+          "anonymous": false
+        },
+        {
+          "type": "event",
+          "name": "Transfer",
+          "inputs": [
+            {"name": "from", "type": "address", "indexed": true},
+            {"name": "to", "type": "address", "indexed": true},
+            {"name": "tokenId", "type": "uint256", "indexed": true}
+          ],
+          "anonymous": false
+        }
+      ]
+    },
+    "CapabilityBadge": {
+      "address": "0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505",
+      "startBlock": 37959312,
+      "events": [
+        {
+          "type": "event",
+          "name": "CapabilityGranted",
+          "inputs": [
+            {"name": "account", "type": "address", "indexed": true},
+            {"name": "capabilityId", "type": "uint256", "indexed": true},
+            {"name": "amount", "type": "uint256", "indexed": false}
+          ],
+          "anonymous": false
+        },
+        {
+          "type": "event",
+          "name": "CapabilityRevoked",
+          "inputs": [
+            {"name": "account", "type": "address", "indexed": true},
+            {"name": "capabilityId", "type": "uint256", "indexed": true},
+            {"name": "amount", "type": "uint256", "indexed": false}
+          ],
+          "anonymous": false
+        },
+        {
+          "type": "event",
+          "name": "TransferSingle",
+          "inputs": [
+            {"name": "operator", "type": "address", "indexed": true},
+            {"name": "from", "type": "address", "indexed": true},
+            {"name": "to", "type": "address", "indexed": true},
+            {"name": "id", "type": "uint256", "indexed": false},
+            {"name": "value", "type": "uint256", "indexed": false}
+          ],
+          "anonymous": false
+        },
+        {
+          "type": "event",
+          "name": "TransferBatch",
+          "inputs": [
+            {"name": "operator", "type": "address", "indexed": true},
+            {"name": "from", "type": "address", "indexed": true},
+            {"name": "to", "type": "address", "indexed": true},
+            {"name": "ids", "type": "uint256[]", "indexed": false},
+            {"name": "values", "type": "uint256[]", "indexed": false}
+          ],
+          "anonymous": false
+        }
+      ]
+    }
+  }
+}

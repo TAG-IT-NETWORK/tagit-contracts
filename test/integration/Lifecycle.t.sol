@@ -420,7 +420,7 @@ contract LifecycleIntegrationTest is Test {
         uint256 gasBefore = gasleft();
         uint256 tokenId = tagitCore.mint(manufacturer, METADATA);
         uint256 mintGas = gasBefore - gasleft();
-        assertLt(mintGas, 150000, "Mint gas should be under 150k");
+        assertLt(mintGas, 170000, "Mint gas should be under 170k (includes NIST AC-7 rate limit)");
 
         // Bind
         vm.prank(manufacturer);

@@ -2,20 +2,41 @@
 src = "src"
 out = "out"
 libs = ["lib"]
-solc = "0.8.20"
+solc = "0.8.28"
 optimizer = true
 optimizer_runs = 200
 via_ir = false
 remappings = [
     "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
-    "@forge-std/=lib/forge-std/src/"
+    "@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/",
+    "@forge-std/=lib/forge-std/src/",
+    "@account-abstraction/=lib/account-abstraction/contracts/",
+    "@chainlink/ccip/=lib/chainlink-local/lib/chainlink-ccip/chains/evm/contracts/"
 ]
 
-# Test configuration
-fuzz = { runs = 10000 }
-invariant = { runs = 256, depth = 15 }
+# Test configuration - Pre-mainnet hardening (SEC-005)
+[fuzz]
+runs = 100000
+max_test_rejects = 65536
+seed = "0x333"
+
+[invariant]
+runs = 256
+depth = 500
+fail_on_revert = true
 
 # Gas reporting
 gas_reports = ["*"]
+
+# RPC endpoints for fork testing
+[rpc_endpoints]
+optimism = "${OP_MAINNET_RPC_URL}"
+optimism_sepolia = "${OP_SEPOLIA_RPC_URL}"
+ethereum = "${ETH_MAINNET_RPC_URL}"
+
+# Fork configuration for reproducible tests
+[profile.fork]
+fork_block_number = 125000000
+no_match_path = "test/unit/*"
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

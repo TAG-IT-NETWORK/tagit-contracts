@@ -5,6 +5,8 @@ import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {ITAGITAccess} from "../interfaces/ITAGITAccess.sol";
+import {CircuitBreaker} from "../libraries/CircuitBreaker.sol";
+import {RateLimiter} from "../libraries/RateLimiter.sol";
 
 /**
  * @title TAGITCore
@@ -25,6 +27,8 @@ import {ITAGITAccess} from "../interfaces/ITAGITAccess.sol";
  * and include ReentrancyGuard. BIDGES capability checks enforce zero-trust access control.
  */
 contract TAGITCore is ERC721, Ownable, ReentrancyGuard {
+    using CircuitBreaker for CircuitBreaker.Config;
+    using RateLimiter for RateLimiter.Config;
     // ============================================
     // STATE MACHINE
     // ============================================
@@ -225,16 +229,52 @@ contract TAGITCore is ERC721, Ownable, ReentrancyGuard {
     uint256 private _totalSupply;
 
     // ============================================
+    // NIST CSF 2.0 COMPLIANCE STORAGE
+    // ============================================
+
+    /// @notice Circuit breaker for flag operations (NIST IR-4)
+    /// @dev Trips if too many flags occur in a window - prevents mass flagging attacks
+    CircuitBreaker.Config private _flagCircuitBreaker;
+
+    /// @notice Rate limiter for mint operations (NIST AC-7)
+    /// @dev Prevents spam minting attacks
+    RateLimiter.Config private _mintRateLimiter;
+
+    /// @notice Per-user rate limit state for minting
+    mapping(address => RateLimiter.UserState) private _mintRateLimits;
+
+    // ============================================
     // CONSTRUCTOR
     // ============================================
 
     /**
      * @notice Initialize TAGITCore contract
      * @dev Sets ERC721 name and symbol, initializes Ownable, initializes token counter
+     *      Initializes NIST CSF 2.0 compliance controls
      */
     constructor() ERC721("TAG IT Digital Twin", "TAGIT") Ownable(msg.sender) {
         _nextTokenId = 1; // Start token IDs at 1 (0 reserved for "none")
         // accessController starts as address(0) - capability checks bypassed until set
+
+        // NIST IR-4: Circuit breaker for flag operations
+        // Threshold: 50 flags per hour triggers circuit breaker
+        // Cooldown: 30 minutes before operations resume
+        _flagCircuitBreaker.initialize(
+            50,             // threshold
+            1 hours,        // window duration
+            30 minutes      // cooldown duration
+        );
+
+        // NIST AC-7: Rate limiter for mint operations
+        // Max: 100 mints per user per hour
+        // Cooldown: 15 minutes after hitting limit
+        // Global: 1000 mints per hour across all users
+        _mintRateLimiter.initialize(
+            100,            // max per user per window
+            1 hours,        // window duration
+            15 minutes,     // cooldown duration
+            1000            // global max per window
+        );
     }
 
     // ============================================
@@ -297,6 +337,9 @@ contract TAGITCore is ERC721, Ownable, ReentrancyGuard {
         // CHECKS
         // ============================================
         if (to == address(0)) revert ZeroAddress();
+
+        // NIST AC-7: Rate limit check for spam prevention
+        _mintRateLimiter.check(_mintRateLimits, msg.sender);
 
         // ============================================
         // EFFECTS
@@ -503,6 +546,10 @@ contract TAGITCore is ERC721, Ownable, ReentrancyGuard {
             revert InvalidState(tokenId, asset.state, State.CLAIMED);
         }
 
+        // NIST IR-4: Circuit breaker check for mass flagging attacks
+        // Trips if threshold exceeded, automatically resets after cooldown
+        _flagCircuitBreaker.check();
+
         // ============================================
         // EFFECTS
         // ============================================
@@ -623,7 +670,7 @@ contract TAGITCore is ERC721, Ownable, ReentrancyGuard {
     /**
      * @notice Get asset metadata for a token
      * @param tokenId The token ID to query
-     * @return owner Current owner address
+     * @return assetOwner Current owner address
      * @return timestamp Last state change timestamp
      * @return state Current lifecycle state
      * @return flags Bit flags (reserved for future use)
@@ -634,7 +681,7 @@ contract TAGITCore is ERC721, Ownable, ReentrancyGuard {
         external
         view
         returns (
-            address owner,
+            address assetOwner,
             uint64 timestamp,
             State state,
             uint8 flags,
@@ -677,5 +724,87 @@ contract TAGITCore is ERC721, Ownable, ReentrancyGuard {
      */
     function getTagByToken(uint256 tokenId) external view returns (bytes32) {
         return _tokenToTag[tokenId];
+    }
+
+    // ============================================
+    // NIST CSF 2.0 COMPLIANCE - ADMIN FUNCTIONS
+    // ============================================
+
+    /**
+     * @notice Force reset the flag circuit breaker (admin emergency action)
+     * @dev Only owner can call. Should only be used after investigating the cause.
+     * @custom:security NIST IR-4 manual override for incident response
+     */
+    function resetFlagCircuitBreaker() external onlyOwner {
+        _flagCircuitBreaker.forceReset(msg.sender);
+    }
+
+    /**
+     * @notice Force unlock a rate-limited minter (admin action)
+     * @dev Only owner can call. Clears rate limit state for a specific user.
+     * @param user Address to unlock
+     * @custom:security NIST AC-7 manual override for legitimate users
+     */
+    function unlockMinter(address user) external onlyOwner {
+        RateLimiter.forceUnlock(_mintRateLimits, user);
+    }
+
+    /**
+     * @notice Update circuit breaker threshold (admin action)
+     * @dev Only owner can call. Allows tuning based on operational needs.
+     * @param newThreshold New threshold for circuit breaker
+     * @custom:security NIST CM-3 configuration management
+     */
+    function setFlagCircuitBreakerThreshold(uint32 newThreshold) external onlyOwner {
+        _flagCircuitBreaker.setThreshold(newThreshold);
+    }
+
+    /**
+     * @notice Enable or disable mint rate limiting (admin action)
+     * @dev Only owner can call. Use for emergency bypass or planned events.
+     * @param enabled Whether rate limiting is enabled
+     * @custom:security NIST AC-7 operational control
+     */
+    function setMintRateLimitEnabled(bool enabled) external onlyOwner {
+        _mintRateLimiter.setEnabled(enabled);
+    }
+
+    // ============================================
+    // NIST CSF 2.0 COMPLIANCE - VIEW FUNCTIONS
+    // ============================================
+
+    /**
+     * @notice Get circuit breaker status for flag operations
+     * @return isTripped Whether the circuit breaker is currently tripped
+     * @return cooldownRemaining Seconds until cooldown ends (0 if not tripped)
+     * @custom:security NIST SI-4 system monitoring
+     */
+    function getFlagCircuitBreakerStatus() external view returns (bool isTripped, uint256 cooldownRemaining) {
+        return _flagCircuitBreaker.status();
+    }
+
+    /**
+     * @notice Get rate limit status for a minter
+     * @param user Address to check
+     * @return canMint Whether the user can mint
+     * @return remaining Remaining mints in current window
+     * @return lockedUntil Lockout end timestamp (0 if not locked)
+     * @custom:security NIST SI-4 system monitoring
+     */
+    function getMintRateLimitStatus(address user) external view returns (
+        bool canMint,
+        uint256 remaining,
+        uint256 lockedUntil
+    ) {
+        return _mintRateLimiter.canAct(_mintRateLimits, user);
+    }
+
+    /**
+     * @notice Get remaining capacity for flag circuit breaker
+     * @return remaining Number of flag operations before circuit trips
+     * @custom:security NIST AU-6 audit review capacity
+     */
+    function getFlagCircuitBreakerCapacity() external view returns (uint256) {
+        return _flagCircuitBreaker.remainingCapacity();
     }
 }

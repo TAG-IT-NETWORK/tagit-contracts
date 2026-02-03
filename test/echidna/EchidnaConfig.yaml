@@ -1,0 +1,22 @@
+# Echidna Configuration for TAG IT Contracts
+# Simplified config for Echidna 2.3.0
+
+testMode: "property"
+testLimit: 10000
+shrinkLimit: 5000
+seqLen: 50
+
+# Deployer and sender addresses
+deployer: "0x10000"
+sender: ["0x10000", "0x20000", "0x30000"]
+
+# Balance settings
+balanceContract: 0xffffffffffffffff
+balanceAddr: 0xffffffffffffffff
+
+# Property function prefix
+prefix: "echidna_"
+
+# Coverage
+coverage: true
+corpusDir: "echidna-corpus"

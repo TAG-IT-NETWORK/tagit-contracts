@@ -22,12 +22,13 @@ NC='\033[0m' # No Color
 
 # ============================================
 # DEPLOYED CONTRACT ADDRESSES (OP Sepolia)
-# Deployment Date: December 2025
+# Deployment Date: January 6, 2026 (NIST CSF 2.0 Phase 12)
+# NIST Controls: CircuitBreaker (IR-4), RateLimiter (AC-7), Forta Events (SI-4)
 # ============================================
-IDENTITY_BADGE="0xb3f757fca307a7feba5ca210cd7d840ec69990e8"
-CAPABILITY_BADGE="0xfa7e212eec6e9214c9dde5bd29c9e1e4ef0894b6"
-TAGIT_ACCESS="0xf7efefc59eb154040db4c9c2ad9417ddb10b4936"
-TAGIT_CORE="0x6a58ee8f2d50d981b1793868c550727b9c58fba6"
+IDENTITY_BADGE="0x26F2EBb84664EF1eF8554e15777EBEc6611256A6"
+CAPABILITY_BADGE="0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505"
+TAGIT_ACCESS="0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9"
+TAGIT_CORE="0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe"
 
 # Chain configuration
 CHAIN_ID="11155420"

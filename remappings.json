@@ -1,0 +1,14 @@
+{
+  "remappings": [
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+    "@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/",
+    "@forge-std/=lib/forge-std/src/",
+    "@account-abstraction/=lib/account-abstraction/contracts/",
+    "@chainlink/ccip/=lib/chainlink-local/lib/chainlink-ccip/chains/evm/contracts/"
+  ],
+  "optimizer": {
+    "enabled": true,
+    "runs": 200
+  },
+  "evmVersion": "shanghai"
+}
