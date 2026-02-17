@@ -1,0 +1,24 @@
+{
+  "optimismSepolia": {
+    "chainId": 11155420,
+    "contracts": {
+      "TAGITAgentIdentity": "",
+      "TAGITAgentReputation": "",
+      "TAGITAgentValidation": ""
+    },
+    "deployedAt": "",
+    "deployer": "",
+    "notes": "Deployed via script/deploy/DeployAgentSuite.s.sol"
+  },
+  "optimism": {
+    "chainId": 10,
+    "contracts": {
+      "TAGITAgentIdentity": "",
+      "TAGITAgentReputation": "",
+      "TAGITAgentValidation": ""
+    },
+    "deployedAt": "",
+    "deployer": "",
+    "notes": "Phase 4 — Mainnet deployment"
+  }
+}
