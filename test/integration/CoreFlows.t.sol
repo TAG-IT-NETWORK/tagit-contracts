@@ -135,6 +135,12 @@ contract CoreFlowsTest is IntegrationBase {
         vm.prank(lawEnforcement);
         core.flag(tokenId);
 
+        // Approve resolve (2-of-3 quorum)
+        vm.prank(lawEnforcement);
+        core.approveResolve(tokenId, consumer1);
+        vm.prank(lawEnforcement2);
+        core.approveResolve(tokenId, consumer1);
+
         // Resolve back to claimed
         vm.prank(lawEnforcement);
         core.resolve(tokenId, consumer1);

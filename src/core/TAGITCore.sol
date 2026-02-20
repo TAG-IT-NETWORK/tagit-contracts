@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {ERC721Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {ERC1967Utils} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
 import {ITAGITAccess} from "../interfaces/ITAGITAccess.sol";
 import {CircuitBreaker} from "../libraries/CircuitBreaker.sol";
 import {RateLimiter} from "../libraries/RateLimiter.sol";
@@ -12,7 +15,7 @@ import {RateLimiter} from "../libraries/RateLimiter.sol";
  * @title TAGITCore
  * @author TAG IT Network <dev@tagit.network>
  * @notice Core asset management for digital twins
- * @dev Implements ERC-721 with lifecycle state machine
+ * @dev Implements ERC-721 with lifecycle state machine behind UUPS proxy
  *
  * This contract manages the lifecycle of physical assets represented as NFTs (Digital Twins).
  * Each asset progresses through a state machine from minting to end-of-life, with cryptographic
@@ -23,12 +26,24 @@ import {RateLimiter} from "../libraries/RateLimiter.sol";
  *                                              ↓
  *                                          RECYCLED
  *
+ * Upgradeability:
+ * - UUPS proxy pattern (EIP-1822) — owner-authorized upgrades only
+ * - Owner should be a TimelockController (48hr delay) controlled by Gnosis Safe 3-of-5
+ * - UpgradeScheduled event emitted on every upgrade for transparency
+ *
  * Security: All state-changing functions must follow Checks-Effects-Interactions pattern
  * and include ReentrancyGuard. BIDGES capability checks enforce zero-trust access control.
  */
-contract TAGITCore is ERC721, Ownable, ReentrancyGuard {
+contract TAGITCore is
+    Initializable,
+    ERC721Upgradeable,
+    OwnableUpgradeable,
+    UUPSUpgradeable,
+    ReentrancyGuard
+{
     using CircuitBreaker for CircuitBreaker.Config;
     using RateLimiter for RateLimiter.Config;
+
     // ============================================
     // STATE MACHINE
     // ============================================
@@ -64,6 +79,9 @@ contract TAGITCore is ERC721, Ownable, ReentrancyGuard {
     bytes32 public constant FLAGGER_CAPABILITY = keccak256("FLAGGER");
     bytes32 public constant RESOLVER_CAPABILITY = keccak256("RESOLVER");
     bytes32 public constant RECYCLER_CAPABILITY = keccak256("RECYCLER");
+
+    /// @notice Number of independent resolver approvals required before resolve() can execute
+    uint256 public constant RESOLVE_QUORUM = 2;
 
     // ============================================
     // DATA STRUCTURES
@@ -143,14 +161,33 @@ contract TAGITCore is ERC721, Ownable, ReentrancyGuard {
      */
     error InvalidTagHash();
 
-    // ============================================
-    // CUSTOM ERRORS (Additional for Access Control)
-    // ============================================
-
     /**
      * @notice Invalid access controller address
      */
     error InvalidAccessController();
+
+    /**
+     * @notice Resolver has already approved this token's resolution
+     * @param tokenId The asset token ID
+     * @param approver Address that already approved
+     */
+    error AlreadyApproved(uint256 tokenId, address approver);
+
+    /**
+     * @notice Resolve quorum not yet reached
+     * @param tokenId The asset token ID
+     * @param current Current number of approvals
+     * @param required Required number of approvals
+     */
+    error QuorumNotReached(uint256 tokenId, uint256 current, uint256 required);
+
+    /**
+     * @notice Proposed newOwner does not match previously approved recipient
+     * @param tokenId The asset token ID
+     * @param expected The previously approved recipient
+     * @param provided The mismatching recipient provided
+     */
+    error RecipientMismatch(uint256 tokenId, address expected, address provided);
 
     // ============================================
     // EVENTS
@@ -205,6 +242,31 @@ contract TAGITCore is ERC721, Ownable, ReentrancyGuard {
         bytes32 indexed tagHash
     );
 
+    /**
+     * @notice Emitted when a contract upgrade is authorized
+     * @param oldImplementation Address of the current implementation
+     * @param newImplementation Address of the new implementation
+     * @param scheduledBy Address that authorized the upgrade
+     * @custom:security Transparency event — allows monitoring of upgrade schedule
+     */
+    event UpgradeScheduled(
+        address indexed oldImplementation,
+        address indexed newImplementation,
+        address indexed scheduledBy
+    );
+
+    /**
+     * @notice Emitted when a resolver approves a flagged asset's resolution
+     * @param tokenId The asset token ID
+     * @param approver Address of the resolver who approved
+     * @param approvalCount Total approvals after this one
+     */
+    event ResolveApproved(
+        uint256 indexed tokenId,
+        address indexed approver,
+        uint256 approvalCount
+    );
+
     // ============================================
     // STORAGE
     // ============================================
@@ -244,17 +306,57 @@ contract TAGITCore is ERC721, Ownable, ReentrancyGuard {
     mapping(address => RateLimiter.UserState) private _mintRateLimits;
 
     // ============================================
-    // CONSTRUCTOR
+    // RESOLVE QUORUM STORAGE (PATCH-02)
+    // ============================================
+
+    /// @notice Tracks which resolvers have approved a given token's resolution
+    /// @dev Keyed by round-id (hash of tokenId + nonce) to invalidate stale approvals across cycles
+    mapping(uint256 => mapping(address => bool)) private _resolveApprovals;
+
+    /// @notice Number of resolver approvals collected per token
+    mapping(uint256 => uint256) private _resolveApprovalCount;
+
+    /// @notice Proposed newOwner for resolution (set by first approver)
+    mapping(uint256 => address) private _resolveRecipient;
+
+    /// @notice Per-token nonce incremented on each resolve — invalidates stale approval entries
+    mapping(uint256 => uint256) private _resolveNonce;
+
+    /// @notice Storage gap for future upgrades (ERC-7201 compatible)
+    /// @dev Reserve 36 slots (reduced from 40 after adding 4 resolve-quorum mappings)
+    uint256[36] private __gap;
+
+    // ============================================
+    // CONSTRUCTOR (disabled for proxy)
+    // ============================================
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    // ============================================
+    // INITIALIZER (replaces constructor for proxy)
     // ============================================
 
     /**
-     * @notice Initialize TAGITCore contract
-     * @dev Sets ERC721 name and symbol, initializes Ownable, initializes token counter
-     *      Initializes NIST CSF 2.0 compliance controls
+     * @notice Initialize TAGITCore contract (called once via proxy)
+     * @dev Replaces constructor for UUPS proxy pattern. Sets ERC721 name/symbol,
+     *      initializes Ownable, sets up NIST compliance controls.
+     * @param initialOwner Address that will own this contract (should be TimelockController)
+     * @custom:security Can only be called once (initializer modifier)
+     * @custom:security Owner should be a TimelockController controlled by Gnosis Safe 3-of-5
      */
-    constructor() ERC721("TAG IT Digital Twin", "TAGIT") Ownable(msg.sender) {
-        _nextTokenId = 1; // Start token IDs at 1 (0 reserved for "none")
-        // accessController starts as address(0) - capability checks bypassed until set
+    function initialize(address initialOwner) external initializer {
+        if (initialOwner == address(0)) revert ZeroAddress();
+
+        // Initialize parent contracts
+        __ERC721_init("TAG IT Digital Twin", "TAGIT");
+        __Ownable_init(initialOwner);
+        __UUPSUpgradeable_init();
+
+        // Start token IDs at 1 (0 reserved for "none")
+        _nextTokenId = 1;
 
         // NIST IR-4: Circuit breaker for flag operations
         // Threshold: 50 flags per hour triggers circuit breaker
@@ -278,6 +380,34 @@ contract TAGITCore is ERC721, Ownable, ReentrancyGuard {
     }
 
     // ============================================
+    // UUPS UPGRADE AUTHORIZATION
+    // ============================================
+
+    /**
+     * @notice Authorize a contract upgrade (UUPS)
+     * @dev Only owner (TimelockController) can authorize upgrades.
+     *      Emits UpgradeScheduled for transparency — allows off-chain monitoring.
+     * @param newImplementation Address of the new implementation contract
+     * @custom:security Owner-only — should be behind TimelockController + Gnosis Safe
+     * @custom:security UpgradeScheduled event enables 48hr monitoring window
+     */
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {
+        emit UpgradeScheduled(
+            ERC1967Utils.getImplementation(),
+            newImplementation,
+            msg.sender
+        );
+    }
+
+    /**
+     * @notice Get the current implementation address
+     * @return The address of the current implementation contract
+     */
+    function getImplementation() external view returns (address) {
+        return ERC1967Utils.getImplementation();
+    }
+
+    // ============================================
     // ACCESS CONTROL
     // ============================================
 
@@ -285,7 +415,7 @@ contract TAGITCore is ERC721, Ownable, ReentrancyGuard {
      * @notice Set the TAGITAccess controller for capability checks
      * @dev Only owner can update. Setting to address(0) disables capability checks.
      * @param controller Address of the TAGITAccess controller (can be address(0))
-     * @custom:security Only owner can call
+     * @custom:security Only owner can call (goes through TimelockController 48hr delay)
      * @custom:security Allows address(0) to disable checks for backward compatibility
      * @custom:emits AccessControllerUpdated
      */
@@ -564,6 +694,66 @@ contract TAGITCore is ERC721, Ownable, ReentrancyGuard {
     }
 
     /**
+     * @notice Approve resolution of a flagged asset (2-of-3 multisig quorum)
+     * @dev Requires RESOLVER_CAPABILITY. Asset must be FLAGGED. Each resolver can only
+     *      approve once per token. First approver sets the recipient; subsequent approvers
+     *      must agree on the same recipient.
+     * @param tokenId The asset token ID to approve resolution for
+     * @param newOwner Proposed recipient of the resolved asset
+     * @custom:security STRIDE Tampering mitigation — prevents single compromised resolver
+     * @custom:emits ResolveApproved
+     */
+    function approveResolve(uint256 tokenId, address newOwner)
+        external
+        nonReentrant
+        requiresCapability(RESOLVER_CAPABILITY)
+    {
+        // ============================================
+        // CHECKS
+        // ============================================
+        Asset storage asset = _assets[tokenId];
+
+        // Verify token exists
+        if (asset.owner == address(0)) revert TokenNotFound(tokenId);
+
+        // Verify asset is in FLAGGED state
+        if (asset.state != State.FLAGGED) {
+            revert InvalidState(tokenId, asset.state, State.FLAGGED);
+        }
+
+        // Compute round key (invalidates stale approvals from previous resolve cycles)
+        uint256 roundKey = uint256(keccak256(abi.encode(tokenId, _resolveNonce[tokenId])));
+
+        // Verify caller hasn't already approved in this round
+        if (_resolveApprovals[roundKey][msg.sender]) {
+            revert AlreadyApproved(tokenId, msg.sender);
+        }
+
+        // Verify recipient matches (if not the first approval)
+        if (_resolveApprovalCount[tokenId] > 0) {
+            if (newOwner != _resolveRecipient[tokenId]) {
+                revert RecipientMismatch(tokenId, _resolveRecipient[tokenId], newOwner);
+            }
+        }
+
+        // ============================================
+        // EFFECTS
+        // ============================================
+        // First approval sets the recipient
+        if (_resolveApprovalCount[tokenId] == 0) {
+            _resolveRecipient[tokenId] = newOwner;
+        }
+
+        _resolveApprovals[roundKey][msg.sender] = true;
+        _resolveApprovalCount[tokenId]++;
+
+        // ============================================
+        // INTERACTIONS
+        // ============================================
+        emit ResolveApproved(tokenId, msg.sender, _resolveApprovalCount[tokenId]);
+    }
+
+    /**
      * @notice Resolve AIRP recovery and return asset to rightful owner
      * @dev CRITICAL: This function transfers both internal state AND ERC721 ownership.
      *      Asset must be in FLAGGED state. This is the ONLY backward state transition.
@@ -598,6 +788,16 @@ contract TAGITCore is ERC721, Ownable, ReentrancyGuard {
         // Verify new owner is not zero address (prevent accidental burns)
         if (newOwner == address(0)) revert ZeroAddress();
 
+        // Verify resolve quorum has been reached (2-of-3 multisig)
+        if (_resolveApprovalCount[tokenId] < RESOLVE_QUORUM) {
+            revert QuorumNotReached(tokenId, _resolveApprovalCount[tokenId], RESOLVE_QUORUM);
+        }
+
+        // Verify newOwner matches the approved recipient
+        if (newOwner != _resolveRecipient[tokenId]) {
+            revert RecipientMismatch(tokenId, _resolveRecipient[tokenId], newOwner);
+        }
+
         // ============================================
         // EFFECTS (ALL state changes BEFORE transfer)
         // ============================================
@@ -607,6 +807,11 @@ contract TAGITCore is ERC721, Ownable, ReentrancyGuard {
         asset.state = State.CLAIMED;
         asset.timestamp = uint64(block.timestamp);
         asset.owner = newOwner;
+
+        // Clear resolve approval state and increment nonce to invalidate stale approvals
+        _resolveApprovalCount[tokenId] = 0;
+        delete _resolveRecipient[tokenId];
+        _resolveNonce[tokenId]++;
 
         // ============================================
         // INTERACTIONS (External calls LAST)
@@ -726,6 +931,23 @@ contract TAGITCore is ERC721, Ownable, ReentrancyGuard {
         return _tokenToTag[tokenId];
     }
 
+    /**
+     * @notice Get current resolve-approval status for a flagged token
+     * @param tokenId The token ID to query
+     * @return approvalCount Number of resolver approvals collected
+     * @return recipient Proposed newOwner (address(0) if no approvals yet)
+     * @return quorumReached Whether the quorum threshold has been met
+     */
+    function getResolveApprovalStatus(uint256 tokenId)
+        external
+        view
+        returns (uint256 approvalCount, address recipient, bool quorumReached)
+    {
+        approvalCount = _resolveApprovalCount[tokenId];
+        recipient = _resolveRecipient[tokenId];
+        quorumReached = approvalCount >= RESOLVE_QUORUM;
+    }
+
     // ============================================
     // NIST CSF 2.0 COMPLIANCE - ADMIN FUNCTIONS
     // ============================================
@@ -734,6 +956,7 @@ contract TAGITCore is ERC721, Ownable, ReentrancyGuard {
      * @notice Force reset the flag circuit breaker (admin emergency action)
      * @dev Only owner can call. Should only be used after investigating the cause.
      * @custom:security NIST IR-4 manual override for incident response
+     * @custom:security Goes through TimelockController 48hr delay
      */
     function resetFlagCircuitBreaker() external onlyOwner {
         _flagCircuitBreaker.forceReset(msg.sender);
@@ -744,6 +967,7 @@ contract TAGITCore is ERC721, Ownable, ReentrancyGuard {
      * @dev Only owner can call. Clears rate limit state for a specific user.
      * @param user Address to unlock
      * @custom:security NIST AC-7 manual override for legitimate users
+     * @custom:security Goes through TimelockController 48hr delay
      */
     function unlockMinter(address user) external onlyOwner {
         RateLimiter.forceUnlock(_mintRateLimits, user);
@@ -754,6 +978,7 @@ contract TAGITCore is ERC721, Ownable, ReentrancyGuard {
      * @dev Only owner can call. Allows tuning based on operational needs.
      * @param newThreshold New threshold for circuit breaker
      * @custom:security NIST CM-3 configuration management
+     * @custom:security Goes through TimelockController 48hr delay
      */
     function setFlagCircuitBreakerThreshold(uint32 newThreshold) external onlyOwner {
         _flagCircuitBreaker.setThreshold(newThreshold);
@@ -764,6 +989,7 @@ contract TAGITCore is ERC721, Ownable, ReentrancyGuard {
      * @dev Only owner can call. Use for emergency bypass or planned events.
      * @param enabled Whether rate limiting is enabled
      * @custom:security NIST AC-7 operational control
+     * @custom:security Goes through TimelockController 48hr delay
      */
     function setMintRateLimitEnabled(bool enabled) external onlyOwner {
         _mintRateLimiter.setEnabled(enabled);

@@ -7,6 +7,7 @@ import {TAGITAccess} from "../../src/access/TAGITAccess.sol";
 import {IdentityBadge} from "../../src/access/IdentityBadge.sol";
 import {CapabilityBadge} from "../../src/access/CapabilityBadge.sol";
 import {ITAGITAccess} from "../../src/interfaces/ITAGITAccess.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 /**
  * @title TAGITCoreTest
@@ -22,6 +23,7 @@ contract TAGITCoreTest is Test {
     // Test accounts
     address public owner;
     address public manufacturer;
+    address public resolver2;
     address public user1;
     address public user2;
 
@@ -40,6 +42,7 @@ contract TAGITCoreTest is Test {
         // Create test accounts
         owner = makeAddr("owner");
         manufacturer = makeAddr("manufacturer");
+        resolver2 = makeAddr("resolver2");
         user1 = makeAddr("user1");
         user2 = makeAddr("user2");
 
@@ -52,9 +55,11 @@ contract TAGITCoreTest is Test {
         tagitAccess.setIdentityBadge(address(identityBadge));
         tagitAccess.setCapabilityBadge(address(capabilityBadge));
 
-        // Deploy TAGITCore contract
-        vm.prank(owner);
-        tagitCore = new TAGITCore();
+        // Deploy TAGITCore behind UUPS proxy
+        TAGITCore implementation = new TAGITCore();
+        bytes memory initData = abi.encodeCall(TAGITCore.initialize, (owner));
+        ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), initData);
+        tagitCore = TAGITCore(address(proxy));
 
         // Set up access controller (as owner)
         vm.prank(owner);
@@ -68,6 +73,9 @@ contract TAGITCoreTest is Test {
         capabilityBadge.grantCapability(manufacturer, uint256(tagitCore.FLAGGER_CAPABILITY()));
         capabilityBadge.grantCapability(manufacturer, uint256(tagitCore.RESOLVER_CAPABILITY()));
         capabilityBadge.grantCapability(manufacturer, uint256(tagitCore.RECYCLER_CAPABILITY()));
+
+        // Grant RESOLVER_CAPABILITY to resolver2 (second resolver for quorum)
+        capabilityBadge.grantCapability(resolver2, uint256(tagitCore.RESOLVER_CAPABILITY()));
     }
 
     // ============================================
@@ -759,6 +767,12 @@ contract TAGITCoreTest is Test {
         tagitCore.flag(tokenId);
         vm.stopPrank();
 
+        // Approve resolve (2-of-3 quorum)
+        vm.prank(manufacturer);
+        tagitCore.approveResolve(tokenId, user2);
+        vm.prank(resolver2);
+        tagitCore.approveResolve(tokenId, user2);
+
         // Resolve to rightful owner (recovery success)
         vm.prank(manufacturer);
         tagitCore.resolve(tokenId, user2);
@@ -841,6 +855,12 @@ contract TAGITCoreTest is Test {
         tagitCore.flag(tokenId);
         vm.stopPrank();
 
+        // Approve resolve (2-of-3 quorum)
+        vm.prank(manufacturer);
+        tagitCore.approveResolve(tokenId, user2);
+        vm.prank(resolver2);
+        tagitCore.approveResolve(tokenId, user2);
+
         // Expect StateChanged event
         vm.expectEmit(true, true, true, true);
         emit StateChanged(tokenId, TAGITCore.State.FLAGGED, TAGITCore.State.CLAIMED, manufacturer);
@@ -869,8 +889,16 @@ contract TAGITCoreTest is Test {
         tagitCore.activate(tokenId);
         tagitCore.claim(tokenId, to);
         tagitCore.flag(tokenId);
-        tagitCore.resolve(tokenId, recoveryOwner);
         vm.stopPrank();
+
+        // Approve resolve (2-of-3 quorum)
+        vm.prank(manufacturer);
+        tagitCore.approveResolve(tokenId, recoveryOwner);
+        vm.prank(resolver2);
+        tagitCore.approveResolve(tokenId, recoveryOwner);
+
+        vm.prank(manufacturer);
+        tagitCore.resolve(tokenId, recoveryOwner);
 
         // Verify final state
         (address assetOwner, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);

@@ -6,6 +6,7 @@ import {TAGITCore} from "../../src/core/TAGITCore.sol";
 import {TAGITAccess} from "../../src/access/TAGITAccess.sol";
 import {IdentityBadge} from "../../src/access/IdentityBadge.sol";
 import {CapabilityBadge} from "../../src/access/CapabilityBadge.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 /**
  * @title LifecycleIntegrationTest
@@ -25,6 +26,7 @@ contract LifecycleIntegrationTest is Test {
     address public distributor;
     address public consumer;
     address public lawEnforcement;
+    address public lawEnforcement2;
     address public recycler;
     address public unauthorizedUser;
 
@@ -45,6 +47,7 @@ contract LifecycleIntegrationTest is Test {
         distributor = makeAddr("distributor");
         consumer = makeAddr("consumer");
         lawEnforcement = makeAddr("lawEnforcement");
+        lawEnforcement2 = makeAddr("lawEnforcement2");
         recycler = makeAddr("recycler");
         unauthorizedUser = makeAddr("unauthorizedUser");
 
@@ -57,9 +60,11 @@ contract LifecycleIntegrationTest is Test {
         tagitAccess.setIdentityBadge(address(identityBadge));
         tagitAccess.setCapabilityBadge(address(capabilityBadge));
 
-        // Deploy TAGITCore
-        vm.prank(owner);
-        tagitCore = new TAGITCore();
+        // Deploy TAGITCore (upgradeable via UUPS proxy)
+        TAGITCore implementation = new TAGITCore();
+        bytes memory initData = abi.encodeCall(TAGITCore.initialize, (owner));
+        ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), initData);
+        tagitCore = TAGITCore(address(proxy));
 
         vm.prank(owner);
         tagitCore.setAccessController(address(tagitAccess));
@@ -82,6 +87,9 @@ contract LifecycleIntegrationTest is Test {
         // Law Enforcement: can flag and resolve
         capabilityBadge.grantCapability(lawEnforcement, uint256(tagitCore.FLAGGER_CAPABILITY()));
         capabilityBadge.grantCapability(lawEnforcement, uint256(tagitCore.RESOLVER_CAPABILITY()));
+
+        // Law Enforcement 2: second resolver for quorum
+        capabilityBadge.grantCapability(lawEnforcement2, uint256(tagitCore.RESOLVER_CAPABILITY()));
 
         // Recycler: can recycle
         capabilityBadge.grantCapability(recycler, uint256(tagitCore.RECYCLER_CAPABILITY()));
@@ -154,6 +162,10 @@ contract LifecycleIntegrationTest is Test {
 
         // Law enforcement resolves to original owner after investigation
         address originalOwner = makeAddr("originalOwner");
+        vm.prank(lawEnforcement);
+        tagitCore.approveResolve(tokenId, originalOwner);
+        vm.prank(lawEnforcement2);
+        tagitCore.approveResolve(tokenId, originalOwner);
         vm.prank(lawEnforcement);
         tagitCore.resolve(tokenId, originalOwner);
 
@@ -354,6 +366,10 @@ contract LifecycleIntegrationTest is Test {
         vm.prank(lawEnforcement);
         tagitCore.flag(tokenId);
         vm.prank(lawEnforcement);
+        tagitCore.approveResolve(tokenId, owners[0]);
+        vm.prank(lawEnforcement2);
+        tagitCore.approveResolve(tokenId, owners[0]);
+        vm.prank(lawEnforcement);
         tagitCore.resolve(tokenId, owners[0]);
         assertEq(tagitCore.ownerOf(tokenId), owners[0], "First resolution");
 
@@ -361,12 +377,20 @@ contract LifecycleIntegrationTest is Test {
         vm.prank(lawEnforcement);
         tagitCore.flag(tokenId);
         vm.prank(lawEnforcement);
+        tagitCore.approveResolve(tokenId, owners[1]);
+        vm.prank(lawEnforcement2);
+        tagitCore.approveResolve(tokenId, owners[1]);
+        vm.prank(lawEnforcement);
         tagitCore.resolve(tokenId, owners[1]);
         assertEq(tagitCore.ownerOf(tokenId), owners[1], "Second resolution");
 
         // Third flag/resolve
         vm.prank(lawEnforcement);
         tagitCore.flag(tokenId);
+        vm.prank(lawEnforcement);
+        tagitCore.approveResolve(tokenId, owners[2]);
+        vm.prank(lawEnforcement2);
+        tagitCore.approveResolve(tokenId, owners[2]);
         vm.prank(lawEnforcement);
         tagitCore.resolve(tokenId, owners[2]);
         assertEq(tagitCore.ownerOf(tokenId), owners[2], "Final resolution");

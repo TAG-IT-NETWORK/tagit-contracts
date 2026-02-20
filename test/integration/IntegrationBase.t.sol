@@ -64,6 +64,7 @@ abstract contract IntegrationBase is Test {
     address public consumer1;
     address public consumer2;
     address public lawEnforcement;
+    address public lawEnforcement2;
     address public recycler;
 
     // ============================================
@@ -106,6 +107,7 @@ abstract contract IntegrationBase is Test {
         consumer1 = makeAddr("consumer1");
         consumer2 = makeAddr("consumer2");
         lawEnforcement = makeAddr("lawEnforcement");
+        lawEnforcement2 = makeAddr("lawEnforcement2");
         recycler = makeAddr("recycler");
 
         vm.startPrank(owner);
@@ -170,8 +172,11 @@ abstract contract IntegrationBase is Test {
     }
 
     function _deployCore() internal returns (TAGITCore) {
-        // TAGITCore is not upgradeable
-        TAGITCore _core = new TAGITCore();
+        // TAGITCore (upgradeable via UUPS proxy)
+        TAGITCore impl = new TAGITCore();
+        bytes memory initData = abi.encodeCall(TAGITCore.initialize, (owner));
+        ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
+        TAGITCore _core = TAGITCore(address(proxy));
         _core.setAccessController(address(access));
         return _core;
     }
@@ -285,6 +290,9 @@ abstract contract IntegrationBase is Test {
         // Grant law enforcement capabilities
         capabilityBadge.grantCapability(lawEnforcement, CAP_FLAG);
         capabilityBadge.grantCapability(lawEnforcement, CAP_RESOLVE);
+
+        // Grant law enforcement 2 resolver capability (second resolver for quorum)
+        capabilityBadge.grantCapability(lawEnforcement2, CAP_RESOLVE);
 
         // Grant recycler capability
         capabilityBadge.grantCapability(recycler, CAP_RECYCLE);

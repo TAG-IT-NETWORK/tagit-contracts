@@ -7,6 +7,7 @@ import {TAGITCore} from "../../src/core/TAGITCore.sol";
 import {TAGITAccess} from "../../src/access/TAGITAccess.sol";
 import {IdentityBadge} from "../../src/access/IdentityBadge.sol";
 import {CapabilityBadge} from "../../src/access/CapabilityBadge.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 /**
  * @title TAGITCoreHandler
@@ -39,6 +40,7 @@ contract TAGITCoreHandler is Test {
 
     // Test accounts
     address public manufacturer;
+    address public resolver2;
     address public user1;
     address public user2;
 
@@ -46,11 +48,12 @@ contract TAGITCoreHandler is Test {
     mapping(uint256 => TAGITCore.State) public lastKnownState;
     mapping(uint256 => bool) public wasRecycled;
 
-    constructor(TAGITCore _tagitCore, CapabilityBadge _capabilityBadge, address _manufacturer) {
+    constructor(TAGITCore _tagitCore, CapabilityBadge _capabilityBadge, address _manufacturer, address _resolver2) {
         tagitCore = _tagitCore;
         capabilityBadge = _capabilityBadge;
 
         manufacturer = _manufacturer;
+        resolver2 = _resolver2;
         user1 = makeAddr("user1");
         user2 = makeAddr("user2");
     }
@@ -153,7 +156,7 @@ contract TAGITCoreHandler is Test {
     }
 
     /**
-     * @notice Resolve a flagged token
+     * @notice Resolve a flagged token (with 2-of-3 quorum)
      */
     function resolve(uint256 tokenIndex, uint256 seed) external {
         if (flaggedTokens.length == 0) return;
@@ -161,6 +164,12 @@ contract TAGITCoreHandler is Test {
         uint256 idx = tokenIndex % flaggedTokens.length;
         uint256 tokenId = flaggedTokens[idx];
         address newOwner = seed % 2 == 0 ? user1 : user2;
+
+        // Approve resolve (2-of-3 quorum)
+        vm.prank(manufacturer);
+        try tagitCore.approveResolve(tokenId, newOwner) {} catch {}
+        vm.prank(resolver2);
+        try tagitCore.approveResolve(tokenId, newOwner) {} catch {}
 
         vm.prank(manufacturer);
         try tagitCore.resolve(tokenId, newOwner) {
@@ -243,6 +252,7 @@ contract TAGITCoreInvariantTest is StdInvariant, Test {
     function setUp() public {
         owner = makeAddr("owner");
         address manufacturer = makeAddr("manufacturer");
+        address resolver2 = makeAddr("resolver2");
 
         // Deploy badge contracts
         identityBadge = new IdentityBadge();
@@ -253,9 +263,11 @@ contract TAGITCoreInvariantTest is StdInvariant, Test {
         tagitAccess.setIdentityBadge(address(identityBadge));
         tagitAccess.setCapabilityBadge(address(capabilityBadge));
 
-        // Deploy TAGITCore
-        vm.prank(owner);
-        tagitCore = new TAGITCore();
+        // Deploy TAGITCore (upgradeable via UUPS proxy)
+        TAGITCore implementation = new TAGITCore();
+        bytes memory initData = abi.encodeCall(TAGITCore.initialize, (owner));
+        ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), initData);
+        tagitCore = TAGITCore(address(proxy));
 
         vm.prank(owner);
         tagitCore.setAccessController(address(tagitAccess));
@@ -269,8 +281,11 @@ contract TAGITCoreInvariantTest is StdInvariant, Test {
         capabilityBadge.grantCapability(manufacturer, uint256(tagitCore.RESOLVER_CAPABILITY()));
         capabilityBadge.grantCapability(manufacturer, uint256(tagitCore.RECYCLER_CAPABILITY()));
 
-        // Deploy handler with manufacturer address
-        handler = new TAGITCoreHandler(tagitCore, capabilityBadge, manufacturer);
+        // Grant RESOLVER_CAPABILITY to resolver2 (second resolver for quorum)
+        capabilityBadge.grantCapability(resolver2, uint256(tagitCore.RESOLVER_CAPABILITY()));
+
+        // Deploy handler with manufacturer and resolver2 addresses
+        handler = new TAGITCoreHandler(tagitCore, capabilityBadge, manufacturer, resolver2);
 
         // Target only the handler for invariant testing
         targetContract(address(handler));

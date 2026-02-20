@@ -153,8 +153,12 @@ contract E2EHappyPathTest is IntegrationBase {
             assertEq(uint8(state), 5, "Product should be FLAGGED");
         }
 
-        // Resolution: Products cleared and returned
+        // Resolution: Products cleared and returned (with 2-of-3 quorum)
         for (uint256 i = 0; i < 3; i++) {
+            vm.prank(lawEnforcement);
+            core.approveResolve(tokenIds[i], consumer1);
+            vm.prank(lawEnforcement2);
+            core.approveResolve(tokenIds[i], consumer1);
             vm.prank(lawEnforcement);
             core.resolve(tokenIds[i], consumer1);
         }
