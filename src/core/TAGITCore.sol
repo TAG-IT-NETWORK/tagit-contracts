@@ -83,6 +83,10 @@ contract TAGITCore is
     /// @notice Number of independent resolver approvals required before resolve() can execute
     uint256 public constant RESOLVE_QUORUM = 2;
 
+    /// @notice Maximum number of assets that can be minted in a single batch call
+    /// @dev Prevents block gas limit DoS attacks on batchMint
+    uint256 public constant MAX_BATCH_SIZE = 100;
+
     // ============================================
     // DATA STRUCTURES
     // ============================================
@@ -188,6 +192,20 @@ contract TAGITCore is
      * @param provided The mismatching recipient provided
      */
     error RecipientMismatch(uint256 tokenId, address expected, address provided);
+
+    /**
+     * @notice Batch size exceeds maximum allowed
+     * @param provided Number of items in the batch
+     * @param maximum Maximum allowed batch size
+     */
+    error BatchTooLarge(uint256 provided, uint256 maximum);
+
+    /**
+     * @notice Array lengths do not match in batch operation
+     * @param recipientsLength Length of the recipients array
+     * @param metadataLength Length of the metadata array
+     */
+    error ArrayLengthMismatch(uint256 recipientsLength, uint256 metadataLength);
 
     // ============================================
     // EVENTS
@@ -522,6 +540,68 @@ contract TAGITCore is
         // PATCH-03: CustodyTransfer audit trail
         bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.NONE), address(0), block.number - 1));
         emit CustodyTransfer(tokenId, uint8(State.NONE), uint8(State.MINTED), address(0), to, block.timestamp, prevHash);
+    }
+
+    /**
+     * @notice Batch mint Digital Twin NFTs for multiple recipients
+     * @dev Capped at MAX_BATCH_SIZE (100) to prevent block gas limit DoS.
+     *      Each mint follows the same logic as single mint().
+     * @param recipients Array of owner addresses for each new asset
+     * @param metadata Array of metadata identifiers (must match recipients length)
+     * @return tokenIds Array of newly minted token IDs
+     * @custom:security MAX_BATCH_SIZE prevents block gas limit DoS
+     * @custom:security ReentrancyGuard prevents reentrancy attacks
+     * @custom:emits AssetMinted, StateChanged, CustodyTransfer (per token)
+     */
+    function batchMint(address[] calldata recipients, bytes32[] calldata metadata)
+        external
+        nonReentrant
+        requiresCapability(MINTER_CAPABILITY)
+        returns (uint256[] memory tokenIds)
+    {
+        // ============================================
+        // CHECKS
+        // ============================================
+        if (recipients.length > MAX_BATCH_SIZE) {
+            revert BatchTooLarge(recipients.length, MAX_BATCH_SIZE);
+        }
+        if (recipients.length != metadata.length) {
+            revert ArrayLengthMismatch(recipients.length, metadata.length);
+        }
+
+        // ============================================
+        // EFFECTS + INTERACTIONS (per token)
+        // ============================================
+        tokenIds = new uint256[](recipients.length);
+
+        for (uint256 i = 0; i < recipients.length; i++) {
+            if (recipients[i] == address(0)) revert ZeroAddress();
+
+            // NIST AC-7: Rate limit check for spam prevention
+            _mintRateLimiter.check(_mintRateLimits, msg.sender);
+
+            uint256 tokenId = _nextTokenId++;
+            _totalSupply++;
+
+            _assets[tokenId] = Asset({
+                owner: recipients[i],
+                timestamp: uint64(block.timestamp),
+                state: State.MINTED,
+                flags: 0,
+                reserved: 0
+            });
+
+            _mint(recipients[i], tokenId);
+
+            emit AssetMinted(tokenId, recipients[i], metadata[i]);
+            emit StateChanged(tokenId, State.NONE, State.MINTED, msg.sender);
+
+            // PATCH-03: CustodyTransfer audit trail
+            bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.NONE), address(0), block.number - 1));
+            emit CustodyTransfer(tokenId, uint8(State.NONE), uint8(State.MINTED), address(0), recipients[i], block.timestamp, prevHash);
+
+            tokenIds[i] = tokenId;
+        }
     }
 
     /**
