@@ -79,6 +79,8 @@ contract TAGITCore is
     bytes32 public constant FLAGGER_CAPABILITY = keccak256("FLAGGER");
     bytes32 public constant RESOLVER_CAPABILITY = keccak256("RESOLVER");
     bytes32 public constant RECYCLER_CAPABILITY = keccak256("RECYCLER");
+    bytes32 public constant VIEWER_CAPABILITY = keccak256("VIEWER");
+    bytes32 public constant AUDITOR_CAPABILITY = keccak256("AUDITOR");
 
     /// @notice Number of independent resolver approvals required before resolve() can execute
     uint256 public constant RESOLVE_QUORUM = 2;
@@ -364,9 +366,17 @@ contract TAGITCore is
     /// @notice Per-token nonce incremented on each resolve — invalidates stale approval entries
     mapping(uint256 => uint256) private _resolveNonce;
 
+    // ============================================
+    // TOKEN URI AUTHORIZATION STORAGE (PATCH-04)
+    // ============================================
+
+    /// @notice Redacted metadata URI returned to unauthorized callers
+    /// @dev ITAR compliance — defense asset metadata must not be accessible without authorization
+    string private _redactedURI;
+
     /// @notice Storage gap for future upgrades (ERC-7201 compatible)
-    /// @dev Reserve 36 slots (reduced from 40 after adding 4 resolve-quorum mappings)
-    uint256[36] private __gap;
+    /// @dev Reserve 35 slots (reduced from 36 after adding _redactedURI)
+    uint256[35] private __gap;
 
     // ============================================
     // CONSTRUCTOR (disabled for proxy)
@@ -998,6 +1008,56 @@ contract TAGITCore is
         // PATCH-03: CustodyTransfer audit trail
         bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(currentState), asset.owner, block.number - 1));
         emit CustodyTransfer(tokenId, uint8(currentState), uint8(State.RECYCLED), asset.owner, asset.owner, block.timestamp, prevHash);
+    }
+
+    // ============================================
+    // TOKEN URI AUTHORIZATION (PATCH-04)
+    // ============================================
+
+    /**
+     * @notice Returns token metadata URI with authorization gate
+     * @dev Returns full URI only to asset owner, VIEWER_CAPABILITY holders, or AUDITOR_CAPABILITY holders.
+     *      Unauthorized callers receive _redactedURI (ITAR compliance for defense assets).
+     * @param tokenId The token ID to query
+     * @return Token metadata URI (full or redacted based on caller authorization)
+     * @custom:security ITAR compliance — defense asset metadata not accessible without authorization
+     * @custom:security NIST 800-53 AC-6 — least privilege
+     */
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        _requireOwned(tokenId);
+
+        // Check if caller is authorized to view full metadata
+        bool isAuthorized = _assets[tokenId].owner == msg.sender;
+
+        if (!isAuthorized && address(accessController) != address(0)) {
+            // Check VIEWER_CAPABILITY
+            try accessController.requireCapability(msg.sender, uint256(VIEWER_CAPABILITY)) {
+                isAuthorized = true;
+            } catch {}
+
+            // Check AUDITOR_CAPABILITY if not already authorized
+            if (!isAuthorized) {
+                try accessController.requireCapability(msg.sender, uint256(AUDITOR_CAPABILITY)) {
+                    isAuthorized = true;
+                } catch {}
+            }
+        }
+
+        if (!isAuthorized) {
+            return _redactedURI;
+        }
+
+        return super.tokenURI(tokenId);
+    }
+
+    /**
+     * @notice Set the redacted URI returned to unauthorized callers
+     * @dev Only owner can update. Used for ITAR compliance on defense asset metadata.
+     * @param redactedURI The redacted/minimal metadata URI
+     * @custom:security Owner-only — goes through TimelockController 48hr delay
+     */
+    function setRedactedURI(string calldata redactedURI) external onlyOwner {
+        _redactedURI = redactedURI;
     }
 
     // ============================================
