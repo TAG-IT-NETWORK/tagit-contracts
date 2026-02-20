@@ -7,6 +7,7 @@ import {TAGITAccess} from "../../src/access/TAGITAccess.sol";
 import {IdentityBadge} from "../../src/access/IdentityBadge.sol";
 import {CapabilityBadge} from "../../src/access/CapabilityBadge.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /**
  * @title TAGITCoreResolveQuorumTest
@@ -27,6 +28,8 @@ contract TAGITCoreResolveQuorumTest is Test {
     address public resolver3;
     address public consumer;
     address public unauthorizedUser;
+
+    uint256 constant ORACLE_PK = 0xA11CE;
 
     // Test data
     bytes32 public constant METADATA = keccak256("ipfs://QmTestQuorum");
@@ -64,6 +67,11 @@ contract TAGITCoreResolveQuorumTest is Test {
         vm.prank(owner);
         tagitCore.setAccessController(address(tagitAccess));
 
+        // Set trusted oracle
+        address oracle = vm.addr(ORACLE_PK);
+        vm.prank(owner);
+        tagitCore.setTrustedOracle(oracle);
+
         // Grant manufacturer all lifecycle capabilities
         capabilityBadge.grantCapability(manufacturer, uint256(tagitCore.MINTER_CAPABILITY()));
         capabilityBadge.grantCapability(manufacturer, uint256(tagitCore.BINDER_CAPABILITY()));
@@ -79,14 +87,31 @@ contract TAGITCoreResolveQuorumTest is Test {
     }
 
     // ============================================
+    // ORACLE HELPER
+    // ============================================
+
+    function _oracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory challengeResponse, bytes memory oracleSignature) {
+        challengeResponse = abi.encodePacked("challenge", tokenId);
+        bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
+        bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ORACLE_PK, ethHash);
+        oracleSignature = abi.encodePacked(r, s, v);
+    }
+
+    // ============================================
     // HELPERS
     // ============================================
 
-    /// @dev Mint → Bind → Activate → Claim → Flag an asset, returns tokenId
+    /// @dev Mint -> Bind -> Activate -> Claim -> Flag an asset, returns tokenId
     function _setupFlaggedAsset() internal returns (uint256 tokenId) {
-        vm.startPrank(manufacturer);
+        vm.prank(manufacturer);
         tokenId = tagitCore.mint(manufacturer, METADATA);
-        tagitCore.bindTag(tokenId, TAG_HASH);
+
+        (bytes memory challengeResponse, bytes memory oracleSignature) = _oracleSign(tokenId, TAG_HASH);
+        vm.prank(manufacturer);
+        tagitCore.bindTag(tokenId, TAG_HASH, challengeResponse, oracleSignature);
+
+        vm.startPrank(manufacturer);
         tagitCore.activate(tokenId);
         tagitCore.claim(tokenId, consumer);
         tagitCore.flag(tokenId);
@@ -304,9 +329,14 @@ contract TAGITCoreResolveQuorumTest is Test {
 
     function test_approveResolve_revertsNonFlagged() public {
         // Create asset in CLAIMED state (not FLAGGED)
-        vm.startPrank(manufacturer);
+        vm.prank(manufacturer);
         uint256 tokenId = tagitCore.mint(manufacturer, METADATA);
-        tagitCore.bindTag(tokenId, TAG_HASH);
+
+        (bytes memory challengeResponse, bytes memory oracleSignature) = _oracleSign(tokenId, TAG_HASH);
+        vm.prank(manufacturer);
+        tagitCore.bindTag(tokenId, TAG_HASH, challengeResponse, oracleSignature);
+
+        vm.startPrank(manufacturer);
         tagitCore.activate(tokenId);
         tagitCore.claim(tokenId, consumer);
         vm.stopPrank();
@@ -387,7 +417,7 @@ contract TAGITCoreResolveQuorumTest is Test {
         vm.prank(manufacturer);
         tagitCore.flag(tokenId);
 
-        // Second cycle — approval state was cleared, must re-approve
+        // Second cycle -- approval state was cleared, must re-approve
         vm.prank(resolver2);
         tagitCore.approveResolve(tokenId, newOwner2);
         vm.prank(resolver3);

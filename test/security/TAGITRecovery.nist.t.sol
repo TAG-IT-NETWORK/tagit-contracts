@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Test} from "@forge-std/Test.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 import {TAGITRecovery} from "../../src/recovery/TAGITRecovery.sol";
 import {IRecovery} from "../../src/interfaces/IRecovery.sol";
@@ -57,6 +58,7 @@ contract TAGITRecoveryNistTest is Test {
 
     uint256 public constant MINIMUM_STAKE = 100e18;
     bytes32 public constant EVIDENCE_HASH = keccak256("evidence");
+    uint256 constant ORACLE_PK = 0xA11CE;
 
     // TAGITCore capabilities
     bytes32 public constant MINTER_CAPABILITY = keccak256("MINTER");
@@ -78,8 +80,11 @@ contract TAGITRecoveryNistTest is Test {
 
         vm.startPrank(owner);
 
-        // Deploy TAGITCore
-        core = new TAGITCore();
+        // Deploy TAGITCore (upgradeable via UUPS proxy)
+        TAGITCore coreImpl = new TAGITCore();
+        bytes memory coreData = abi.encodeCall(TAGITCore.initialize, (owner));
+        ERC1967Proxy coreProxy = new ERC1967Proxy(address(coreImpl), coreData);
+        core = TAGITCore(address(coreProxy));
 
         // Deploy TAGITAccess + CapabilityBadge
         access = new TAGITAccess();
@@ -88,6 +93,9 @@ contract TAGITRecoveryNistTest is Test {
 
         // Set access controller on TAGITCore
         core.setAccessController(address(access));
+
+        // Set trusted oracle for NFC verification
+        core.setTrustedOracle(vm.addr(ORACLE_PK));
 
         // Deploy TAGITToken (upgradeable)
         TAGITToken tokenImpl = new TAGITToken();
@@ -127,10 +135,24 @@ contract TAGITRecoveryNistTest is Test {
     // HELPER FUNCTIONS
     // ============================================
 
+    function _oracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory challengeResponse, bytes memory oracleSignature) {
+        challengeResponse = abi.encodePacked("challenge", tokenId);
+        bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
+        bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ORACLE_PK, ethHash);
+        oracleSignature = abi.encodePacked(r, s, v);
+    }
+
     function _mintAndClaimAsset(address to) internal returns (uint256 tokenId) {
-        vm.startPrank(manufacturer);
+        vm.prank(manufacturer);
         tokenId = core.mint(manufacturer, keccak256("metadata"));
-        core.bindTag(tokenId, keccak256(abi.encodePacked("tag", tokenId)));
+
+        bytes32 tagHash = keccak256(abi.encodePacked("tag", tokenId));
+        (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, tagHash);
+        vm.prank(manufacturer);
+        core.bindTag(tokenId, tagHash, cr, sig);
+
+        vm.startPrank(manufacturer);
         core.activate(tokenId);
         core.claim(tokenId, to);
         vm.stopPrank();

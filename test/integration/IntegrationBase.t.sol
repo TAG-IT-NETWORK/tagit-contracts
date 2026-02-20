@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Test, console2} from "@forge-std/Test.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 // Core contracts
 import {TAGITCore} from "../../src/core/TAGITCore.sol";
@@ -70,6 +71,8 @@ abstract contract IntegrationBase is Test {
     // ============================================
     // CONSTANTS
     // ============================================
+
+    uint256 constant ORACLE_PK = 0xA11CE;
 
     uint256 public constant INITIAL_TOKEN_SUPPLY = 100_000_000 ether;
     uint256 public constant USER_INITIAL_BALANCE = 100_000 ether;
@@ -146,6 +149,10 @@ abstract contract IntegrationBase is Test {
 
         // Wire up contracts
         _wireContracts();
+
+        // Set trusted oracle for NFC verification
+        address oracle = vm.addr(ORACLE_PK);
+        core.setTrustedOracle(oracle);
 
         // Setup roles
         _setupRoles();
@@ -327,6 +334,14 @@ abstract contract IntegrationBase is Test {
 
     uint256 private _assetCounter;
 
+    function _oracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory challengeResponse, bytes memory oracleSignature) {
+        challengeResponse = abi.encodePacked("challenge", tokenId);
+        bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
+        bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ORACLE_PK, ethHash);
+        oracleSignature = abi.encodePacked(r, s, v);
+    }
+
     /// @notice Mint and fully activate an asset
     function _mintActivatedAsset(address to) internal returns (uint256 tokenId) {
         _assetCounter++;
@@ -336,8 +351,9 @@ abstract contract IntegrationBase is Test {
         vm.prank(manufacturer);
         tokenId = core.mint(to, metadata);
 
+        (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, tagHash);
         vm.prank(manufacturer);
-        core.bindTag(tokenId, tagHash);
+        core.bindTag(tokenId, tagHash, cr, sig);
 
         vm.prank(qaInspector);
         core.activate(tokenId);

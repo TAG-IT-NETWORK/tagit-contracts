@@ -7,6 +7,8 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {ERC721Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {ERC1967Utils} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {ITAGITAccess} from "../interfaces/ITAGITAccess.sol";
 import {CircuitBreaker} from "../libraries/CircuitBreaker.sol";
 import {RateLimiter} from "../libraries/RateLimiter.sol";
@@ -196,6 +198,16 @@ contract TAGITCore is
     error RecipientMismatch(uint256 tokenId, address expected, address provided);
 
     /**
+     * @notice Oracle signature verification failed
+     */
+    error InvalidOracleSignature();
+
+    /**
+     * @notice Trusted oracle address not set
+     */
+    error OracleNotSet();
+
+    /**
      * @notice Batch size exceeds maximum allowed
      * @param provided Number of items in the batch
      * @param maximum Maximum allowed batch size
@@ -311,6 +323,16 @@ contract TAGITCore is
         uint256 approvalCount
     );
 
+    /**
+     * @notice Emitted when the trusted NFC oracle address is updated
+     * @param previousOracle Previous oracle address
+     * @param newOracle New oracle address
+     */
+    event TrustedOracleUpdated(
+        address indexed previousOracle,
+        address indexed newOracle
+    );
+
     // ============================================
     // STORAGE
     // ============================================
@@ -374,9 +396,17 @@ contract TAGITCore is
     /// @dev ITAR compliance — defense asset metadata must not be accessible without authorization
     string private _redactedURI;
 
+    // ============================================
+    // NFC ORACLE STORAGE (PATCH-06)
+    // ============================================
+
+    /// @notice Address of the trusted NFC oracle that signs challenge-response attestations
+    /// @dev Must be set before bindTag() can be called. Configurable by admin.
+    address public trustedOracle;
+
     /// @notice Storage gap for future upgrades (ERC-7201 compatible)
-    /// @dev Reserve 35 slots (reduced from 36 after adding _redactedURI)
-    uint256[35] private __gap;
+    /// @dev Reserve 34 slots (reduced from 35 after adding trustedOracle)
+    uint256[34] private __gap;
 
     // ============================================
     // CONSTRUCTOR (disabled for proxy)
@@ -615,18 +645,23 @@ contract TAGITCore is
     }
 
     /**
-     * @notice Cryptographically bind an NFC tag to a minted asset
+     * @notice Cryptographically bind an NFC tag to a minted asset with oracle attestation
      * @dev Tag binding is irreversible. Asset must be in MINTED state.
      *      Tag hash must be unique across all assets.
+     *      Oracle ECDSA signature required to prove physical NFC chip was scanned.
      *      Follows Checks-Effects-Interactions pattern for security.
      * @param tokenId The asset token ID to bind
      * @param tagHash Keccak256 hash of the NFC tag UID
+     * @param challengeResponse NFC chip's response to the oracle challenge
+     * @param oracleSignature ECDSA signature from trusted oracle attesting the challenge-response
+     * @custom:security ECDSA.recover verifies oracle signed (tokenId, tagHash, challengeResponse)
+     * @custom:security Prevents spoofing — cannot bind without physical NFC scan + oracle attestation
      * @custom:security ReentrancyGuard prevents reentrancy attacks
      * @custom:security Tag uniqueness enforced via _tagToToken mapping
      * @custom:security State validation prevents re-binding
      * @custom:emits TagBound, StateChanged
      */
-    function bindTag(uint256 tokenId, bytes32 tagHash)
+    function bindTag(uint256 tokenId, bytes32 tagHash, bytes calldata challengeResponse, bytes calldata oracleSignature)
         external
         nonReentrant
         requiresCapability(BINDER_CAPABILITY)
@@ -649,6 +684,13 @@ contract TAGITCore is
 
         // Verify tag is not already bound to another asset
         if (_tagToToken[tagHash] != 0) revert TagAlreadyBound(tagHash);
+
+        // PATCH-06: Verify oracle ECDSA signature
+        if (trustedOracle == address(0)) revert OracleNotSet();
+        bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
+        bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
+        address recovered = ECDSA.recover(ethHash, oracleSignature);
+        if (recovered != trustedOracle) revert InvalidOracleSignature();
 
         // ============================================
         // EFFECTS
@@ -1138,6 +1180,24 @@ contract TAGITCore is
         approvalCount = _resolveApprovalCount[tokenId];
         recipient = _resolveRecipient[tokenId];
         quorumReached = approvalCount >= RESOLVE_QUORUM;
+    }
+
+    // ============================================
+    // NFC ORACLE ADMIN (PATCH-06)
+    // ============================================
+
+    /**
+     * @notice Set the trusted NFC oracle address for bindTag signature verification
+     * @dev Only owner can update. Must be set before any bindTag() calls.
+     * @param oracle Address of the trusted NFC oracle (cannot be address(0))
+     * @custom:security Owner-only — goes through TimelockController 48hr delay
+     * @custom:emits TrustedOracleUpdated
+     */
+    function setTrustedOracle(address oracle) external onlyOwner {
+        if (oracle == address(0)) revert ZeroAddress();
+        address previousOracle = trustedOracle;
+        trustedOracle = oracle;
+        emit TrustedOracleUpdated(previousOracle, oracle);
     }
 
     // ============================================

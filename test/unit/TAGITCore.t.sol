@@ -8,6 +8,7 @@ import {IdentityBadge} from "../../src/access/IdentityBadge.sol";
 import {CapabilityBadge} from "../../src/access/CapabilityBadge.sol";
 import {ITAGITAccess} from "../../src/interfaces/ITAGITAccess.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /**
  * @title TAGITCoreTest
@@ -32,6 +33,8 @@ contract TAGITCoreTest is Test {
     bytes32 public constant METADATA_2 = keccak256("ipfs://QmTest2");
     bytes32 public constant TAG_HASH_1 = keccak256("NFC_TAG_UID_001");
     bytes32 public constant TAG_HASH_2 = keccak256("NFC_TAG_UID_002");
+
+    uint256 constant ORACLE_PK = 0xA11CE;
 
     // Events (redeclare for testing)
     event AssetMinted(uint256 indexed tokenId, address indexed to, bytes32 metadata);
@@ -64,6 +67,10 @@ contract TAGITCoreTest is Test {
         // Set up access controller (as owner)
         vm.prank(owner);
         tagitCore.setAccessController(address(tagitAccess));
+
+        address oracle = vm.addr(ORACLE_PK);
+        vm.prank(owner);
+        tagitCore.setTrustedOracle(oracle);
 
         // Grant all 7 capabilities to manufacturer
         capabilityBadge.grantCapability(manufacturer, uint256(tagitCore.MINTER_CAPABILITY()));
@@ -192,7 +199,7 @@ contract TAGITCoreTest is Test {
 
     /**
      * @notice Test successful binding of NFC tag to asset
-     * @dev Should transition MINTED → BOUND, emit events
+     * @dev Should transition MINTED -> BOUND, emit events
      */
     function test_bindTag_success() public {
         // Mint asset first
@@ -200,8 +207,9 @@ contract TAGITCoreTest is Test {
         uint256 tokenId = tagitCore.mint(user1, METADATA_1);
 
         // Bind tag
+        (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
         vm.prank(manufacturer);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
 
         // Verify asset state changed to BOUND
         (, uint64 timestamp, TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
@@ -220,9 +228,10 @@ contract TAGITCoreTest is Test {
     function test_bindTag_revert_tokenNotFound() public {
         uint256 nonExistentTokenId = 999;
 
+        (bytes memory cr, bytes memory sig) = _oracleSign(nonExistentTokenId, TAG_HASH_1);
         vm.prank(manufacturer);
         vm.expectRevert(abi.encodeWithSelector(TAGITCore.TokenNotFound.selector, nonExistentTokenId));
-        tagitCore.bindTag(nonExistentTokenId, TAG_HASH_1);
+        tagitCore.bindTag(nonExistentTokenId, TAG_HASH_1, cr, sig);
     }
 
     /**
@@ -233,10 +242,14 @@ contract TAGITCoreTest is Test {
         // Mint and bind tag
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(user1, METADATA_1);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
+            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
+        }
         vm.stopPrank();
 
         // Try to bind again (state is now BOUND, not MINTED)
+        (bytes memory cr2, bytes memory sig2) = _oracleSign(tokenId, TAG_HASH_2);
         vm.prank(manufacturer);
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -246,7 +259,7 @@ contract TAGITCoreTest is Test {
                 TAGITCore.State.MINTED
             )
         );
-        tagitCore.bindTag(tokenId, TAG_HASH_2);
+        tagitCore.bindTag(tokenId, TAG_HASH_2, cr2, sig2);
     }
 
     /**
@@ -260,11 +273,17 @@ contract TAGITCoreTest is Test {
         uint256 tokenId2 = tagitCore.mint(user2, METADATA_2);
 
         // Bind tag to first asset
-        tagitCore.bindTag(tokenId1, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId1, TAG_HASH_1);
+            tagitCore.bindTag(tokenId1, TAG_HASH_1, cr, sig);
+        }
 
         // Try to bind same tag to second asset
-        vm.expectRevert(abi.encodeWithSelector(TAGITCore.TagAlreadyBound.selector, TAG_HASH_1));
-        tagitCore.bindTag(tokenId2, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId2, TAG_HASH_1);
+            vm.expectRevert(abi.encodeWithSelector(TAGITCore.TagAlreadyBound.selector, TAG_HASH_1));
+            tagitCore.bindTag(tokenId2, TAG_HASH_1, cr, sig);
+        }
         vm.stopPrank();
     }
 
@@ -278,9 +297,10 @@ contract TAGITCoreTest is Test {
         uint256 tokenId = tagitCore.mint(user1, METADATA_1);
 
         // Try to bind zero tag hash
+        (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, bytes32(0));
         vm.prank(manufacturer);
         vm.expectRevert(TAGITCore.InvalidTagHash.selector);
-        tagitCore.bindTag(tokenId, bytes32(0));
+        tagitCore.bindTag(tokenId, bytes32(0), cr, sig);
     }
 
     /**
@@ -306,8 +326,9 @@ contract TAGITCoreTest is Test {
         );
 
         // Bind tag
+        (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
         vm.prank(manufacturer);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
     }
 
     /**
@@ -323,8 +344,9 @@ contract TAGITCoreTest is Test {
         uint256 tokenId = tagitCore.mint(user1, METADATA_1);
 
         // Bind tag
+        (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, tagHash);
         vm.prank(manufacturer);
-        tagitCore.bindTag(tokenId, tagHash);
+        tagitCore.bindTag(tokenId, tagHash, cr, sig);
 
         // Verify state
         (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
@@ -341,13 +363,16 @@ contract TAGITCoreTest is Test {
 
     /**
      * @notice Test successful activation of bound asset
-     * @dev Should transition BOUND → ACTIVATED, emit event
+     * @dev Should transition BOUND -> ACTIVATED, emit event
      */
     function test_activate_success() public {
         // Mint and bind asset
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(user1, METADATA_1);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
+            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
+        }
 
         // Activate asset (QA approval)
         tagitCore.activate(tokenId);
@@ -427,7 +452,10 @@ contract TAGITCoreTest is Test {
         // Mint and bind asset
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(user1, METADATA_1);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
+            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
+        }
 
         // Expect StateChanged event
         vm.expectEmit(true, false, false, true);
@@ -456,7 +484,10 @@ contract TAGITCoreTest is Test {
         // Mint and bind asset
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(to, metadata);
-        tagitCore.bindTag(tokenId, tagHash);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, tagHash);
+            tagitCore.bindTag(tokenId, tagHash, cr, sig);
+        }
 
         // Activate asset
         tagitCore.activate(tokenId);
@@ -473,13 +504,16 @@ contract TAGITCoreTest is Test {
 
     /**
      * @notice Test successful claim of activated asset by end consumer
-     * @dev Should transition ACTIVATED → CLAIMED, transfer ownership
+     * @dev Should transition ACTIVATED -> CLAIMED, transfer ownership
      */
     function test_claim_success() public {
         // Setup: Mint, bind, and activate asset
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
+            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
+        }
         tagitCore.activate(tokenId);
         vm.stopPrank();
 
@@ -517,7 +551,10 @@ contract TAGITCoreTest is Test {
         // Mint and bind asset (but don't activate)
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(user1, METADATA_1);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
+            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
+        }
         vm.stopPrank();
 
         // Try to claim (state is BOUND, not ACTIVATED)
@@ -541,7 +578,10 @@ contract TAGITCoreTest is Test {
         // Setup: Mint, bind, and activate asset
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
+            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
+        }
         tagitCore.activate(tokenId);
         vm.stopPrank();
 
@@ -559,7 +599,10 @@ contract TAGITCoreTest is Test {
         // Setup: Mint, bind, and activate asset
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
+            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
+        }
         tagitCore.activate(tokenId);
 
         // Verify initial ownership
@@ -585,7 +628,10 @@ contract TAGITCoreTest is Test {
         // Setup: Mint, bind, and activate asset
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
+            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
+        }
         tagitCore.activate(tokenId);
 
         // Expect StateChanged event
@@ -617,7 +663,10 @@ contract TAGITCoreTest is Test {
         // Setup: Mint, bind, and activate asset
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(to, metadata);
-        tagitCore.bindTag(tokenId, tagHash);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, tagHash);
+            tagitCore.bindTag(tokenId, tagHash, cr, sig);
+        }
         tagitCore.activate(tokenId);
         vm.stopPrank();
 
@@ -637,13 +686,16 @@ contract TAGITCoreTest is Test {
 
     /**
      * @notice Test successful flagging of claimed asset
-     * @dev Should transition CLAIMED → FLAGGED, emit event
+     * @dev Should transition CLAIMED -> FLAGGED, emit event
      */
     function test_flag_success() public {
         // Setup: Full lifecycle to CLAIMED
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
+            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
+        }
         tagitCore.activate(tokenId);
         tagitCore.claim(tokenId, user1);
         vm.stopPrank();
@@ -678,7 +730,10 @@ contract TAGITCoreTest is Test {
         // Mint and bind asset (not yet claimed)
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(user1, METADATA_1);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
+            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
+        }
         tagitCore.activate(tokenId);
         vm.stopPrank();
 
@@ -703,7 +758,10 @@ contract TAGITCoreTest is Test {
         // Setup: Full lifecycle to CLAIMED
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
+            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
+        }
         tagitCore.activate(tokenId);
         tagitCore.claim(tokenId, user1);
         vm.stopPrank();
@@ -735,7 +793,10 @@ contract TAGITCoreTest is Test {
         // Setup: Full lifecycle to CLAIMED
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(to, metadata);
-        tagitCore.bindTag(tokenId, tagHash);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, tagHash);
+            tagitCore.bindTag(tokenId, tagHash, cr, sig);
+        }
         tagitCore.activate(tokenId);
         tagitCore.claim(tokenId, user1);
         vm.stopPrank();
@@ -750,18 +811,21 @@ contract TAGITCoreTest is Test {
     }
 
     // ============================================
-    // RESOLVE TESTS (AIRP Recovery: FLAGGED → CLAIMED)
+    // RESOLVE TESTS (AIRP Recovery: FLAGGED -> CLAIMED)
     // ============================================
 
     /**
      * @notice Test successful AIRP recovery resolution
-     * @dev Tests the ONLY backward state transition (FLAGGED → CLAIMED)
+     * @dev Tests the ONLY backward state transition (FLAGGED -> CLAIMED)
      */
     function test_resolve_success() public {
         // Setup: Full lifecycle to FLAGGED
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
+            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
+        }
         tagitCore.activate(tokenId);
         tagitCore.claim(tokenId, user1);
         tagitCore.flag(tokenId);
@@ -805,7 +869,10 @@ contract TAGITCoreTest is Test {
         // Create asset in CLAIMED state (not FLAGGED)
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(user1, METADATA_1);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
+            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
+        }
         tagitCore.activate(tokenId);
         tagitCore.claim(tokenId, user1);
         vm.stopPrank();
@@ -830,7 +897,10 @@ contract TAGITCoreTest is Test {
         // Setup: Full lifecycle to FLAGGED
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
+            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
+        }
         tagitCore.activate(tokenId);
         tagitCore.claim(tokenId, user1);
         tagitCore.flag(tokenId);
@@ -849,7 +919,10 @@ contract TAGITCoreTest is Test {
         // Setup: Full lifecycle to FLAGGED
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
+            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
+        }
         tagitCore.activate(tokenId);
         tagitCore.claim(tokenId, user1);
         tagitCore.flag(tokenId);
@@ -885,7 +958,10 @@ contract TAGITCoreTest is Test {
         // Full lifecycle to FLAGGED
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(manufacturer, metadata);
-        tagitCore.bindTag(tokenId, tagHash);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, tagHash);
+            tagitCore.bindTag(tokenId, tagHash, cr, sig);
+        }
         tagitCore.activate(tokenId);
         tagitCore.claim(tokenId, to);
         tagitCore.flag(tokenId);
@@ -908,18 +984,21 @@ contract TAGITCoreTest is Test {
     }
 
     // ============================================
-    // RECYCLE TESTS (End-of-Life: CLAIMED/FLAGGED → RECYCLED)
+    // RECYCLE TESTS (End-of-Life: CLAIMED/FLAGGED -> RECYCLED)
     // ============================================
 
     /**
      * @notice Test successful recycling from CLAIMED state
-     * @dev Tests terminal state transition (CLAIMED → RECYCLED)
+     * @dev Tests terminal state transition (CLAIMED -> RECYCLED)
      */
     function test_recycle_success_fromClaimed() public {
         // Setup: Full lifecycle to CLAIMED
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
+            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
+        }
         tagitCore.activate(tokenId);
         tagitCore.claim(tokenId, user1);
         vm.stopPrank();
@@ -937,13 +1016,16 @@ contract TAGITCoreTest is Test {
 
     /**
      * @notice Test successful recycling from FLAGGED state
-     * @dev Tests terminal state transition (FLAGGED → RECYCLED)
+     * @dev Tests terminal state transition (FLAGGED -> RECYCLED)
      */
     function test_recycle_success_fromFlagged() public {
         // Setup: Full lifecycle to FLAGGED
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
+            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
+        }
         tagitCore.activate(tokenId);
         tagitCore.claim(tokenId, user1);
         tagitCore.flag(tokenId);
@@ -992,7 +1074,10 @@ contract TAGITCoreTest is Test {
         // Setup: Full lifecycle to CLAIMED
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
+            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
+        }
         tagitCore.activate(tokenId);
         tagitCore.claim(tokenId, user1);
         vm.stopPrank();
@@ -1013,7 +1098,10 @@ contract TAGITCoreTest is Test {
         // Setup: Full lifecycle to FLAGGED
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
+            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
+        }
         tagitCore.activate(tokenId);
         tagitCore.claim(tokenId, user1);
         tagitCore.flag(tokenId);
@@ -1041,7 +1129,10 @@ contract TAGITCoreTest is Test {
         // Full lifecycle to CLAIMED, then recycle
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(manufacturer, metadata);
-        tagitCore.bindTag(tokenId, tagHash);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, tagHash);
+            tagitCore.bindTag(tokenId, tagHash, cr, sig);
+        }
         tagitCore.activate(tokenId);
         tagitCore.claim(tokenId, to);
         tagitCore.recycle(tokenId);
@@ -1075,9 +1166,10 @@ contract TAGITCoreTest is Test {
         uint256 tokenId = tagitCore.mint(user1, METADATA_1);
 
         // Try to bind tag as unauthorized user
+        (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
         vm.prank(user1); // user1 has no BINDER_CAPABILITY
         vm.expectRevert(); // Expect MissingCapability revert
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
     }
 
     /**
@@ -1087,7 +1179,10 @@ contract TAGITCoreTest is Test {
         // Setup: mint and bind as manufacturer
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(user1, METADATA_1);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
+            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
+        }
         vm.stopPrank();
 
         // Try to activate as unauthorized user
@@ -1103,7 +1198,10 @@ contract TAGITCoreTest is Test {
         // Setup: mint, bind, and activate as manufacturer
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
+            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
+        }
         tagitCore.activate(tokenId);
         vm.stopPrank();
 
@@ -1120,7 +1218,10 @@ contract TAGITCoreTest is Test {
         // Setup: full lifecycle to CLAIMED
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
+            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
+        }
         tagitCore.activate(tokenId);
         tagitCore.claim(tokenId, user1);
         vm.stopPrank();
@@ -1138,7 +1239,10 @@ contract TAGITCoreTest is Test {
         // Setup: full lifecycle to FLAGGED
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
+            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
+        }
         tagitCore.activate(tokenId);
         tagitCore.claim(tokenId, user1);
         tagitCore.flag(tokenId);
@@ -1157,7 +1261,10 @@ contract TAGITCoreTest is Test {
         // Setup: full lifecycle to CLAIMED
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
-        tagitCore.bindTag(tokenId, TAG_HASH_1);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
+            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
+        }
         tagitCore.activate(tokenId);
         tagitCore.claim(tokenId, user1);
         vm.stopPrank();
@@ -1172,17 +1279,24 @@ contract TAGITCoreTest is Test {
      * @notice Test that capability bypass works when accessController is address(0)
      */
     function test_capabilityBypass_whenNoAccessController() public {
-        // Deploy new TAGITCore without access controller
-        vm.prank(owner);
-        TAGITCore bypassCore = new TAGITCore();
+        // Deploy new TAGITCore via proxy but without access controller
+        TAGITCore bypassImpl = new TAGITCore();
+        bytes memory bypassInit = abi.encodeCall(TAGITCore.initialize, (owner));
+        ERC1967Proxy bypassProxy = new ERC1967Proxy(address(bypassImpl), bypassInit);
+        TAGITCore bypassCore = TAGITCore(address(bypassProxy));
         // NOTE: We do NOT set access controller, it remains address(0)
+
+        // Set trusted oracle (still required for bindTag)
+        vm.prank(owner);
+        bypassCore.setTrustedOracle(vm.addr(ORACLE_PK));
 
         // Any account should be able to call functions (bypass mode)
         vm.prank(user1); // user1 has no capabilities, but should work in bypass mode
         uint256 tokenId = bypassCore.mint(user1, METADATA_1);
 
+        (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
         vm.prank(user1);
-        bypassCore.bindTag(tokenId, TAG_HASH_1);
+        bypassCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
 
         vm.prank(user1);
         bypassCore.activate(tokenId);
@@ -1210,5 +1324,17 @@ contract TAGITCoreTest is Test {
         vm.prank(user1);
         vm.expectRevert(); // Expect MissingCapability revert
         tagitCore.mint(user1, METADATA_2);
+    }
+
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+
+    function _oracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory challengeResponse, bytes memory oracleSignature) {
+        challengeResponse = abi.encodePacked("challenge", tokenId);
+        bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
+        bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ORACLE_PK, ethHash);
+        oracleSignature = abi.encodePacked(r, s, v);
     }
 }

@@ -7,6 +7,7 @@ import {TAGITAccess} from "../../src/access/TAGITAccess.sol";
 import {IdentityBadge} from "../../src/access/IdentityBadge.sol";
 import {CapabilityBadge} from "../../src/access/CapabilityBadge.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /**
  * @title LifecycleIntegrationTest
@@ -14,6 +15,8 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
  * @dev Tests cross-contract interactions between TAGITCore, TAGITAccess, and badges
  */
 contract LifecycleIntegrationTest is Test {
+    uint256 constant ORACLE_PK = 0xA11CE;
+
     TAGITCore public tagitCore;
     TAGITAccess public tagitAccess;
     IdentityBadge public identityBadge;
@@ -69,6 +72,10 @@ contract LifecycleIntegrationTest is Test {
         vm.prank(owner);
         tagitCore.setAccessController(address(tagitAccess));
 
+        // Set trusted oracle for NFC verification
+        vm.prank(owner);
+        tagitCore.setTrustedOracle(vm.addr(ORACLE_PK));
+
         // Set up role-based capabilities
         _setupRoleCapabilities();
     }
@@ -113,8 +120,9 @@ contract LifecycleIntegrationTest is Test {
         assertEq(tagitCore.ownerOf(tokenId), manufacturer, "Manufacturer should own token");
 
         // Step 2: Manufacturer binds NFC tag
+        (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH);
         vm.prank(manufacturer);
-        tagitCore.bindTag(tokenId, TAG_HASH);
+        tagitCore.bindTag(tokenId, TAG_HASH, cr, sig);
 
         _verifyState(tokenId, TAGITCore.State.BOUND);
         assertEq(tagitCore.getTagByToken(tokenId), TAG_HASH, "Tag should be bound");
@@ -220,12 +228,12 @@ contract LifecycleIntegrationTest is Test {
         assertEq(tagitCore.totalSupply(), batchSize, "Should have minted batch");
 
         // Batch bind
-        vm.startPrank(manufacturer);
         for (uint256 i = 0; i < batchSize; i++) {
             bytes32 tagHash = keccak256(abi.encodePacked("tag", i));
-            tagitCore.bindTag(tokenIds[i], tagHash);
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenIds[i], tagHash);
+            vm.prank(manufacturer);
+            tagitCore.bindTag(tokenIds[i], tagHash, cr, sig);
         }
-        vm.stopPrank();
 
         // Batch activate
         vm.startPrank(qaInspector);
@@ -259,13 +267,20 @@ contract LifecycleIntegrationTest is Test {
         tagitCore.mint(qaInspector, keccak256("unauthorized"));
 
         // Consumer cannot bind
-        vm.prank(consumer);
-        vm.expectRevert();
-        tagitCore.bindTag(tokenId, keccak256("fake_tag"));
+        {
+            bytes32 fakeTag = keccak256("fake_tag");
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, fakeTag);
+            vm.prank(consumer);
+            vm.expectRevert();
+            tagitCore.bindTag(tokenId, fakeTag, cr, sig);
+        }
 
         // Manufacturer binds correctly
-        vm.prank(manufacturer);
-        tagitCore.bindTag(tokenId, TAG_HASH);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH);
+            vm.prank(manufacturer);
+            tagitCore.bindTag(tokenId, TAG_HASH, cr, sig);
+        }
 
         // Distributor cannot activate
         vm.prank(distributor);
@@ -412,8 +427,11 @@ contract LifecycleIntegrationTest is Test {
         (, uint64 ts1, , , ) = tagitCore.getAsset(tokenId);
 
         vm.warp(block.timestamp + 1 hours);
-        vm.prank(manufacturer);
-        tagitCore.bindTag(tokenId, TAG_HASH);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH);
+            vm.prank(manufacturer);
+            tagitCore.bindTag(tokenId, TAG_HASH, cr, sig);
+        }
         (, uint64 ts2, , , ) = tagitCore.getAsset(tokenId);
         assertGt(ts2, ts1, "Bind timestamp should be later");
 
@@ -447,9 +465,10 @@ contract LifecycleIntegrationTest is Test {
         assertLt(mintGas, 170000, "Mint gas should be under 170k (includes NIST AC-7 rate limit)");
 
         // Bind
+        (bytes memory crGas, bytes memory sigGas) = _oracleSign(tokenId, TAG_HASH);
         vm.prank(manufacturer);
         gasBefore = gasleft();
-        tagitCore.bindTag(tokenId, TAG_HASH);
+        tagitCore.bindTag(tokenId, TAG_HASH, crGas, sigGas);
         uint256 bindGas = gasBefore - gasleft();
         assertLt(bindGas, 80000, "Bind gas should be under 80k");
 
@@ -478,12 +497,22 @@ contract LifecycleIntegrationTest is Test {
     // HELPER FUNCTIONS
     // ============================================
 
+    function _oracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory challengeResponse, bytes memory oracleSignature) {
+        challengeResponse = abi.encodePacked("challenge", tokenId);
+        bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
+        bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ORACLE_PK, ethHash);
+        oracleSignature = abi.encodePacked(r, s, v);
+    }
+
     function _setupToClaimedState(address claimTo) internal returns (uint256 tokenId) {
         vm.prank(manufacturer);
         tokenId = tagitCore.mint(manufacturer, METADATA);
 
+        bytes32 tagHash = keccak256(abi.encodePacked("tag", tokenId));
+        (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, tagHash);
         vm.prank(manufacturer);
-        tagitCore.bindTag(tokenId, keccak256(abi.encodePacked("tag", tokenId)));
+        tagitCore.bindTag(tokenId, tagHash, cr, sig);
 
         vm.prank(qaInspector);
         tagitCore.activate(tokenId);

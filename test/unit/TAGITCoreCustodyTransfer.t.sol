@@ -7,6 +7,7 @@ import {TAGITAccess} from "../../src/access/TAGITAccess.sol";
 import {IdentityBadge} from "../../src/access/IdentityBadge.sol";
 import {CapabilityBadge} from "../../src/access/CapabilityBadge.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /**
  * @title TAGITCoreCustodyTransferTest
@@ -28,6 +29,8 @@ contract TAGITCoreCustodyTransferTest is Test {
     address public lawEnforcement2;
     address public recycler;
     address public consumer;
+
+    uint256 constant ORACLE_PK = 0xA11CE;
 
     // Capability IDs
     uint256 constant CAP_MINT = uint256(keccak256("MINTER"));
@@ -76,6 +79,11 @@ contract TAGITCoreCustodyTransferTest is Test {
         vm.prank(owner);
         tagitCore.setAccessController(address(tagitAccess));
 
+        // Set trusted oracle
+        address oracle = vm.addr(ORACLE_PK);
+        vm.prank(owner);
+        tagitCore.setTrustedOracle(oracle);
+
         // Grant capabilities
         capabilityBadge.grantCapability(manufacturer, CAP_MINT);
         capabilityBadge.grantCapability(manufacturer, CAP_BIND);
@@ -85,6 +93,18 @@ contract TAGITCoreCustodyTransferTest is Test {
         capabilityBadge.grantCapability(lawEnforcement, CAP_RESOLVE);
         capabilityBadge.grantCapability(lawEnforcement2, CAP_RESOLVE);
         capabilityBadge.grantCapability(recycler, CAP_RECYCLE);
+    }
+
+    // ============================================
+    // ORACLE HELPER
+    // ============================================
+
+    function _oracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory challengeResponse, bytes memory oracleSignature) {
+        challengeResponse = abi.encodePacked("challenge", tokenId);
+        bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
+        bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ORACLE_PK, ethHash);
+        oracleSignature = abi.encodePacked(r, s, v);
     }
 
     // ============================================
@@ -133,8 +153,9 @@ contract TAGITCoreCustodyTransferTest is Test {
             expectedPrevHash
         );
 
+        (bytes memory challengeResponse, bytes memory oracleSignature) = _oracleSign(tokenId, tagHash);
         vm.prank(manufacturer);
-        tagitCore.bindTag(tokenId, tagHash);
+        tagitCore.bindTag(tokenId, tagHash, challengeResponse, oracleSignature);
     }
 
     // ============================================
@@ -144,8 +165,11 @@ contract TAGITCoreCustodyTransferTest is Test {
     function test_custodyTransfer_activate_emitsEvent() public {
         vm.prank(manufacturer);
         uint256 tokenId = tagitCore.mint(consumer, keccak256("metadata"));
+
+        bytes32 tagHash = keccak256("tag");
+        (bytes memory challengeResponse, bytes memory oracleSignature) = _oracleSign(tokenId, tagHash);
         vm.prank(manufacturer);
-        tagitCore.bindTag(tokenId, keccak256("tag"));
+        tagitCore.bindTag(tokenId, tagHash, challengeResponse, oracleSignature);
 
         bytes32 expectedPrevHash = keccak256(abi.encode(tokenId, uint8(TAGITCore.State.BOUND), consumer, block.number - 1));
 
@@ -171,8 +195,12 @@ contract TAGITCoreCustodyTransferTest is Test {
     function test_custodyTransfer_claim_emitsEvent() public {
         vm.prank(manufacturer);
         uint256 tokenId = tagitCore.mint(manufacturer, keccak256("metadata"));
+
+        bytes32 tagHash = keccak256("tag");
+        (bytes memory challengeResponse, bytes memory oracleSignature) = _oracleSign(tokenId, tagHash);
         vm.prank(manufacturer);
-        tagitCore.bindTag(tokenId, keccak256("tag"));
+        tagitCore.bindTag(tokenId, tagHash, challengeResponse, oracleSignature);
+
         vm.prank(qaInspector);
         tagitCore.activate(tokenId);
 
@@ -305,7 +333,7 @@ contract TAGITCoreCustodyTransferTest is Test {
 
     /**
      * @notice Full lifecycle test: verify the custody chain is cryptographically linkable end-to-end
-     * @dev NONE → MINTED → BOUND → ACTIVATED → CLAIMED → FLAGGED → RECYCLED
+     * @dev NONE -> MINTED -> BOUND -> ACTIVATED -> CLAIMED -> FLAGGED -> RECYCLED
      */
     function test_custodyTransfer_fullLifecycleChainLinkable() public {
         // Step 1: Mint
@@ -313,8 +341,10 @@ contract TAGITCoreCustodyTransferTest is Test {
         uint256 tokenId = tagitCore.mint(manufacturer, keccak256("chain-test"));
 
         // Step 2: Bind
+        bytes32 tagHash = keccak256("chain-tag");
+        (bytes memory challengeResponse, bytes memory oracleSignature) = _oracleSign(tokenId, tagHash);
         vm.prank(manufacturer);
-        tagitCore.bindTag(tokenId, keccak256("chain-tag"));
+        tagitCore.bindTag(tokenId, tagHash, challengeResponse, oracleSignature);
 
         // Step 3: Activate
         vm.prank(qaInspector);
@@ -363,7 +393,7 @@ contract TAGITCoreCustodyTransferTest is Test {
     }
 
     /**
-     * @notice Verify resolve cycle emits correct custody events through flag→resolve→flag→recycle
+     * @notice Verify resolve cycle emits correct custody events through flag->resolve->flag->recycle
      */
     function test_custodyTransfer_flagResolveReFlag() public {
         uint256 tokenId = _mintClaimedAsset(consumer);
@@ -417,8 +447,9 @@ contract TAGITCoreCustodyTransferTest is Test {
         vm.prank(manufacturer);
         tokenId = tagitCore.mint(to, metadata);
 
+        (bytes memory challengeResponse, bytes memory oracleSignature) = _oracleSign(tokenId, tagHash);
         vm.prank(manufacturer);
-        tagitCore.bindTag(tokenId, tagHash);
+        tagitCore.bindTag(tokenId, tagHash, challengeResponse, oracleSignature);
 
         vm.prank(qaInspector);
         tagitCore.activate(tokenId);

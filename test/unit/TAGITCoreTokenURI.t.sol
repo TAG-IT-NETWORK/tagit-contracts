@@ -7,6 +7,7 @@ import {TAGITAccess} from "../../src/access/TAGITAccess.sol";
 import {IdentityBadge} from "../../src/access/IdentityBadge.sol";
 import {CapabilityBadge} from "../../src/access/CapabilityBadge.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /**
  * @title TAGITCoreTokenURITest
@@ -25,6 +26,8 @@ contract TAGITCoreTokenURITest is Test {
     address public auditor;
     address public consumer;
     address public unauthorized;
+
+    uint256 constant ORACLE_PK = 0xA11CE;
 
     uint256 constant CAP_MINT = uint256(keccak256("MINTER"));
     uint256 constant CAP_VIEWER = uint256(keccak256("VIEWER"));
@@ -55,6 +58,11 @@ contract TAGITCoreTokenURITest is Test {
         vm.prank(owner);
         tagitCore.setAccessController(address(tagitAccess));
 
+        // Set trusted oracle
+        address oracle = vm.addr(ORACLE_PK);
+        vm.prank(owner);
+        tagitCore.setTrustedOracle(oracle);
+
         // Set redacted URI
         vm.prank(owner);
         tagitCore.setRedactedURI(REDACTED_URI);
@@ -67,6 +75,18 @@ contract TAGITCoreTokenURITest is Test {
         // Mint a token to consumer
         vm.prank(manufacturer);
         tagitCore.mint(consumer, keccak256("metadata-1"));
+    }
+
+    // ============================================
+    // ORACLE HELPER
+    // ============================================
+
+    function _oracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory challengeResponse, bytes memory oracleSignature) {
+        challengeResponse = abi.encodePacked("challenge", tokenId);
+        bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
+        bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ORACLE_PK, ethHash);
+        oracleSignature = abi.encodePacked(r, s, v);
     }
 
     // ============================================

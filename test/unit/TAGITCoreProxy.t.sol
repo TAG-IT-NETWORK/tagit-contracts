@@ -8,6 +8,7 @@ import {IdentityBadge} from "../../src/access/IdentityBadge.sol";
 import {CapabilityBadge} from "../../src/access/CapabilityBadge.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /**
  * @title TAGITCoreProxyTest
@@ -24,6 +25,8 @@ contract TAGITCoreProxyTest is Test {
     address public manufacturer;
     address public resolver2;
     address public attacker;
+
+    uint256 constant ORACLE_PK = 0xA11CE;
 
     bytes32 public constant METADATA = keccak256("ipfs://QmTest");
     bytes32 public constant TAG_HASH = keccak256("NFC_TAG_001");
@@ -59,6 +62,11 @@ contract TAGITCoreProxyTest is Test {
         vm.prank(owner);
         proxy.setAccessController(address(tagitAccess));
 
+        // Set trusted oracle
+        address oracle = vm.addr(ORACLE_PK);
+        vm.prank(owner);
+        proxy.setTrustedOracle(oracle);
+
         // Grant manufacturer all capabilities
         capabilityBadge.grantCapability(manufacturer, uint256(proxy.MINTER_CAPABILITY()));
         capabilityBadge.grantCapability(manufacturer, uint256(proxy.BINDER_CAPABILITY()));
@@ -70,6 +78,18 @@ contract TAGITCoreProxyTest is Test {
 
         // Grant RESOLVER_CAPABILITY to resolver2 (second resolver for quorum)
         capabilityBadge.grantCapability(resolver2, uint256(proxy.RESOLVER_CAPABILITY()));
+    }
+
+    // ============================================
+    // ORACLE HELPER
+    // ============================================
+
+    function _oracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory challengeResponse, bytes memory oracleSignature) {
+        challengeResponse = abi.encodePacked("challenge", tokenId);
+        bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
+        bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ORACLE_PK, ethHash);
+        oracleSignature = abi.encodePacked(r, s, v);
     }
 
     // ============================================
@@ -136,8 +156,9 @@ contract TAGITCoreProxyTest is Test {
         uint256 tokenId = proxy.mint(manufacturer, METADATA);
 
         // Bind
+        (bytes memory challengeResponse, bytes memory oracleSignature) = _oracleSign(tokenId, TAG_HASH);
         vm.prank(manufacturer);
-        proxy.bindTag(tokenId, TAG_HASH);
+        proxy.bindTag(tokenId, TAG_HASH, challengeResponse, oracleSignature);
 
         // Activate
         vm.prank(manufacturer);
@@ -180,8 +201,9 @@ contract TAGITCoreProxyTest is Test {
         vm.prank(manufacturer);
         uint256 tokenId = proxy.mint(manufacturer, METADATA);
 
+        (bytes memory challengeResponse, bytes memory oracleSignature) = _oracleSign(tokenId, TAG_HASH);
         vm.prank(manufacturer);
-        proxy.bindTag(tokenId, TAG_HASH);
+        proxy.bindTag(tokenId, TAG_HASH, challengeResponse, oracleSignature);
 
         assertEq(proxy.getTokenByTag(TAG_HASH), tokenId);
         assertEq(proxy.getTagByToken(tokenId), TAG_HASH);

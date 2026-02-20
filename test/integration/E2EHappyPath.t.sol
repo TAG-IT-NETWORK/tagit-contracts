@@ -37,8 +37,12 @@ contract E2EHappyPathTest is IntegrationBase {
         vm.prank(manufacturer);
         uint256 tokenId = core.mint(consumer1, keccak256("PREMIUM_WATCH_001"));
 
-        vm.prank(manufacturer);
-        core.bindTag(tokenId, keccak256("NFC_TAG_WATCH_001"));
+        {
+            bytes32 tagHash = keccak256("NFC_TAG_WATCH_001");
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, tagHash);
+            vm.prank(manufacturer);
+            core.bindTag(tokenId, tagHash, cr, sig);
+        }
 
         vm.prank(qaInspector);
         core.activate(tokenId);
@@ -106,7 +110,10 @@ contract E2EHappyPathTest is IntegrationBase {
             tokenIds[i] = core.mint(consumer1, metadata);
 
             tagHashes[i] = keccak256(abi.encodePacked("TAG_BATCH_", i));
-            core.bindTag(tokenIds[i], tagHashes[i]);
+            {
+                (bytes memory cr, bytes memory sig) = _oracleSign(tokenIds[i], tagHashes[i]);
+                core.bindTag(tokenIds[i], tagHashes[i], cr, sig);
+            }
         }
         vm.stopPrank();
 
@@ -336,8 +343,16 @@ contract E2EHappyPathTest is IntegrationBase {
         vm.startPrank(manufacturer);
         uint256 tokenId1 = core.mint(consumer1, keccak256("product1"));
         uint256 tokenId2 = core.mint(consumer2, keccak256("product2"));
-        core.bindTag(tokenId1, keccak256("tag1"));
-        core.bindTag(tokenId2, keccak256("tag2"));
+        {
+            bytes32 tagHash1 = keccak256("tag1");
+            (bytes memory cr1, bytes memory sig1) = _oracleSign(tokenId1, tagHash1);
+            core.bindTag(tokenId1, tagHash1, cr1, sig1);
+        }
+        {
+            bytes32 tagHash2 = keccak256("tag2");
+            (bytes memory cr2, bytes memory sig2) = _oracleSign(tokenId2, tagHash2);
+            core.bindTag(tokenId2, tagHash2, cr2, sig2);
+        }
         vm.stopPrank();
 
         // QA activates both

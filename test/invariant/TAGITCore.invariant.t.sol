@@ -8,6 +8,7 @@ import {TAGITAccess} from "../../src/access/TAGITAccess.sol";
 import {IdentityBadge} from "../../src/access/IdentityBadge.sol";
 import {CapabilityBadge} from "../../src/access/CapabilityBadge.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /**
  * @title TAGITCoreHandler
@@ -16,6 +17,8 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 contract TAGITCoreHandler is Test {
     TAGITCore public tagitCore;
     CapabilityBadge public capabilityBadge;
+
+    uint256 constant ORACLE_PK = 0xA11CE;
 
     // Track state for invariant checks
     uint256 public mintCount;
@@ -58,6 +61,18 @@ contract TAGITCoreHandler is Test {
         user2 = makeAddr("user2");
     }
 
+    // ============================================
+    // ORACLE HELPER
+    // ============================================
+
+    function _oracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory challengeResponse, bytes memory oracleSignature) {
+        challengeResponse = abi.encodePacked("challenge", tokenId);
+        bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
+        bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ORACLE_PK, ethHash);
+        oracleSignature = abi.encodePacked(r, s, v);
+    }
+
     /**
      * @notice Mint a new token
      */
@@ -88,8 +103,10 @@ contract TAGITCoreHandler is Test {
         // Skip if tag already bound
         if (tagIsBound[tagHash]) return;
 
+        (bytes memory challengeResponse, bytes memory oracleSignature) = _oracleSign(tokenId, tagHash);
+
         vm.prank(manufacturer);
-        try tagitCore.bindTag(tokenId, tagHash) {
+        try tagitCore.bindTag(tokenId, tagHash, challengeResponse, oracleSignature) {
             // Remove from minted, add to bound
             _removeFromArray(mintedTokens, idx);
             boundTokens.push(tokenId);
@@ -272,6 +289,10 @@ contract TAGITCoreInvariantTest is StdInvariant, Test {
         vm.prank(owner);
         tagitCore.setAccessController(address(tagitAccess));
 
+        // Set trusted oracle
+        vm.prank(owner);
+        tagitCore.setTrustedOracle(vm.addr(0xA11CE));
+
         // Grant all capabilities to manufacturer (as owner of capabilityBadge)
         capabilityBadge.grantCapability(manufacturer, uint256(tagitCore.MINTER_CAPABILITY()));
         capabilityBadge.grantCapability(manufacturer, uint256(tagitCore.BINDER_CAPABILITY()));
@@ -356,7 +377,7 @@ contract TAGITCoreInvariantTest is StdInvariant, Test {
 
     /**
      * @notice Invariant: State transitions are valid
-     * @dev Forward-only except FLAGGED → CLAIMED (resolve)
+     * @dev Forward-only except FLAGGED -> CLAIMED (resolve)
      */
     function invariant_stateTransitionsValid() public view {
         // Verify bind operations came from minted tokens

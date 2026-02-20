@@ -33,8 +33,9 @@ contract CoreFlowsTest is IntegrationBase {
         assertEq(uint8(state), 1, "State should be MINTED (1)");
 
         // Step 2: Manufacturer binds tag
+        (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, tagHash);
         vm.prank(manufacturer);
-        core.bindTag(tokenId, tagHash);
+        core.bindTag(tokenId, tagHash, cr, sig);
 
         // Verify state is BOUND
         (, , TAGITCore.State state2, , ) = core.getAsset(tokenId);
@@ -92,11 +93,17 @@ contract CoreFlowsTest is IntegrationBase {
         uint256 tokenId2 = core.mint(consumer1, keccak256("asset2"));
 
         // Bind tag to first asset
-        core.bindTag(tokenId1, tagHash);
+        {
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId1, tagHash);
+            core.bindTag(tokenId1, tagHash, cr, sig);
+        }
 
         // Try to bind same tag to second asset - should fail
-        vm.expectRevert();
-        core.bindTag(tokenId2, tagHash);
+        {
+            (bytes memory cr2, bytes memory sig2) = _oracleSign(tokenId2, tagHash);
+            vm.expectRevert();
+            core.bindTag(tokenId2, tagHash, cr2, sig2);
+        }
         vm.stopPrank();
     }
 
@@ -235,13 +242,21 @@ contract CoreFlowsTest is IntegrationBase {
         assertGt(tokenId, 0, "Should mint successfully");
 
         // Unauthorized user cannot bind
-        vm.prank(consumer1);
-        vm.expectRevert();
-        core.bindTag(tokenId, keccak256("tag"));
+        {
+            bytes32 tagHash = keccak256("tag");
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, tagHash);
+            vm.prank(consumer1);
+            vm.expectRevert();
+            core.bindTag(tokenId, tagHash, cr, sig);
+        }
 
         // Authorized manufacturer can bind
-        vm.prank(manufacturer);
-        core.bindTag(tokenId, keccak256("tag"));
+        {
+            bytes32 tagHash = keccak256("tag");
+            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, tagHash);
+            vm.prank(manufacturer);
+            core.bindTag(tokenId, tagHash, cr, sig);
+        }
     }
 
     /**
