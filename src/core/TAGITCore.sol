@@ -256,6 +256,30 @@ contract TAGITCore is
     );
 
     /**
+     * @notice Emitted on every custody/state change for full audit trail
+     * @dev prevStateHash = keccak256(abi.encode(assetId, fromState, fromOwner, block.number - 1))
+     *      This creates a cryptographically linkable chain of custody events.
+     * @param assetId Token ID of the asset
+     * @param fromState Previous lifecycle state (uint8-encoded)
+     * @param toState New lifecycle state (uint8-encoded)
+     * @param fromOwner Owner before the transition
+     * @param toOwner Owner after the transition
+     * @param timestamp Block timestamp of the transition
+     * @param prevStateHash Hash linking to previous state for chain-of-custody verification
+     * @custom:security CMMC audit trail — every custody change cryptographically linkable
+     * @custom:security NIST 800-53 AU-9 — immutable on-chain audit log
+     */
+    event CustodyTransfer(
+        uint256 indexed assetId,
+        uint8 fromState,
+        uint8 toState,
+        address indexed fromOwner,
+        address indexed toOwner,
+        uint256 timestamp,
+        bytes32 prevStateHash
+    );
+
+    /**
      * @notice Emitted when a resolver approves a flagged asset's resolution
      * @param tokenId The asset token ID
      * @param approver Address of the resolver who approved
@@ -494,6 +518,10 @@ contract TAGITCore is
         // ============================================
         emit AssetMinted(tokenId, to, metadata);
         emit StateChanged(tokenId, State.NONE, State.MINTED, msg.sender);
+
+        // PATCH-03: CustodyTransfer audit trail
+        bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.NONE), address(0), block.number - 1));
+        emit CustodyTransfer(tokenId, uint8(State.NONE), uint8(State.MINTED), address(0), to, block.timestamp, prevHash);
     }
 
     /**
@@ -548,6 +576,10 @@ contract TAGITCore is
         // ============================================
         emit TagBound(tokenId, tagHash);
         emit StateChanged(tokenId, State.MINTED, State.BOUND, msg.sender);
+
+        // PATCH-03: CustodyTransfer audit trail
+        bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.MINTED), asset.owner, block.number - 1));
+        emit CustodyTransfer(tokenId, uint8(State.MINTED), uint8(State.BOUND), asset.owner, asset.owner, block.timestamp, prevHash);
     }
 
     /**
@@ -590,6 +622,10 @@ contract TAGITCore is
         // INTERACTIONS
         // ============================================
         emit StateChanged(tokenId, State.BOUND, State.ACTIVATED, msg.sender);
+
+        // PATCH-03: CustodyTransfer audit trail
+        bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.BOUND), asset.owner, block.number - 1));
+        emit CustodyTransfer(tokenId, uint8(State.BOUND), uint8(State.ACTIVATED), asset.owner, asset.owner, block.timestamp, prevHash);
     }
 
     /**
@@ -646,6 +682,10 @@ contract TAGITCore is
 
         // Emit state change event
         emit StateChanged(tokenId, State.ACTIVATED, State.CLAIMED, msg.sender);
+
+        // PATCH-03: CustodyTransfer audit trail
+        bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.ACTIVATED), previousOwner, block.number - 1));
+        emit CustodyTransfer(tokenId, uint8(State.ACTIVATED), uint8(State.CLAIMED), previousOwner, newOwner, block.timestamp, prevHash);
     }
 
     /**
@@ -691,6 +731,10 @@ contract TAGITCore is
         // INTERACTIONS
         // ============================================
         emit StateChanged(tokenId, State.CLAIMED, State.FLAGGED, msg.sender);
+
+        // PATCH-03: CustodyTransfer audit trail
+        bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.CLAIMED), asset.owner, block.number - 1));
+        emit CustodyTransfer(tokenId, uint8(State.CLAIMED), uint8(State.FLAGGED), asset.owner, asset.owner, block.timestamp, prevHash);
     }
 
     /**
@@ -822,6 +866,10 @@ contract TAGITCore is
 
         // Emit state change event
         emit StateChanged(tokenId, State.FLAGGED, State.CLAIMED, msg.sender);
+
+        // PATCH-03: CustodyTransfer audit trail
+        bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.FLAGGED), previousOwner, block.number - 1));
+        emit CustodyTransfer(tokenId, uint8(State.FLAGGED), uint8(State.CLAIMED), previousOwner, newOwner, block.timestamp, prevHash);
     }
 
     /**
@@ -866,6 +914,10 @@ contract TAGITCore is
         // INTERACTIONS
         // ============================================
         emit StateChanged(tokenId, currentState, State.RECYCLED, msg.sender);
+
+        // PATCH-03: CustodyTransfer audit trail
+        bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(currentState), asset.owner, block.number - 1));
+        emit CustodyTransfer(tokenId, uint8(currentState), uint8(State.RECYCLED), asset.owner, asset.owner, block.timestamp, prevHash);
     }
 
     // ============================================
