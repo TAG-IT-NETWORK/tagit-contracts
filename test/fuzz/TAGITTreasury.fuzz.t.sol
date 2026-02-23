@@ -116,7 +116,7 @@ contract TAGITTreasuryFuzzTest is Test {
             address(treasury),
             tokenAddr,
             to,
-            block.timestamp / 1 days
+            treasury.sweepNonce()
         ));
         bytes32 ethHash = sweepHash.toEthSignedMessageHash();
 
@@ -505,8 +505,9 @@ contract TAGITTreasuryFuzzTest is Test {
 
         // Small tier amounts only (avoid multisig requirement)
         amount = bound(amount, 1e18, 49_999e18);
-        // Valid durations
-        duration = uint48(bound(uint256(duration), 1 days, 730 days));
+        // Valid durations — must outlast timelock (PATCH-07: allocation expiry check)
+        // Small amounts use 48h timelock, so duration must be > 48h + 1
+        duration = uint48(bound(uint256(duration), 3 days, 730 days));
 
         uint256 treasuryBalanceBefore = token.balanceOf(address(treasury));
 

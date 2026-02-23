@@ -70,6 +70,10 @@ contract TAGITEmissions is
     /// @notice Governor address for access control
     address public governor;
 
+    /// @notice Maximum epochs that can be caught up in a single call (PATCH-10)
+    /// @dev 12 epochs = ~3 months; prevents unbounded gas consumption
+    uint256 public constant MAX_CATCH_UP_EPOCHS = 12;
+
     /// @dev Storage gap for future upgrades (50 slots)
     uint256[43] private __gap;
 
@@ -131,42 +135,61 @@ contract TAGITEmissions is
     // ============================================
 
     /**
-     * @notice Distribute tokens for the current epoch
-     * @dev Permissionless - anyone can trigger. Cannot distribute future or past epochs.
-     * @return distributed The total amount of tokens distributed
+     * @notice Distribute tokens for pending epochs with catch-up loop (PATCH-10)
+     * @dev Permissionless - anyone can trigger. Loops from _lastDistributedEpoch+1
+     *      through currentEpoch(), capped at MAX_CATCH_UP_EPOCHS per call.
+     *      Each iteration compounds on the updated totalSupply.
+     * @return distributed The total amount of tokens distributed across all caught-up epochs
      * @custom:security Uses nonReentrant to prevent reentrancy during minting
-     * @custom:emits EpochDistributed
+     * @custom:security Capped at MAX_CATCH_UP_EPOCHS (12) to bound gas consumption
+     * @custom:emits EpochDistributed (per epoch)
      */
     function distributeEpoch() external nonReentrant returns (uint256 distributed) {
-        uint256 epoch = currentEpoch();
+        uint256 current = currentEpoch();
 
         // Cannot distribute already-distributed epoch
-        if (epoch <= _lastDistributedEpoch) {
-            revert EpochAlreadyDistributed(epoch);
+        if (current <= _lastDistributedEpoch) {
+            revert EpochAlreadyDistributed(current);
         }
 
-        // Calculate weekly emission: totalSupply * 3.33% / 52
-        uint256 totalSupply = token.totalSupply();
-        uint256 weeklyAmount = (totalSupply * INFLATION_RATE) / (BASIS_POINTS * EPOCHS_PER_YEAR);
+        // PATCH-10: Calculate how many epochs to catch up, capped at MAX_CATCH_UP_EPOCHS
+        uint256 pendingEpochs = current - _lastDistributedEpoch;
+        uint256 epochsToDistribute = pendingEpochs > MAX_CATCH_UP_EPOCHS
+            ? MAX_CATCH_UP_EPOCHS
+            : pendingEpochs;
 
-        // Distribute to each allocation
-        uint256 allocLength = _allocations.length;
-        for (uint256 i = 0; i < allocLength;) {
-            uint256 share = (weeklyAmount * _allocations[i].weight) / BASIS_POINTS;
-            if (share > 0) {
-                token.mint(_allocations[i].recipient, share);
+        uint256 startEpoch = _lastDistributedEpoch + 1;
+
+        for (uint256 i = 0; i < epochsToDistribute;) {
+            uint256 epoch = startEpoch + i;
+
+            // Compounds: each iteration uses updated totalSupply (after previous mints)
+            uint256 totalSupply = token.totalSupply();
+            uint256 weeklyAmount = (totalSupply * INFLATION_RATE) / (BASIS_POINTS * EPOCHS_PER_YEAR);
+
+            // Distribute to each allocation
+            uint256 allocLength = _allocations.length;
+            for (uint256 j = 0; j < allocLength;) {
+                uint256 share = (weeklyAmount * _allocations[j].weight) / BASIS_POINTS;
+                if (share > 0) {
+                    token.mint(_allocations[j].recipient, share);
+                }
+                unchecked { ++j; }
             }
+
+            _epochDistributions[epoch] = weeklyAmount;
+            _totalDistributed += weeklyAmount;
+            distributed += weeklyAmount;
+
+            emit EpochDistributed(epoch, weeklyAmount, block.timestamp);
+
             unchecked { ++i; }
         }
 
-        // Update state
-        _lastDistributedEpoch = epoch;
-        _totalDistributed += weeklyAmount;
-        _epochDistributions[epoch] = weeklyAmount;
+        // Update last distributed epoch (may not reach currentEpoch if capped)
+        _lastDistributedEpoch = startEpoch + epochsToDistribute - 1;
 
-        emit EpochDistributed(epoch, weeklyAmount, block.timestamp);
-
-        return weeklyAmount;
+        return distributed;
     }
 
     // ============================================
@@ -309,14 +332,30 @@ contract TAGITEmissions is
     }
 
     /**
-     * @notice Calculate the pending distribution amount
-     * @return The amount that would be distributed in the current epoch
+     * @notice Calculate the pending distribution amount across all pending epochs (PATCH-10)
+     * @dev Estimates compounding across pending epochs (capped at MAX_CATCH_UP_EPOCHS).
+     *      Actual distribution may differ slightly due to compounding.
+     * @return The estimated total amount that would be distributed
      */
     function pendingDistribution() external view returns (uint256) {
-        if (currentEpoch() <= _lastDistributedEpoch) {
+        uint256 current = currentEpoch();
+        if (current <= _lastDistributedEpoch) {
             return 0;
         }
-        return (token.totalSupply() * INFLATION_RATE) / (BASIS_POINTS * EPOCHS_PER_YEAR);
+        uint256 pendingEpochs = current - _lastDistributedEpoch;
+        uint256 epochsToEstimate = pendingEpochs > MAX_CATCH_UP_EPOCHS
+            ? MAX_CATCH_UP_EPOCHS
+            : pendingEpochs;
+        uint256 weeklyRate = INFLATION_RATE;
+        uint256 supply = token.totalSupply();
+        uint256 total = 0;
+        for (uint256 i = 0; i < epochsToEstimate;) {
+            uint256 amount = (supply * weeklyRate) / (BASIS_POINTS * EPOCHS_PER_YEAR);
+            total += amount;
+            supply += amount; // simulate compounding
+            unchecked { ++i; }
+        }
+        return total;
     }
 
     /**

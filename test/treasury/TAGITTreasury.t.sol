@@ -432,7 +432,7 @@ contract TAGITTreasuryTest is Test {
             address(treasury),
             address(0), // ETH
             alice,
-            block.timestamp / 1 days
+            uint256(0) // PATCH-08: counter-based nonce (starts at 0)
         ));
         bytes32 ethSignedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
 
@@ -462,7 +462,7 @@ contract TAGITTreasuryTest is Test {
             address(treasury),
             address(0),
             alice,
-            block.timestamp / 1 days
+            uint256(0) // PATCH-08: counter-based nonce (starts at 0)
         ));
         bytes32 ethSignedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
 

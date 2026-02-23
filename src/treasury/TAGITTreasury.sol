@@ -124,6 +124,9 @@ contract TAGITTreasury is
     /// @notice Drain detector configuration and state
     DrainDetector.Config private _drainConfig;
 
+    /// @notice Counter-based nonce for emergency sweep signature uniqueness (PATCH-08)
+    uint256 private _sweepNonce;
+
     // ============================================
     // EVENTS
     // ============================================
@@ -387,6 +390,12 @@ contract TAGITTreasury is
             revert TimelockNotPassed(withdrawalId, withdrawal.executesAt, uint48(block.timestamp));
         }
 
+        // PATCH-07: Verify allocation hasn't expired since withdrawal was queued
+        Allocation storage alloc = _allocations[withdrawal.allocationId];
+        if (block.timestamp >= alloc.expiresAt) {
+            revert AllocationExpired(withdrawal.allocationId, alloc.expiresAt);
+        }
+
         // Check if large withdrawal requires multisig (handled separately)
         (, bool requiresMultisig) = getTimelockForAmount(withdrawal.amount);
         if (requiresMultisig) {
@@ -469,14 +478,14 @@ contract TAGITTreasury is
             revert InsufficientSigners(REQUIRED_SIGNERS, signatures.length);
         }
 
-        // Create message hash for signature verification
+        // PATCH-08: Create message hash with counter-based nonce (replaces day-based)
         bytes32 messageHash = keccak256(abi.encodePacked(
             "TAGIT_EMERGENCY_SWEEP",
             block.chainid,
             address(this),
             token,
             to,
-            block.timestamp / 1 days // Day-based nonce
+            _sweepNonce
         ));
         bytes32 ethSignedHash = messageHash.toEthSignedMessageHash();
 
@@ -519,6 +528,7 @@ contract TAGITTreasury is
 
         // EFFECTS: Reset allocations before external calls (CEI pattern)
         _totalAllocated = 0;
+        _sweepNonce++; // PATCH-08: Increment nonce to prevent signature replay
 
         // Emit event before external calls
         emit EmergencySweep(token, to, amount, validSigners);
@@ -715,6 +725,14 @@ contract TAGITTreasury is
         } else {
             return (TIMELOCK_SMALL, false);
         }
+    }
+
+    /**
+     * @notice Get the current sweep nonce (PATCH-08)
+     * @return Current nonce value used in emergency sweep signature hash
+     */
+    function sweepNonce() external view returns (uint256) {
+        return _sweepNonce;
     }
 
     /**

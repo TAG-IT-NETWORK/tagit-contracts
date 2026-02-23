@@ -441,7 +441,9 @@ contract TAGITEmissionsTest is Test {
 
         vm.warp(block.timestamp + weeksElapsed * 1 weeks);
 
-        uint256 expectedEpoch = weeksElapsed;
+        // PATCH-10: catch-up is capped at MAX_CATCH_UP_EPOCHS per call
+        uint256 maxCatchUp = emissions.MAX_CATCH_UP_EPOCHS();
+        uint256 expectedEpoch = weeksElapsed > maxCatchUp ? maxCatchUp : weeksElapsed;
         emissions.distributeEpoch();
 
         assertEq(emissions.lastDistributedEpoch(), expectedEpoch);

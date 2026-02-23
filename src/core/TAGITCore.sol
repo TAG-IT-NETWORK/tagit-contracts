@@ -215,6 +215,12 @@ contract TAGITCore is
     error BatchTooLarge(uint256 provided, uint256 maximum);
 
     /**
+     * @notice External ERC721 transfers are disabled (PATCH-09)
+     * @dev Assets must move through lifecycle functions (claim, resolve)
+     */
+    error TransferDisabled();
+
+    /**
      * @notice Array lengths do not match in batch operation
      * @param recipientsLength Length of the recipients array
      * @param metadataLength Length of the metadata array
@@ -1050,6 +1056,31 @@ contract TAGITCore is
         // PATCH-03: CustodyTransfer audit trail
         bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(currentState), asset.owner, block.number - 1));
         emit CustodyTransfer(tokenId, uint8(currentState), uint8(State.RECYCLED), asset.owner, asset.owner, block.timestamp, prevHash);
+    }
+
+    // ============================================
+    // TRANSFER RESTRICTION (PATCH-09)
+    // ============================================
+
+    /**
+     * @notice Block external ERC721 transfers — assets must move through lifecycle
+     * @dev OZ v5 ERC721 calls _update with auth=address(0) for internal operations
+     *      (_mint, _transfer) and auth=msg.sender for external calls (transferFrom,
+     *      safeTransferFrom). Reverting when auth != address(0) blocks all external
+     *      transfers while allowing lifecycle functions that use _mint/_transfer.
+     * @param to Destination address
+     * @param tokenId Token being transferred
+     * @param auth Address that authorized the transfer (address(0) for internal)
+     * @return Previous owner address
+     * @custom:security Prevents bypassing lifecycle state machine via direct transfer
+     */
+    function _update(address to, uint256 tokenId, address auth)
+        internal
+        override
+        returns (address)
+    {
+        if (auth != address(0)) revert TransferDisabled();
+        return super._update(to, tokenId, auth);
     }
 
     // ============================================
