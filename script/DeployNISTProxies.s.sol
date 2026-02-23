@@ -29,9 +29,16 @@ contract DeployNISTProxies is Script {
     address constant ACCOUNT_FACTORY_IMPL = 0x8D27B612a9D3e45d51D2234B2f4e03dCC5ca844b;
     address constant CCIP_ADAPTER_IMPL = 0x8dA6D7ffCD4cc0F2c9FfD6411CeD7C9c573C9E88;
 
-    // Existing contracts
-    address constant TAGIT_CORE = 0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe;
-    address constant TAGIT_ACCESS = 0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9;
+    // Existing contracts — read from env vars for flexibility
+    // Post-T00: these should point to proxy addresses (TAGITCore is now behind ERC1967Proxy)
+    // Set via: TAGIT_CORE_PROXY=0x... TAGIT_ACCESS=0x... forge script ...
+    address immutable TAGIT_CORE;
+    address immutable TAGIT_ACCESS;
+
+    constructor() {
+        TAGIT_CORE = vm.envAddress("TAGIT_CORE_PROXY");
+        TAGIT_ACCESS = vm.envAddress("TAGIT_ACCESS");
+    }
 
     // ERC-4337 EntryPoint (v0.7)
     address constant ENTRY_POINT = 0x0000000071727De22E5E9d8BAf0edAc6f37da032;

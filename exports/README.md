@@ -12,6 +12,7 @@ import addresses from './addresses.json';
 const network = 'op-sepolia';
 const contracts = addresses.networks[network].contracts;
 
+// TAGITCore is behind a UUPS proxy — always use the proxy address
 console.log(contracts.TAGITCore);  // 0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe
 ```
 
@@ -42,18 +43,49 @@ const tagitCore = new ethers.Contract(
 
 ---
 
+## Proxy Architecture
+
+TAGITCore uses the **UUPS proxy pattern** (EIP-1822) with a **TimelockController** for governance.
+
+### How It Works
+
+- **Proxy contract**: The address callers interact with. Holds all storage and delegates calls to the implementation.
+- **Implementation contract**: The logic contract behind the proxy. Can be upgraded without changing the proxy address.
+- **TimelockController**: Owns the proxy. All admin operations (upgrades, config changes) require a **48-hour delay** before execution.
+
+### Key Points for Integrators
+
+- Always interact with the **proxy address** (`contracts.TAGITCore` / `contracts.TAGITCoreProxy`). The proxy address never changes.
+- The implementation address can change after upgrades. Call `getImplementation()` on the proxy to read the current logic contract.
+- ABI remains the same — the proxy transparently delegates to the implementation.
+- Upgrades are governed: a proposal must be scheduled on the TimelockController and can only execute after the 48-hour delay.
+
+### Upgrade Flow
+
+```
+1. Proposer schedules upgradeToAndCall on TimelockController (48hr delay starts)
+2. UpgradeScheduled event emitted — off-chain monitors can alert
+3. After 48hr delay, executor calls TimelockController.execute()
+4. TimelockController calls proxy.upgradeToAndCall(newImpl, "")
+5. Proxy storage slot updated to point to new implementation
+```
+
+Use `script/UpgradeTAGITCore.s.sol` for the full schedule + execute workflow.
+
+---
+
 ## Contract Reference
 
 ### TAGITCore (ERC-721)
 
-Digital Twin NFT with lifecycle state machine.
+Digital Twin NFT with lifecycle state machine, deployed behind UUPS proxy.
 
 #### Key Functions
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `mint` | `mint(address to, bytes32 metadata) returns (uint256)` | Create new Digital Twin NFT |
-| `bindTag` | `bindTag(uint256 tokenId, bytes32 tagHash)` | Bind NFC tag to token |
+| `bindTag` | `bindTag(uint256 tokenId, bytes32 tagHash, bytes challengeResponse, bytes oracleSignature)` | Bind NFC tag with oracle verification |
 | `activate` | `activate(uint256 tokenId)` | QA approval |
 | `claim` | `claim(uint256 tokenId, address newOwner)` | Transfer ownership |
 | `flag` | `flag(uint256 tokenId)` | Mark as lost/stolen |
@@ -71,6 +103,17 @@ Digital Twin NFT with lifecycle state machine.
 | `getAsset` | `getAsset(uint256 tokenId) returns (address, uint64, State, uint8, uint16)` | Asset details |
 | `getTagByToken` | `getTagByToken(uint256 tokenId) returns (bytes32)` | Get tag hash by token |
 | `getTokenByTag` | `getTokenByTag(bytes32 tagHash) returns (uint256)` | Get token by tag hash |
+| `getImplementation` | `getImplementation() returns (address)` | Current implementation address (proxy only) |
+
+#### Admin Functions (TimelockController only)
+
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `upgradeToAndCall` | `upgradeToAndCall(address newImplementation, bytes data)` | Upgrade to new implementation |
+| `setAccessController` | `setAccessController(address accessController)` | Set BIDGES access controller |
+| `setNFCOracle` | `setNFCOracle(address oracle)` | Set trusted NFC oracle for bindTag |
+
+All admin functions require a 48-hour governance delay via TimelockController.
 
 #### State Enum
 
@@ -154,9 +197,11 @@ const tokenId = event.args[0];
 
 console.log('Minted Token ID:', tokenId.toString());
 
-// 4. Bind tag
+// 4. Bind tag (requires oracle signature post-PATCH-06)
 const tagHash = ethers.keccak256(ethers.toUtf8Bytes('NFC-TAG-UID-ABC123'));
-await tagitCore.bindTag(tokenId, tagHash);
+const challengeResponse = '0x...'; // NFC challenge-response bytes
+const oracleSignature = '0x...';   // Signed by trusted NFC oracle
+await tagitCore.bindTag(tokenId, tagHash, challengeResponse, oracleSignature);
 
 // 5. Activate
 await tagitCore.activate(tokenId);
@@ -177,10 +222,13 @@ console.log('State:', asset[2]); // 4 = CLAIMED
 
 | Contract | Address |
 |----------|---------|
-| TAGITCore | `0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe` |
+| TAGITCore (proxy) | `0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe` |
+| TimelockController | *Set after deployment* |
 | TAGITAccess | `0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9` |
 | IdentityBadge | `0x26F2EBb84664EF1eF8554e15777EBEc6611256A6` |
 | CapabilityBadge | `0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505` |
+
+> **Governance:** All TAGITCore admin operations go through the TimelockController with a 48-hour delay.
 
 ### OP Mainnet
 

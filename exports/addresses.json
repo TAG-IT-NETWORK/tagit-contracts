@@ -7,9 +7,22 @@
       "blockExplorer": "https://sepolia-optimism.etherscan.io",
       "contracts": {
         "TAGITCore": "0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe",
+        "TAGITCoreProxy": "0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe",
+        "TAGITCoreImplementation": null,
+        "TimelockController": null,
         "TAGITAccess": "0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9",
         "IdentityBadge": "0x26F2EBb84664EF1eF8554e15777EBEc6611256A6",
         "CapabilityBadge": "0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505"
+      },
+      "proxyArchitecture": {
+        "TAGITCore": {
+          "pattern": "UUPS (EIP-1822)",
+          "proxy": "0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe",
+          "implementation": null,
+          "admin": "TimelockController",
+          "upgradeDelay": "48 hours",
+          "notes": "Proxy and implementation addresses are set after deployment. Use getImplementation() on the proxy to read the current logic contract."
+        }
       },
       "nistImplementations": {
         "TAGITRecovery": "0x6138a80c06A5e6a3CB6cc491A3a2c4DF4adD1600",
@@ -46,9 +59,21 @@
       "blockExplorer": "https://optimistic.etherscan.io",
       "contracts": {
         "TAGITCore": null,
+        "TAGITCoreProxy": null,
+        "TAGITCoreImplementation": null,
+        "TimelockController": null,
         "TAGITAccess": null,
         "IdentityBadge": null,
         "CapabilityBadge": null
+      },
+      "proxyArchitecture": {
+        "TAGITCore": {
+          "pattern": "UUPS (EIP-1822)",
+          "proxy": null,
+          "implementation": null,
+          "admin": "TimelockController",
+          "upgradeDelay": "48 hours"
+        }
       },
       "deployedAt": null
     }
