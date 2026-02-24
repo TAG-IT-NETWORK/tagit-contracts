@@ -13,7 +13,7 @@ const network = 'op-sepolia';
 const contracts = addresses.networks[network].contracts;
 
 // TAGITCore is behind a UUPS proxy — always use the proxy address
-console.log(contracts.TAGITCore);  // 0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe
+console.log(contracts.TAGITCore);  // 0x8BdE22da889306d422802728cb98B6Da42ed8e1a
 ```
 
 ### 2. Import ABIs
@@ -222,13 +222,15 @@ console.log('State:', asset[2]); // 4 = CLAIMED
 
 | Contract | Address |
 |----------|---------|
-| TAGITCore (proxy) | `0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe` |
-| TimelockController | *Set after deployment* |
+| TAGITCore (proxy) | `0x8BdE22da889306d422802728cb98B6Da42ed8e1a` |
+| TAGITCore (impl) | `0x92c8e84a32D24b26B5Cf07d9a8CeD4DA8c055192` |
+| TimelockController | `0x1B2bdd6f0a3C9127397dE51C36Dc237b097410a8` |
 | TAGITAccess | `0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9` |
 | IdentityBadge | `0x26F2EBb84664EF1eF8554e15777EBEc6611256A6` |
 | CapabilityBadge | `0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505` |
+| TAGITCore (deprecated) | `0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe` |
 
-> **Governance:** All TAGITCore admin operations go through the TimelockController with a 48-hour delay.
+> **Governance:** All TAGITCore admin operations go through the TimelockController with a 5-minute delay (testnet). Bump to 48 hours for mainnet.
 
 ### OP Mainnet
 
@@ -249,7 +251,9 @@ console.log('State:', asset[2]); // 4 = CLAIMED
 
 All contracts are verified and source code is available:
 
-- [TAGITCore](https://sepolia-optimism.etherscan.io/address/0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe#code)
+- [TAGITCore (proxy)](https://sepolia-optimism.etherscan.io/address/0x8BdE22da889306d422802728cb98B6Da42ed8e1a#code)
+- [TAGITCore (impl)](https://sepolia-optimism.etherscan.io/address/0x92c8e84a32D24b26B5Cf07d9a8CeD4DA8c055192#code)
+- [TimelockController](https://sepolia-optimism.etherscan.io/address/0x1B2bdd6f0a3C9127397dE51C36Dc237b097410a8#code)
 - [TAGITAccess](https://sepolia-optimism.etherscan.io/address/0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9#code)
 - [CapabilityBadge](https://sepolia-optimism.etherscan.io/address/0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505#code)
 - [IdentityBadge](https://sepolia-optimism.etherscan.io/address/0x26F2EBb84664EF1eF8554e15777EBEc6611256A6#code)

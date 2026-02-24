@@ -6,22 +6,23 @@
       "rpcUrl": "https://sepolia.optimism.io",
       "blockExplorer": "https://sepolia-optimism.etherscan.io",
       "contracts": {
-        "TAGITCore": "0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe",
-        "TAGITCoreProxy": "0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe",
-        "TAGITCoreImplementation": null,
-        "TimelockController": null,
+        "TAGITCore": "0x8BdE22da889306d422802728cb98B6Da42ed8e1a",
+        "TAGITCoreProxy": "0x8BdE22da889306d422802728cb98B6Da42ed8e1a",
+        "TAGITCoreImplementation": "0x92c8e84a32D24b26B5Cf07d9a8CeD4DA8c055192",
+        "TimelockController": "0x1B2bdd6f0a3C9127397dE51C36Dc237b097410a8",
         "TAGITAccess": "0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9",
         "IdentityBadge": "0x26F2EBb84664EF1eF8554e15777EBEc6611256A6",
-        "CapabilityBadge": "0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505"
+        "CapabilityBadge": "0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505",
+        "TAGITCore_deprecated": "0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe"
       },
       "proxyArchitecture": {
         "TAGITCore": {
           "pattern": "UUPS (EIP-1822)",
-          "proxy": "0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe",
-          "implementation": null,
+          "proxy": "0x8BdE22da889306d422802728cb98B6Da42ed8e1a",
+          "implementation": "0x92c8e84a32D24b26B5Cf07d9a8CeD4DA8c055192",
           "admin": "TimelockController",
-          "upgradeDelay": "48 hours",
-          "notes": "Proxy and implementation addresses are set after deployment. Use getImplementation() on the proxy to read the current logic contract."
+          "upgradeDelay": "5 minutes (testnet)",
+          "notes": "Deployed via DeployTAGITCoreProxy.s.sol. Use getImplementation() on the proxy to read the current logic contract. Old non-proxy TAGITCore at 0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe is deprecated."
         }
       },
       "nistImplementations": {
