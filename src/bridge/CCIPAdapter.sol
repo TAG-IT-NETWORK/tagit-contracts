@@ -109,6 +109,10 @@ contract CCIPAdapter is
     /// @notice Per-chain state for replay protection
     mapping(uint64 => ReplayProtection.ChainState) private _chainStates;
 
+    /// @notice Chain-bound processed CCIP messageIds (defense-in-depth)
+    /// @dev Key = keccak256(messageId, block.chainid, sourceChainSelector)
+    mapping(bytes32 => bool) private _processedCcipMessages;
+
     // ============================================
     // CONSTRUCTOR & INITIALIZER
     // ============================================
@@ -223,6 +227,17 @@ contract CCIPAdapter is
             block.timestamp, // Use current time since CCIP doesn't provide message timestamp
             0 // No nonce for CCIP (out-of-order execution allowed)
         );
+
+        // Defense-in-depth: Chain-bound CCIP messageId tracking
+        // Binds message.messageId to block.chainid + sourceChainSelector
+        // Prevents cross-chain replay if same messageId appears on multiple chains
+        bytes32 ccipKey = keccak256(abi.encodePacked(message.messageId, block.chainid, sourceChain));
+        if (_processedCcipMessages[ccipKey]) {
+            revert ReplayProtection.MessageAlreadyProcessed(message.messageId, sourceChain);
+        }
+        _processedCcipMessages[ccipKey] = true;
+
+        emit CcipMessageProcessed(message.messageId, sourceChain, block.chainid);
 
         // Process based on message type
         if (messageType == 0) {
@@ -727,6 +742,20 @@ contract CCIPAdapter is
      */
     function isMessageProcessed(bytes32 messageId) external view returns (bool processed) {
         return ReplayProtection.isProcessed(_processedMessages, messageId);
+    }
+
+    /**
+     * @notice Check if a CCIP message has been processed with chain binding
+     * @param messageId CCIP message ID
+     * @param sourceChainSelector Source chain selector
+     * @return processed Whether the message has been processed on this chain
+     */
+    function isCcipMessageProcessed(
+        bytes32 messageId,
+        uint64 sourceChainSelector
+    ) external view returns (bool processed) {
+        bytes32 key = keccak256(abi.encodePacked(messageId, block.chainid, sourceChainSelector));
+        return _processedCcipMessages[key];
     }
 
     /**

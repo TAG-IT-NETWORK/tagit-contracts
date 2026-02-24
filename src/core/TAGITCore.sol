@@ -780,6 +780,12 @@ contract TAGITCore is
      * @custom:security In production, requires CAP_CLAIM capability or asset ownership
      * @custom:emits StateChanged
      */
+    /// @dev Security: CEI (Checks-Effects-Interactions) order enforced.
+    ///      1. CHECKS — validate state, ownership, and capability
+    ///      2. EFFECTS — update asset.state, asset.owner, asset.timestamp in storage
+    ///      3. INTERACTIONS — _transfer() and event emissions AFTER all state mutations
+    ///      nonReentrant prevents reentry via onERC721Received or any callback.
+    ///      _update() override blocks external ERC721 transfers, preventing ownership desync.
     function claim(uint256 tokenId, address newOwner)
         external
         nonReentrant
@@ -949,6 +955,12 @@ contract TAGITCore is
      * @custom:security In production, requires CAP_RECOVERY_APPROVE capability
      * @custom:emits StateChanged
      */
+    /// @dev Security: CEI (Checks-Effects-Interactions) order enforced.
+    ///      1. CHECKS — validate state, quorum, recipient match
+    ///      2. EFFECTS — update asset.state/owner/timestamp, clear approval state
+    ///      3. INTERACTIONS — _transfer() and event emissions AFTER all state mutations
+    ///      nonReentrant prevents reentry via onERC721Received or any callback.
+    ///      _update() override blocks external ERC721 transfers, preventing ownership desync.
     function resolve(uint256 tokenId, address newOwner)
         external
         nonReentrant

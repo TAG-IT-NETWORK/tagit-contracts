@@ -131,6 +131,10 @@ contract IntegrationFactoryTest is Test {
 
         // Fund payer with tokens
         token.mint(payer, 100_000 ether);
+
+        // Grant payer as authorized integrator (required by onlyAuthorizedIntegrator modifier)
+        vm.prank(owner);
+        factory.grantIntegrator(payer);
     }
 
     // ============================================
@@ -469,7 +473,8 @@ contract IntegrationFactoryTest is Test {
 
     function test_processPayment_revert_exceedsCap() public {
         uint256 integrationId = _deployDefaultIntegration();
-        uint256 overCap = factory.maxPaymentPerTx() + 1;
+        uint256 maxPayment = factory.maxPaymentPerTx();
+        uint256 overCap = maxPayment + 1;
 
         vm.prank(payer);
         token.approve(address(factory), overCap);
@@ -479,7 +484,7 @@ contract IntegrationFactoryTest is Test {
             abi.encodeWithSelector(
                 IIntegrationFactory.PaymentExceedsCap.selector,
                 overCap,
-                factory.maxPaymentPerTx()
+                maxPayment
             )
         );
         factory.processPayment(integrationId, overCap);

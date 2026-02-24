@@ -92,6 +92,9 @@ interface IIntegrationFactory {
     /// @notice Token transfer failed
     error TransferFailed();
 
+    /// @notice Caller is not an authorized integrator
+    error NotAuthorizedIntegrator(address caller);
+
     // ============================================
     // EVENTS
     // ============================================
@@ -137,6 +140,12 @@ interface IIntegrationFactory {
 
     /// @notice Emitted when a multisig signer is removed
     event SignerRemoved(address indexed signer);
+
+    /// @notice Emitted when an integrator is authorized
+    event IntegratorAuthorized(address indexed integrator);
+
+    /// @notice Emitted when an integrator is revoked
+    event IntegratorRevoked(address indexed integrator);
 
     // ============================================
     // CORE FUNCTIONS
@@ -265,4 +274,23 @@ interface IIntegrationFactory {
 
     /// @notice Contract version
     function version() external pure returns (string memory);
+
+    /**
+     * @notice Authorize an address to call processPayment
+     * @param integrator Address to authorize
+     */
+    function grantIntegrator(address integrator) external;
+
+    /**
+     * @notice Revoke an integrator's authorization
+     * @param integrator Address to revoke
+     */
+    function revokeIntegrator(address integrator) external;
+
+    /**
+     * @notice Check if an address is an authorized integrator
+     * @param integrator Address to check
+     * @return authorized Whether the address is authorized
+     */
+    function isAuthorizedIntegrator(address integrator) external view returns (bool authorized);
 }

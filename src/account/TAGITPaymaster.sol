@@ -346,6 +346,14 @@ contract TAGITPaymaster is
     }
 
     /// @inheritdoc ITAGITPaymaster
+    /// @dev Security: No reentrancy/race risk in two-step ownership transfer.
+    ///      _brandOwners[brandId] is checked against msg.sender — only the CURRENT
+    ///      owner can withdraw. The pending owner (from transferBrandOwnership) is stored
+    ///      in _pendingBrandOwners and only enters _brandOwners AFTER calling
+    ///      acceptBrandOwnership(). Until acceptance, the pending owner has zero withdrawal
+    ///      capability. No double-withdrawal window exists because ownership transfer is
+    ///      atomic on acceptance: _brandOwners updates and _pendingBrandOwners clears in
+    ///      the same transaction.
     function withdrawBrandDeposit(bytes32 brandId, uint256 amount) external override nonReentrant {
         // PATCH-12: proper brand owner check
         if (_brandOwners[brandId] != msg.sender) revert NotBrandOwner(brandId, msg.sender);

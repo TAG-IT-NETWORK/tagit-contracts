@@ -319,6 +319,13 @@ contract TAGITAccount is IAccount, ITAGITAccount, ReentrancyGuard {
     }
 
     /// @inheritdoc ITAGITAccount
+    /// @dev Security: Spend limit checked on aggregate batch value, not per-op.
+    ///      _extractValueFromCalldata() sums ETH values across ALL operations in the batch.
+    ///      The session key spend limit is validated against this aggregate total in
+    ///      _validateSignatureWithTracking(). Splitting a large transfer into multiple
+    ///      smaller batch operations does NOT bypass the limit — the sum of all values
+    ///      is compared to spendLimit. This is correct by design: one userOp = one
+    ///      aggregate spend check, regardless of internal batch structure.
     function executeBatch(
         address[] calldata dest,
         uint256[] calldata values,

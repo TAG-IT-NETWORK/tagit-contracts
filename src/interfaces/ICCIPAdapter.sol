@@ -156,6 +156,13 @@ interface ICCIPAdapter {
         bool success
     );
 
+    /// @notice Emitted when a CCIP message is processed with chain-bound tracking
+    event CcipMessageProcessed(
+        bytes32 indexed messageId,
+        uint64 indexed sourceChainSelector,
+        uint256 chainId
+    );
+
     /// @notice Emitted when chain addition is scheduled
     event ChainAdditionScheduled(
         uint64 indexed chainSelector,

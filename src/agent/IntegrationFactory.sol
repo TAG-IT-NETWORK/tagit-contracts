@@ -88,6 +88,9 @@ contract IntegrationFactory is
     /// @notice Ordered list of signers
     address[] private _signerList;
 
+    /// @notice Authorized integrators (can call processPayment)
+    mapping(address => bool) private _authorizedIntegrators;
+
     // ============================================
     // CONSTRUCTOR
     // ============================================
@@ -123,6 +126,18 @@ contract IntegrationFactory is
             _signers[signers[i]] = true;
             _signerList.push(signers[i]);
         }
+    }
+
+    // ============================================
+    // MODIFIERS
+    // ============================================
+
+    /// @notice Restricts processPayment to authorized integrators only
+    modifier onlyAuthorizedIntegrator() {
+        if (!_authorizedIntegrators[msg.sender]) {
+            revert NotAuthorizedIntegrator(msg.sender);
+        }
+        _;
     }
 
     // ============================================
@@ -166,7 +181,7 @@ contract IntegrationFactory is
     function processPayment(
         uint256 integrationId,
         uint256 amount
-    ) external nonReentrant whenNotPaused {
+    ) external nonReentrant whenNotPaused onlyAuthorizedIntegrator {
         // CHECKS
         if (amount == 0) revert ZeroAmount();
         if (amount > _maxPaymentPerTx) revert PaymentExceedsCap(amount, _maxPaymentPerTx);
@@ -357,6 +372,29 @@ contract IntegrationFactory is
         _nonce++;
 
         _unpause();
+    }
+
+    // ============================================
+    // INTEGRATOR ACCESS CONTROL
+    // ============================================
+
+    /// @inheritdoc IIntegrationFactory
+    function grantIntegrator(address integrator) external onlyOwner {
+        if (integrator == address(0)) revert ZeroAddress();
+        _authorizedIntegrators[integrator] = true;
+        emit IntegratorAuthorized(integrator);
+    }
+
+    /// @inheritdoc IIntegrationFactory
+    function revokeIntegrator(address integrator) external onlyOwner {
+        if (integrator == address(0)) revert ZeroAddress();
+        _authorizedIntegrators[integrator] = false;
+        emit IntegratorRevoked(integrator);
+    }
+
+    /// @inheritdoc IIntegrationFactory
+    function isAuthorizedIntegrator(address integrator) external view returns (bool) {
+        return _authorizedIntegrators[integrator];
     }
 
     // ============================================
