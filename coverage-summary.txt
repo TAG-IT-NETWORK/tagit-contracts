@@ -1,0 +1,300 @@
+[PASS] test_submitEvidence_revert_caseNotFound() (gas: 44619)
+[PASS] test_submitEvidence_revert_notAuthorized() (gas: 627900)
+[PASS] test_unpause_allowsOperations() (gas: 632662)
+[PASS] test_version() (gas: 15341)
+[PASS] test_vote_certifiedVerifierWeight() (gas: 40758)
+[PASS] test_vote_emitsEvent() (gas: 789657)
+[PASS] test_vote_governanceWeight() (gas: 28601)
+[PASS] test_vote_manufacturerWeight() (gas: 34691)
+[PASS] test_vote_recordsVote() (gas: 793056)
+[PASS] test_vote_revert_alreadyVoted() (gas: 792024)
+[PASS] test_vote_revert_notBadgeHolder() (gas: 656765)
+[PASS] test_vote_revert_votingEnded() (gas: 628682)
+[PASS] test_vote_updatesVoteCounts() (gas: 911248)
+[PASS] test_vote_verifierWeight() (gas: 46806)
+Suite result: FAILED. 53 passed; 1 failed; 0 skipped; finished in 504.45s (504.73s CPU time)
+
+Ran 38 tests for test/libraries/RateLimiter.t.sol:RateLimiterTest
+[PASS] testFuzz_cooldownRespected(uint64) (runs: 100000, μ: 120864, ~: 120949)
+[PASS] testFuzz_globalLimitDistributed(uint8) (runs: 100000, μ: 774907, ~: 813959)
+[PASS] testFuzz_rateLimitBehavior(uint64,uint64) (runs: 100000, μ: 1806292, ~: 1739868)
+[PASS] test_canAct_decreasesRemaining() (gas: 60255)
+[FAIL: canAct should be < 3000 gas: 4428 >= 3000] test_canAct_gasEfficiency() (gas: 50228)
+[PASS] test_canAct_resetsAfterWindow() (gas: 81690)
+[PASS] test_canAct_returnsFalseWhenLocked() (gas: 112048)
+[PASS] test_canAct_returnsMaxWhenDisabled() (gas: 15878)
+[PASS] test_canAct_returnsTrueInitially() (gas: 15496)
+[PASS] test_check_allowsExactlyMaxCalls() (gas: 115200)
+[PASS] test_check_emitsGlobalLimitHit() (gas: 2892036)
+[PASS] test_check_emitsRateLimitHit() (gas: 115839)
+[PASS] test_check_emitsUserUnlocked() (gas: 123498)
+[PASS] test_check_emitsWarningAt80Percent() (gas: 97050)
+[FAIL: Warm check should be < 5000 gas: 6648 >= 5000] test_check_gasEfficiency() (gas: 52426)
+[PASS] test_check_incrementsCount() (gas: 55060)
+[PASS] test_check_incrementsGlobalCount() (gas: 79825)
+[PASS] test_check_locksAfterMaxCalls() (gas: 111605)
+[PASS] test_check_noGlobalLimitWhenZero() (gas: 6885576)
+[PASS] test_check_passesWhenDisabled() (gas: 233218)
+[PASS] test_check_resetsAfterLockout() (gas: 124113)
+[PASS] test_check_resetsGlobalCountOnNewWindow() (gas: 1486775)
+[PASS] test_check_resetsOnNewWindow() (gas: 111036)
+[PASS] test_check_revertsOnGlobalLimit() (gas: 2890394)
+[PASS] test_check_revertsWhileLocked() (gas: 116152)
+[PASS] test_check_revertsWithUserLockedAfterMax() (gas: 115034)
+[PASS] test_check_tracksUsersIndependently() (gas: 119270)
+[PASS] test_forceUnlock_allowsNewCalls() (gas: 118993)
+[PASS] test_forceUnlock_unlocksUser() (gas: 124995)
+[PASS] test_initialize_allowsZeroGlobalMax() (gas: 1477450)
+[PASS] test_initialize_revertsOnZeroMaxPerWindow() (gas: 1431270)
+[PASS] test_initialize_revertsOnZeroWindow() (gas: 1431341)
+[PASS] test_initialize_setsCorrectValues() (gas: 13742)
+[PASS] test_isInitialized_returnsFalseBeforeInit() (gas: 1428708)
+[PASS] test_isInitialized_returnsTrueAfterInit() (gas: 8124)
+[PASS] test_setEnabled_disablesRateLimiting() (gas: 12527)
+[PASS] test_updateConfig_skipsZeroValues() (gas: 19148)
+[PASS] test_updateConfig_updatesValues() (gas: 22870)
+Suite result: FAILED. 36 passed; 2 failed; 0 skipped; finished in 566.78s (1017.09s CPU time)
+
+Ran 18 tests for test/unit/IdentityBadge.t.sol:IdentityBadgeTest
+[PASS] testFuzz_grantIdentity(address,uint256) (runs: 100000, μ: 104828, ~: 104922)
+[PASS] testFuzz_grantRevokeIdentity(address,uint256) (runs: 100000, μ: 86502, ~: 86565)
+[PASS] test_approve_reverts() (gas: 97418)
+[PASS] test_grantIdentity_emitsEvents() (gas: 97407)
+[PASS] test_grantIdentity_multipleBadges() (gas: 148441)
+[PASS] test_grantIdentity_revert_alreadyGranted() (gas: 95954)
+[PASS] test_grantIdentity_revert_invalidBadgeId() (gas: 14029)
+[PASS] test_grantIdentity_revert_notOwner() (gas: 16531)
+[PASS] test_grantIdentity_revert_zeroAddress() (gas: 11746)
+[PASS] test_grantIdentity_success() (gas: 98008)
+[PASS] test_hasIdentity_returnsCorrectly() (gas: 81323)
+[PASS] test_locked_alwaysReturnsTrue() (gas: 91028)
+[PASS] test_revokeIdentity_emitsEvent() (gas: 79864)
+[PASS] test_revokeIdentity_revert_notFound() (gas: 17037)
+[PASS] test_revokeIdentity_revert_notOwner() (gas: 97030)
+[PASS] test_revokeIdentity_success() (gas: 83088)
+[PASS] test_safeTransferFrom_reverts() (gas: 98460)
+[PASS] test_transfer_reverts() (gas: 98377)
+Suite result: ok. 18 passed; 0 failed; 0 skipped; finished in 639.01s (191.49s CPU time)
+
+Ran 10 tests for test/invariant/TAGITCore.invariant.t.sol:TAGITCoreInvariantTest
+[PASS] invariant_noZeroOwners() (runs: 256, calls: 128000, reverts: 0)
+
+╭------------------+--------------------+-------+---------+----------╮
+| Contract         | Selector           | Calls | Reverts | Discards |
++====================================================================+
+| TAGITCoreHandler | activate           | 15779 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | bindTag            | 16042 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | claim              | 16013 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | flag               | 16113 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | mint               | 16012 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromClaimed | 16061 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromFlagged | 15965 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | resolve            | 16015 | 0       | 0        |
+╰------------------+--------------------+-------+---------+----------╯
+
+[PASS] invariant_ownerConsistency() (runs: 256, calls: 128000, reverts: 0)
+
+╭------------------+--------------------+-------+---------+----------╮
+| Contract         | Selector           | Calls | Reverts | Discards |
++====================================================================+
+| TAGITCoreHandler | activate           | 15779 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | bindTag            | 16042 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | claim              | 16013 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | flag               | 16113 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | mint               | 16012 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromClaimed | 16061 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromFlagged | 15965 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | resolve            | 16015 | 0       | 0        |
+╰------------------+--------------------+-------+---------+----------╯
+
+[PASS] invariant_recycledIsTerminal() (runs: 256, calls: 128000, reverts: 0)
+
+╭------------------+--------------------+-------+---------+----------╮
+| Contract         | Selector           | Calls | Reverts | Discards |
++====================================================================+
+| TAGITCoreHandler | activate           | 15779 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | bindTag            | 16042 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | claim              | 16013 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | flag               | 16113 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | mint               | 16012 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromClaimed | 16061 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromFlagged | 15965 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | resolve            | 16015 | 0       | 0        |
+╰------------------+--------------------+-------+---------+----------╯
+
+[PASS] invariant_stateTransitionsValid() (runs: 256, calls: 128000, reverts: 0)
+
+╭------------------+--------------------+-------+---------+----------╮
+| Contract         | Selector           | Calls | Reverts | Discards |
++====================================================================+
+| TAGITCoreHandler | activate           | 15779 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | bindTag            | 16042 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | claim              | 16013 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | flag               | 16113 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | mint               | 16012 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromClaimed | 16061 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromFlagged | 15965 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | resolve            | 16015 | 0       | 0        |
+╰------------------+--------------------+-------+---------+----------╯
+
+[PASS] invariant_tagBindingUnique() (runs: 256, calls: 128000, reverts: 0)
+
+╭------------------+--------------------+-------+---------+----------╮
+| Contract         | Selector           | Calls | Reverts | Discards |
++====================================================================+
+| TAGITCoreHandler | activate           | 15779 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | bindTag            | 16042 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | claim              | 16013 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | flag               | 16113 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | mint               | 16012 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromClaimed | 16061 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromFlagged | 15965 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | resolve            | 16015 | 0       | 0        |
+╰------------------+--------------------+-------+---------+----------╯
+
+[PASS] invariant_tagMappingBidirectional() (runs: 256, calls: 128000, reverts: 0)
+
+╭------------------+--------------------+-------+---------+----------╮
+| Contract         | Selector           | Calls | Reverts | Discards |
++====================================================================+
+| TAGITCoreHandler | activate           | 15779 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | bindTag            | 16042 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | claim              | 16013 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | flag               | 16113 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | mint               | 16012 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromClaimed | 16061 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromFlagged | 15965 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | resolve            | 16015 | 0       | 0        |
+╰------------------+--------------------+-------+---------+----------╯
+
+[PASS] invariant_timestampsValid() (runs: 256, calls: 128000, reverts: 0)
+
+╭------------------+--------------------+-------+---------+----------╮
+| Contract         | Selector           | Calls | Reverts | Discards |
++====================================================================+
+| TAGITCoreHandler | activate           | 15779 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | bindTag            | 16042 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | claim              | 16013 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | flag               | 16113 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | mint               | 16012 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromClaimed | 16061 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromFlagged | 15965 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | resolve            | 16015 | 0       | 0        |
+╰------------------+--------------------+-------+---------+----------╯
+
+[PASS] invariant_totalSupplyConsistency() (runs: 256, calls: 128000, reverts: 0)
+
+╭------------------+--------------------+-------+---------+----------╮
+| Contract         | Selector           | Calls | Reverts | Discards |
++====================================================================+
+| TAGITCoreHandler | activate           | 15779 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | bindTag            | 16042 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | claim              | 16013 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | flag               | 16113 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | mint               | 16012 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromClaimed | 16061 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromFlagged | 15965 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | resolve            | 16015 | 0       | 0        |
+╰------------------+--------------------+-------+---------+----------╯
+
+[PASS] invariant_totalSupplyEqualsMintCount() (runs: 256, calls: 128000, reverts: 0)
+
+╭------------------+--------------------+-------+---------+----------╮
+| Contract         | Selector           | Calls | Reverts | Discards |
++====================================================================+
+| TAGITCoreHandler | activate           | 15779 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | bindTag            | 16042 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | claim              | 16013 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | flag               | 16113 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | mint               | 16012 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromClaimed | 16061 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromFlagged | 15965 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | resolve            | 16015 | 0       | 0        |
+╰------------------+--------------------+-------+---------+----------╯
+
+[PASS] invariant_validStateValues() (runs: 256, calls: 128000, reverts: 0)
+
+╭------------------+--------------------+-------+---------+----------╮
+| Contract         | Selector           | Calls | Reverts | Discards |
++====================================================================+
+| TAGITCoreHandler | activate           | 15779 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | bindTag            | 16042 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | claim              | 16013 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | flag               | 16113 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | mint               | 16012 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromClaimed | 16061 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromFlagged | 15965 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | resolve            | 16015 | 0       | 0        |
+╰------------------+--------------------+-------+---------+----------╯
+
+Suite result: ok. 10 passed; 0 failed; 0 skipped; finished in 668.78s (4186.91s CPU time)

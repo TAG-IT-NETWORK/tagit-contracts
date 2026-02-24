@@ -2,12 +2,16 @@
   "optimismSepolia": {
     "chainId": 11155420,
     "contracts": {
-      "TAGITAgentIdentity": "",
-      "TAGITAgentReputation": "",
-      "TAGITAgentValidation": ""
+      "TAGITAgentIdentity": "0xA7f34FD595eBc397Fe04DcE012dbcf0fbbD2A78D",
+      "TAGITAgentReputation": "0x57CCa1974DFE29593FBD24fdAEE1cD614Bfd6E4a",
+      "TAGITAgentValidation": "0x9806919185F98Bd07a64F7BC7F264e91939e86b7"
     },
-    "deployedAt": "",
-    "deployer": "",
+    "deployedAt": "2026-02-16",
+    "deployer": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D",
+    "sageAgent": {
+      "agentId": 1,
+      "wallet": "0xDb8ACD440Ef32a4D23AD685Dd64aC386b0d3d63F"
+    },
     "notes": "Deployed via script/deploy/DeployAgentSuite.s.sol"
   },
   "optimism": {
