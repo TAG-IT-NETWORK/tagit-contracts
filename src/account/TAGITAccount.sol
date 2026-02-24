@@ -262,6 +262,20 @@ contract TAGITAccount is IAccount, ITAGITAccount, ReentrancyGuard {
                 }
             }
 
+            // PATCH-16: enforce session key spend limit
+            if (sessionKey.spendLimit > 0) {
+                uint256 ethValue = _extractValueFromCalldata(userOp.callData);
+                if (ethValue > 0) {
+                    uint256 newTotal = _sessionKeySpent[signer] + ethValue;
+                    if (newTotal > sessionKey.spendLimit) {
+                        emit SessionKeyValidationFailed(signer, userOpHash, "spend_limit_exceeded");
+                        return (SIG_VALIDATION_FAILED, address(0));
+                    }
+                    _sessionKeySpent[signer] = newTotal;
+                    emit SessionKeySpendRecorded(signer, ethValue, newTotal, sessionKey.spendLimit);
+                }
+            }
+
             return (_packValidationData(false, sessionKey.validUntil, sessionKey.validAfter), signer);
         }
 
@@ -318,6 +332,47 @@ contract TAGITAccount is IAccount, ITAGITAccount, ReentrancyGuard {
             _call(dest[i], values[i], func[i]);
             emit Executed(dest[i], values[i], func[i]);
         }
+    }
+
+    /**
+     * @dev PATCH-16: Extract ETH value from execute/executeBatch calldata
+     * @param callData The userOp.callData containing the account-level call
+     * @return ethValue The total ETH value being sent
+     */
+    function _extractValueFromCalldata(bytes calldata callData) internal pure returns (uint256 ethValue) {
+        if (callData.length < 4) return 0;
+
+        bytes4 selector = bytes4(callData[:4]);
+
+        // execute(address dest, uint256 value, bytes calldata func)
+        // ABI: 4 + 32 (address) + 32 (value) = 68 bytes minimum
+        bytes4 execSelector = bytes4(keccak256("execute(address,uint256,bytes)"));
+        if (selector == execSelector && callData.length >= 68) {
+            return uint256(bytes32(callData[36:68]));
+        }
+
+        // executeBatch(address[] dest, uint256[] values, bytes[] func)
+        // Sum all values from the dynamic array
+        bytes4 batchSelector = bytes4(keccak256("executeBatch(address[],uint256[],bytes[])"));
+        if (selector == batchSelector && callData.length >= 100) {
+            // Values array offset is at position 36-68
+            uint256 valuesOffset = uint256(bytes32(callData[36:68]));
+            // Values array length is at valuesOffset + 4
+            uint256 dataStart = 4 + valuesOffset;
+            if (callData.length >= dataStart + 32) {
+                uint256 arrLen = uint256(bytes32(callData[dataStart:dataStart + 32]));
+                uint256 total = 0;
+                for (uint256 i = 0; i < arrLen; i++) {
+                    uint256 elemStart = dataStart + 32 + (i * 32);
+                    if (callData.length >= elemStart + 32) {
+                        total += uint256(bytes32(callData[elemStart:elemStart + 32]));
+                    }
+                }
+                return total;
+            }
+        }
+
+        return 0;
     }
 
     function _call(address target, uint256 value, bytes calldata data) internal {
