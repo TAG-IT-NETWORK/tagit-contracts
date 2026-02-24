@@ -69,6 +69,9 @@ contract TAGITPaymaster is
     /// @notice Protocol deposit balance
     uint256 private _protocolDeposit;
 
+    // PATCH-12: pending brand ownership transfers
+    mapping(bytes32 => address) private _pendingBrandOwners;
+
     // ============================================
     // NIST SECURITY CONTROLS (SI-4, IR-4)
     // ============================================
@@ -327,13 +330,9 @@ contract TAGITPaymaster is
     function depositForBrand(bytes32 brandId) external payable override nonReentrant {
         if (msg.value == 0) revert ZeroAmount();
 
+        // PATCH-13: brand must be pre-registered — no permissionless creation
         BrandDeposit storage brand = _brandDeposits[brandId];
-        if (brand.brandId == bytes32(0)) {
-            // New brand
-            brand.brandId = brandId;
-            brand.active = true;
-            _brandOwners[brandId] = msg.sender;
-        }
+        if (brand.brandId == bytes32(0)) revert BrandNotRegistered(brandId);
 
         brand.balance += msg.value;
 
@@ -348,7 +347,8 @@ contract TAGITPaymaster is
 
     /// @inheritdoc ITAGITPaymaster
     function withdrawBrandDeposit(bytes32 brandId, uint256 amount) external override nonReentrant {
-        if (_brandOwners[brandId] != msg.sender) revert NotGovernor(msg.sender);
+        // PATCH-12: proper brand owner check
+        if (_brandOwners[brandId] != msg.sender) revert NotBrandOwner(brandId, msg.sender);
 
         BrandDeposit storage brand = _brandDeposits[brandId];
         if (brand.balance < amount) {
@@ -491,6 +491,63 @@ contract TAGITPaymaster is
     /// @inheritdoc ITAGITPaymaster
     function version() external pure override returns (string memory) {
         return "1.0.0";
+    }
+
+    // ============================================
+    // PATCH-13: BRAND REGISTRATION (governor-gated)
+    // ============================================
+
+    /**
+     * @notice Register a new brand (Governor only)
+     * @dev Prevents permissionless brand squatting
+     * @param brandId Brand identifier
+     * @param owner Brand owner address
+     */
+    function registerBrand(bytes32 brandId, address owner) external onlyGovernor {
+        if (owner == address(0)) revert ZeroAddress();
+        if (_brandDeposits[brandId].brandId != bytes32(0)) revert BrandAlreadyRegistered(brandId);
+
+        _brandDeposits[brandId].brandId = brandId;
+        _brandDeposits[brandId].active = true;
+        _brandOwners[brandId] = owner;
+
+        emit BrandRegistered(brandId, owner, msg.sender);
+    }
+
+    // ============================================
+    // PATCH-12: BRAND OWNERSHIP TRANSFER
+    // ============================================
+
+    /**
+     * @notice Initiate brand ownership transfer (two-step)
+     * @param brandId Brand identifier
+     * @param newOwner New owner address
+     */
+    function transferBrandOwnership(bytes32 brandId, address newOwner) external {
+        if (_brandOwners[brandId] != msg.sender) revert NotBrandOwner(brandId, msg.sender);
+        if (newOwner == address(0)) revert ZeroAddress();
+        _pendingBrandOwners[brandId] = newOwner;
+        emit BrandOwnershipTransferInitiated(brandId, msg.sender, newOwner);
+    }
+
+    /**
+     * @notice Accept brand ownership transfer
+     * @param brandId Brand identifier
+     */
+    function acceptBrandOwnership(bytes32 brandId) external {
+        if (_pendingBrandOwners[brandId] != msg.sender) revert NoPendingTransfer(brandId);
+        _brandOwners[brandId] = msg.sender;
+        delete _pendingBrandOwners[brandId];
+        emit BrandOwnershipTransferred(brandId, msg.sender);
+    }
+
+    /**
+     * @notice Get brand owner address
+     * @param brandId Brand identifier
+     * @return owner Brand owner
+     */
+    function brandOwner(bytes32 brandId) external view returns (address) {
+        return _brandOwners[brandId];
     }
 
     // ============================================

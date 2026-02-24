@@ -342,6 +342,10 @@ contract TAGITTreasury is
             revert NotRecipient(msg.sender, alloc.recipient);
         }
 
+        // PATCH-11: enforce asset matches allocated asset (TAGIT token only)
+        // Allocations are tracked against TAGIT balance — only TAGIT withdrawals allowed
+        if (token != _tagitToken) revert AssetMismatch(_tagitToken, token);
+
         // Check remaining allocation
         uint256 remaining = alloc.amount - alloc.spent;
         if (amount > remaining) {

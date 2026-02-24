@@ -107,6 +107,10 @@ contract TAGITPaymasterNistTest is Test {
 
         vm.stopPrank();
 
+        // PATCH-13: Register test brand before deposits
+        vm.prank(governor);
+        paymaster.registerBrand(TEST_BRAND_ID, user);
+
         // Setup sponsorship config for test selector
         vm.prank(governor);
         paymaster.setSponsorshipConfig(

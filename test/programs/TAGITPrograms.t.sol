@@ -82,6 +82,16 @@ contract TAGITProgramsTest is Test {
 
         // Fund programs contract with tokens
         token.mint(address(programs), 1_000_000e18);
+
+        // PATCH-14: set governor as action verifier for test convenience
+        vm.prank(governor);
+        programs.setActionVerifier(governor);
+    }
+
+    /// @dev Helper: approve an action proof before claiming (PATCH-14)
+    function _approveAction(bytes32 programId, address user, bytes32 actionProof) internal {
+        vm.prank(governor);
+        programs.approveAction(programId, user, actionProof);
     }
 
     // ============================================
@@ -162,6 +172,7 @@ contract TAGITProgramsTest is Test {
         bytes32 actionProof = keccak256("action1");
         uint256 balanceBefore = token.balanceOf(user1);
 
+        _approveAction(SCAN_REWARDS, user1, actionProof);
         vm.prank(user1);
         programs.claimReward(SCAN_REWARDS, actionProof);
 
@@ -182,6 +193,7 @@ contract TAGITProgramsTest is Test {
         bytes32 actionProof = keccak256("action1");
         uint256 balanceBefore = token.balanceOf(user1);
 
+        _approveAction(SCAN_REWARDS, user1, actionProof);
         vm.prank(user1);
         programs.claimReward(SCAN_REWARDS, actionProof);
 
@@ -194,6 +206,9 @@ contract TAGITProgramsTest is Test {
         vm.prank(governor);
         programs.createProgram(SCAN_REWARDS, 10e18, 100_000e18, 2, 30 days);
 
+        _approveAction(SCAN_REWARDS, user1, keccak256("action1"));
+        _approveAction(SCAN_REWARDS, user1, keccak256("action2"));
+        _approveAction(SCAN_REWARDS, user1, keccak256("action3"));
         vm.startPrank(user1);
         programs.claimReward(SCAN_REWARDS, keccak256("action1"));
         programs.claimReward(SCAN_REWARDS, keccak256("action2"));
@@ -221,17 +236,25 @@ contract TAGITProgramsTest is Test {
 
         bytes32 actionProof = keccak256("action1");
 
+        _approveAction(SCAN_REWARDS, user1, actionProof);
         vm.startPrank(user1);
         programs.claimReward(SCAN_REWARDS, actionProof);
-
-        vm.expectRevert(abi.encodeWithSelector(ITAGITPrograms.AlreadyClaimed.selector, SCAN_REWARDS, user1, actionProof));
-        programs.claimReward(SCAN_REWARDS, actionProof);
         vm.stopPrank();
+
+        // Second claim with same proof — proof consumed, so ActionProofNotVerified
+        vm.prank(user1);
+        vm.expectRevert(abi.encodeWithSelector(ITAGITPrograms.ActionProofNotVerified.selector, SCAN_REWARDS, user1, actionProof));
+        programs.claimReward(SCAN_REWARDS, actionProof);
     }
 
     function test_batchClaimRewards_success() public {
         vm.prank(governor);
         programs.createProgram(SCAN_REWARDS, 10e18, 100_000e18, 10, 30 days);
+
+        // Pre-approve all batch claims (PATCH-14)
+        _approveAction(SCAN_REWARDS, user1, keccak256("a1"));
+        _approveAction(SCAN_REWARDS, user1, keccak256("a2"));
+        _approveAction(SCAN_REWARDS, user1, keccak256("a3"));
 
         // batchClaimRewards only allows self-claims
         ITAGITPrograms.RewardClaim[] memory claims = new ITAGITPrograms.RewardClaim[](3);
@@ -457,6 +480,9 @@ contract TAGITProgramsTest is Test {
         vm.prank(governor);
         programs.createProgram(SCAN_REWARDS, 10e18, 100_000e18, 10, 30 days);
 
+        _approveAction(SCAN_REWARDS, user1, keccak256("a1"));
+        _approveAction(SCAN_REWARDS, user1, keccak256("a2"));
+        _approveAction(SCAN_REWARDS, user1, keccak256("a3"));
         vm.startPrank(user1);
         programs.claimReward(SCAN_REWARDS, keccak256("a1"));
         programs.claimReward(SCAN_REWARDS, keccak256("a2"));
@@ -470,6 +496,7 @@ contract TAGITProgramsTest is Test {
         vm.prank(governor);
         programs.createProgram(SCAN_REWARDS, 10e18, 100_000e18, 10, 30 days);
 
+        _approveAction(SCAN_REWARDS, user1, keccak256("a1"));
         vm.prank(user1);
         programs.claimReward(SCAN_REWARDS, keccak256("a1")); // Claims 10 tokens
 
@@ -523,6 +550,8 @@ contract TAGITProgramsTest is Test {
     function test_gas_claimReward() public {
         vm.prank(governor);
         programs.createProgram(SCAN_REWARDS, 10e18, 100_000e18, 5, 30 days);
+
+        _approveAction(SCAN_REWARDS, user1, keccak256("action1"));
 
         vm.prank(user1);
         uint256 gasBefore = gasleft();

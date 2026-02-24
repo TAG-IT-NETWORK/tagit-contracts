@@ -117,6 +117,9 @@ interface ITAGITTreasury {
     /// @notice Insufficient signers for emergency action
     error InsufficientSigners(uint256 required, uint256 provided);
 
+    /// @notice PATCH-11: Withdrawal asset does not match allocated asset
+    error AssetMismatch(address expected, address received);
+
     // ============================================
     // EVENTS
     // ============================================

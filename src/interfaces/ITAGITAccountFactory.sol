@@ -24,6 +24,9 @@ interface ITAGITAccountFactory {
     /// @notice Not authorized to create accounts
     error NotAuthorized(address caller);
 
+    /// @notice PATCH-15: email hash not pre-verified
+    error EmailNotVerified(bytes32 emailHash);
+
     // ============================================
     // EVENTS
     // ============================================
@@ -53,6 +56,12 @@ interface ITAGITAccountFactory {
         address indexed oldGovernor,
         address indexed newGovernor
     );
+
+    /// @notice PATCH-15: Emitted when email hash is pre-verified
+    event EmailVerified(bytes32 indexed emailHash, address indexed verifier);
+
+    /// @notice PATCH-15: Emitted when email verifier is updated
+    event EmailVerifierUpdated(address indexed oldVerifier, address indexed newVerifier);
 
     // ============================================
     // ACCOUNT CREATION

@@ -71,6 +71,23 @@ contract EntryPointForkTest is ForkBase {
         ERC1967Proxy proxy = new ERC1967Proxy(address(factoryImpl), initData);
         factory = TAGITAccountFactory(address(proxy));
         vm.stopPrank();
+
+        // PATCH-15: pre-verify email hashes for all test accounts
+        vm.startPrank(governor);
+        factory.verifyEmail(keccak256("user@test.com"));
+        factory.verifyEmail(keccak256("idempotent@test.com"));
+        factory.verifyEmail(keccak256("deterministic@test.com"));
+        factory.verifyEmail(keccak256("receiver@test.com"));
+        factory.verifyEmail(keccak256("nonce@test.com"));
+        factory.verifyEmail(keccak256("executor@test.com"));
+        factory.verifyEmail(keccak256("locked@test.com"));
+        factory.verifyEmail(keccak256("session@test.com"));
+        factory.verifyEmail(keccak256("validity@test.com"));
+        factory.verifyEmail(keccak256("guardian@test.com"));
+        factory.verifyEmail(keccak256("addguardian@test.com"));
+        factory.verifyEmail(keccak256("deposit@test.com"));
+        factory.verifyEmail(keccak256("version@test.com"));
+        vm.stopPrank();
     }
 
     // ============================================

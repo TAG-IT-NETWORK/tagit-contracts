@@ -51,6 +51,13 @@ contract TAGITAccountFactory is
     /// @notice Email hash to account mapping
     mapping(bytes32 => address) private _emailToAccount;
 
+    // PATCH-15: email verification gate
+    /// @notice Pre-verified email hashes (must be true before account deployment)
+    mapping(bytes32 => bool) private _verifiedEmails;
+
+    /// @notice Trusted email verifier address (off-chain service)
+    address private _emailVerifier;
+
     // ============================================
     // CONSTRUCTOR & INITIALIZER
     // ============================================
@@ -121,6 +128,10 @@ contract TAGITAccountFactory is
             return account;
         }
 
+        // PATCH-15: require pre-verified email hash
+        if (!_verifiedEmails[emailHash]) revert EmailNotVerified(emailHash);
+        _verifiedEmails[emailHash] = false; // consume — one-time use
+
         // Deploy clone
         account = _accountImplementation.cloneDeterministic(combinedSalt);
 
@@ -158,6 +169,10 @@ contract TAGITAccountFactory is
             return account;
         }
 
+        // PATCH-15: require pre-verified email hash
+        if (!_verifiedEmails[emailHash]) revert EmailNotVerified(emailHash);
+        _verifiedEmails[emailHash] = false; // consume — one-time use
+
         // Deploy clone
         account = _accountImplementation.cloneDeterministic(combinedSalt);
 
@@ -189,6 +204,51 @@ contract TAGITAccountFactory is
     /// @inheritdoc ITAGITAccountFactory
     function isAccount(address account) external view override returns (bool) {
         return _deployedAccounts[account];
+    }
+
+    // ============================================
+    // PATCH-15: EMAIL VERIFICATION
+    // ============================================
+
+    /**
+     * @notice Pre-verify an email hash before account deployment
+     * @dev Only governor or trusted email verifier can call.
+     *      Off-chain service verifies email ownership then calls this.
+     * @param emailHash Keccak256 hash of verified email
+     */
+    function verifyEmail(bytes32 emailHash) external {
+        if (msg.sender != _governor && msg.sender != _emailVerifier) {
+            revert NotAuthorized(msg.sender);
+        }
+        if (emailHash == bytes32(0)) revert InvalidEmailHash();
+        _verifiedEmails[emailHash] = true;
+        emit EmailVerified(emailHash, msg.sender);
+    }
+
+    /**
+     * @notice Check if an email hash is pre-verified
+     * @param emailHash Email hash to check
+     * @return verified True if verified and available for deployment
+     */
+    function isEmailVerified(bytes32 emailHash) external view returns (bool) {
+        return _verifiedEmails[emailHash];
+    }
+
+    /**
+     * @notice Set the trusted email verifier address
+     * @param newVerifier New email verifier address (address(0) to disable)
+     */
+    function setEmailVerifier(address newVerifier) external onlyGovernor {
+        address oldVerifier = _emailVerifier;
+        _emailVerifier = newVerifier;
+        emit EmailVerifierUpdated(oldVerifier, newVerifier);
+    }
+
+    /**
+     * @notice Get the email verifier address
+     */
+    function emailVerifier() external view returns (address) {
+        return _emailVerifier;
     }
 
     // ============================================

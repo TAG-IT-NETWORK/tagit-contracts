@@ -83,6 +83,18 @@ interface ITAGITPaymaster {
     /// @notice Paymaster is paused
     error PaymasterPaused();
 
+    /// @notice PATCH-12: caller is not the brand owner
+    error NotBrandOwner(bytes32 brandId, address caller);
+
+    /// @notice PATCH-13: brand already registered
+    error BrandAlreadyRegistered(bytes32 brandId);
+
+    /// @notice PATCH-13: brand not registered
+    error BrandNotRegistered(bytes32 brandId);
+
+    /// @notice PATCH-12: no pending ownership transfer
+    error NoPendingTransfer(bytes32 brandId);
+
     // ============================================
     // EVENTS
     // ============================================
@@ -137,6 +149,15 @@ interface ITAGITPaymaster {
 
     /// @notice Emitted when governor is updated
     event GovernorUpdated(address indexed oldGovernor, address indexed newGovernor);
+
+    /// @notice PATCH-13: Emitted when brand is registered
+    event BrandRegistered(bytes32 indexed brandId, address indexed owner, address indexed registrar);
+
+    /// @notice PATCH-12: Emitted when brand ownership transfer is initiated
+    event BrandOwnershipTransferInitiated(bytes32 indexed brandId, address from, address to);
+
+    /// @notice PATCH-12: Emitted when brand ownership is accepted
+    event BrandOwnershipTransferred(bytes32 indexed brandId, address indexed newOwner);
 
     // ============================================
     // SPONSORSHIP MANAGEMENT

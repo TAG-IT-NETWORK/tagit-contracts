@@ -150,6 +150,19 @@ contract TAGITProgramsNistTest is Test {
         // Sync drain detector balance
         vm.prank(governor);
         programs.syncDrainBalance();
+
+        // PATCH-14: set up action verifier for proof approval
+        vm.prank(governor);
+        programs.setActionVerifier(governor);
+    }
+
+    // ============================================
+    // PATCH-14 HELPER
+    // ============================================
+
+    function _approveAction(bytes32 programId, address _user, bytes32 actionProof) internal {
+        vm.prank(governor);
+        programs.approveAction(programId, _user, actionProof);
     }
 
     // ============================================
@@ -216,6 +229,7 @@ contract TAGITProgramsNistTest is Test {
 
         // The claim would trigger spike (50 ETH > 5% of 100 ETH = 5 ETH)
         // This will pause the contract via drain detection
+        _approveAction(keccak256("BIG_REWARD"), user, keccak256("action1"));
         vm.prank(user);
         programs.claimReward(keccak256("BIG_REWARD"), keccak256("action1"));
 
@@ -276,6 +290,7 @@ contract TAGITProgramsNistTest is Test {
 
         uint256 balanceBefore = token.balanceOf(user);
 
+        _approveAction(TEST_PROGRAM_ID, user, keccak256("action1"));
         vm.prank(user);
         programs.claimReward(TEST_PROGRAM_ID, keccak256("action1"));
 
@@ -294,6 +309,9 @@ contract TAGITProgramsNistTest is Test {
 
         uint256 balanceBefore = token.balanceOf(user);
 
+        _approveAction(TEST_PROGRAM_ID, user, keccak256("batch1"));
+        _approveAction(TEST_PROGRAM_ID, user, keccak256("batch2"));
+        _approveAction(TEST_PROGRAM_ID, user, keccak256("batch3"));
         vm.prank(user);
         programs.batchClaimRewards(claims);
 
@@ -327,6 +345,7 @@ contract TAGITProgramsNistTest is Test {
         vm.prank(governor);
         programs.updateDrainBalance(1_000_000 ether);
 
+        _approveAction(TEST_PROGRAM_ID, user, keccak256("gas_test"));
         vm.prank(user);
         uint256 gasBefore = gasleft();
         programs.claimReward(TEST_PROGRAM_ID, keccak256("gas_test"));
@@ -376,6 +395,7 @@ contract TAGITProgramsNistTest is Test {
         assertFalse(programs.paused());
 
         // Claim should trigger spike and pause
+        _approveAction(keccak256("SPIKE_TEST"), user, keccak256("spike_claim"));
         vm.prank(user);
         programs.claimReward(keccak256("SPIKE_TEST"), keccak256("spike_claim"));
 
@@ -394,6 +414,7 @@ contract TAGITProgramsNistTest is Test {
 
         // Multiple normal claims shouldn't trip
         for (uint256 i = 0; i < 10; i++) {
+            _approveAction(TEST_PROGRAM_ID, user, keccak256(abi.encodePacked("normal_claim_", i)));
             vm.prank(user);
             programs.claimReward(TEST_PROGRAM_ID, keccak256(abi.encodePacked("normal_claim_", i)));
         }
@@ -409,6 +430,7 @@ contract TAGITProgramsNistTest is Test {
         vm.prank(governor);
         programs.createProgram(keccak256("TRIP_TEST"), 10 ether, 1000 ether, 100, 365 days);
 
+        _approveAction(keccak256("TRIP_TEST"), user, keccak256("trip_claim"));
         vm.prank(user);
         programs.claimReward(keccak256("TRIP_TEST"), keccak256("trip_claim"));
 
@@ -429,6 +451,7 @@ contract TAGITProgramsNistTest is Test {
         programs.syncDrainBalance();
 
         // Should work now
+        _approveAction(keccak256("TRIP_TEST"), user, keccak256("recovery_claim"));
         vm.prank(user);
         programs.claimReward(keccak256("TRIP_TEST"), keccak256("recovery_claim"));
     }

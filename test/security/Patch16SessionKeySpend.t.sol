@@ -94,6 +94,10 @@ contract Patch16SessionKeySpendTest is Test {
         ERC1967Proxy factoryProxy = new ERC1967Proxy(address(factoryImpl), factoryInit);
         factory = TAGITAccountFactory(address(factoryProxy));
 
+        // PATCH-15 requires email verification before account creation
+        vm.prank(governor);
+        factory.verifyEmail(EMAIL_HASH);
+
         // Create account
         address accountAddr = factory.createAccountWithOwner(EMAIL_HASH, SALT, owner);
         account = TAGITAccount(payable(accountAddr));

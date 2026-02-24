@@ -128,6 +128,9 @@ interface ITAGITPrograms {
     /// @notice Already claimed for this action
     error AlreadyClaimed(bytes32 programId, address user, bytes32 actionProof);
 
+    /// @notice PATCH-14: action proof not verified
+    error ActionProofNotVerified(bytes32 programId, address user, bytes32 actionProof);
+
     /// @notice User not found
     error UserNotFound(address user);
 
@@ -233,6 +236,19 @@ interface ITAGITPrograms {
     event UpdaterSet(
         address indexed updater,
         bool authorized
+    );
+
+    /// @notice PATCH-14: Emitted when action proof is approved
+    event ActionProofApproved(
+        bytes32 indexed proofKey,
+        bytes32 indexed programId,
+        address indexed user
+    );
+
+    /// @notice PATCH-14: Emitted when action verifier is updated
+    event ActionVerifierUpdated(
+        address indexed oldVerifier,
+        address indexed newVerifier
     );
 
     // ============================================

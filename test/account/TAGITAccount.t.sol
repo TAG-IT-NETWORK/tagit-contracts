@@ -113,6 +113,10 @@ contract TAGITAccountTest is Test {
         ERC1967Proxy factoryProxy = new ERC1967Proxy(address(factoryImpl), factoryInit);
         factory = TAGITAccountFactory(address(factoryProxy));
 
+        // PATCH-15: pre-verify email hash before account creation
+        vm.prank(governor);
+        factory.verifyEmail(EMAIL_HASH);
+
         // Deploy paymaster
         TAGITPaymaster paymasterImpl = new TAGITPaymaster();
         bytes memory paymasterInit = abi.encodeCall(

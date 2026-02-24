@@ -126,6 +126,13 @@ contract TAGITPrograms is
     /// @notice User staked amounts for reputation boost
     mapping(address => uint256) private _reputationStakes;
 
+    // PATCH-14: action proof verification
+    /// @notice Authorized action verifier (signs/approves action proofs)
+    address private _actionVerifier;
+
+    /// @notice Pre-approved action proofs: keccak256(programId, user, actionProof) => approved
+    mapping(bytes32 => bool) private _approvedActions;
+
     // ============================================
     // NIST SECURITY CONTROLS (SI-4)
     // ============================================
@@ -393,6 +400,14 @@ contract TAGITPrograms is
         if (block.timestamp < program.startsAt) revert ProgramNotStarted(programId, program.startsAt);
         if (block.timestamp > program.endsAt) revert ProgramExpired(programId, program.endsAt);
 
+        // PATCH-14: verify action proof was pre-approved by verifier
+        bytes32 proofKey = keccak256(abi.encodePacked(programId, user, actionProof));
+        if (!_approvedActions[proofKey]) {
+            revert ActionProofNotVerified(programId, user, actionProof);
+        }
+        // Consume approval (prevents double-use even though _claimedActions also checks)
+        _approvedActions[proofKey] = false;
+
         // Check if already claimed
         if (_claimedActions[programId][user][actionProof]) {
             revert AlreadyClaimed(programId, user, actionProof);
@@ -649,6 +664,88 @@ contract TAGITPrograms is
         if (updater == address(0)) revert ZeroAddress();
         _authorizedUpdaters[updater] = authorized;
         emit UpdaterSet(updater, authorized);
+    }
+
+    // ============================================
+    // PATCH-14: ACTION PROOF VERIFICATION
+    // ============================================
+
+    /**
+     * @notice Set the action verifier address
+     * @param newVerifier New action verifier address
+     */
+    function setActionVerifier(address newVerifier) external onlyGovernor {
+        address oldVerifier = _actionVerifier;
+        _actionVerifier = newVerifier;
+        emit ActionVerifierUpdated(oldVerifier, newVerifier);
+    }
+
+    /**
+     * @notice Pre-approve an action proof for a user
+     * @dev Only governor or action verifier can call.
+     *      Off-chain service validates action then approves the proof.
+     * @param programId Program the claim is for
+     * @param user User who will claim
+     * @param actionProof The action proof hash
+     */
+    function approveAction(
+        bytes32 programId,
+        address user,
+        bytes32 actionProof
+    ) external {
+        if (msg.sender != _governor && msg.sender != _actionVerifier) {
+            revert NotAuthorizedUpdater(msg.sender);
+        }
+        bytes32 proofKey = keccak256(abi.encodePacked(programId, user, actionProof));
+        _approvedActions[proofKey] = true;
+        emit ActionProofApproved(proofKey, programId, user);
+    }
+
+    /**
+     * @notice Batch approve action proofs
+     * @param programIds Program IDs
+     * @param users User addresses
+     * @param actionProofs Action proof hashes
+     */
+    function batchApproveActions(
+        bytes32[] calldata programIds,
+        address[] calldata users,
+        bytes32[] calldata actionProofs
+    ) external {
+        if (msg.sender != _governor && msg.sender != _actionVerifier) {
+            revert NotAuthorizedUpdater(msg.sender);
+        }
+        if (programIds.length != users.length || users.length != actionProofs.length) {
+            revert BatchTooLarge(programIds.length, MAX_BATCH_SIZE);
+        }
+        for (uint256 i = 0; i < programIds.length; i++) {
+            bytes32 proofKey = keccak256(abi.encodePacked(programIds[i], users[i], actionProofs[i]));
+            _approvedActions[proofKey] = true;
+            emit ActionProofApproved(proofKey, programIds[i], users[i]);
+        }
+    }
+
+    /**
+     * @notice Check if an action proof is approved
+     * @param programId Program ID
+     * @param user User address
+     * @param actionProof Action proof hash
+     * @return approved True if approved
+     */
+    function isActionApproved(
+        bytes32 programId,
+        address user,
+        bytes32 actionProof
+    ) external view returns (bool) {
+        bytes32 proofKey = keccak256(abi.encodePacked(programId, user, actionProof));
+        return _approvedActions[proofKey];
+    }
+
+    /**
+     * @notice Get the action verifier address
+     */
+    function actionVerifier() external view returns (address) {
+        return _actionVerifier;
     }
 
     /**
