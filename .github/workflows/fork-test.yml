@@ -1,0 +1,52 @@
+name: Fork Tests (OP Sepolia)
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # Daily at 6am UTC
+  workflow_dispatch:       # Manual trigger
+
+jobs:
+  fork-test:
+    name: Test against live OP Sepolia state
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Run fork tests
+        env:
+          OP_SEPOLIA_RPC_URL: ${{ secrets.OP_SEPOLIA_RPC_URL }}
+        run: |
+          if [ -z "$OP_SEPOLIA_RPC_URL" ]; then
+            echo "::warning::OP_SEPOLIA_RPC_URL not set, using public endpoint"
+            export OP_SEPOLIA_RPC_URL="https://sepolia.optimism.io"
+          fi
+          forge test --fork-url "$OP_SEPOLIA_RPC_URL" -v --fuzz-runs 1000
+
+      - name: Verify deployed contracts have code
+        env:
+          OP_SEPOLIA_RPC_URL: ${{ secrets.OP_SEPOLIA_RPC_URL }}
+        run: |
+          RPC="${OP_SEPOLIA_RPC_URL:-https://sepolia.optimism.io}"
+          CONTRACTS=(
+            "TAGITCore:0x8BdE22da889306d422802728cb98B6Da42ed8e1a"
+            "TAGITTreasury:0xf6f5e2e03f6e28aE9Dc17bCc814a0cf758c887c9"
+            "TAGITPaymaster:0x4339c46D63231063250834D9b3fa4E51FdB8026e"
+            "TAGITRecovery:0x6138a80c06A5e6a3CB6cc491A3a2c4DF4adD1600"
+          )
+
+          for entry in "${CONTRACTS[@]}"; do
+            NAME="${entry%%:*}"
+            ADDR="${entry##*:}"
+            CODE=$(cast code "$ADDR" --rpc-url "$RPC" 2>/dev/null || echo "0x")
+            if [ "$CODE" = "0x" ] || [ -z "$CODE" ]; then
+              echo "::error::$NAME ($ADDR) has no code!"
+              exit 1
+            else
+              echo "$NAME: OK (${#CODE} bytes)"
+            fi
+          done

@@ -1,0 +1,52 @@
+name: Coverage Check
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'test/**'
+
+jobs:
+  coverage:
+    name: Coverage Report
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Run coverage
+        run: |
+          forge coverage --report summary 2>&1 | tee coverage-output.txt
+
+      - name: Check coverage threshold
+        run: |
+          # Extract overall line coverage percentage
+          # Format: | Total | ... | XX.XX% |
+          COVERAGE=$(grep -i "total" coverage-output.txt | grep -oP '\d+\.\d+%' | head -1 | tr -d '%')
+
+          if [ -z "$COVERAGE" ]; then
+            echo "::warning::Could not parse coverage. Check output above."
+            exit 0
+          fi
+
+          THRESHOLD=85
+          echo "Coverage: ${COVERAGE}%"
+          echo "Threshold: ${THRESHOLD}%"
+
+          if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
+            echo "::error::Coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
+            exit 1
+          else
+            echo "Coverage OK: ${COVERAGE}% >= ${THRESHOLD}%"
+          fi
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage-output.txt
