@@ -92,14 +92,23 @@ contract DeployTAGITCoreProxy is Script {
         }
         console2.log("5b. EXECUTOR_ROLE granted to Safe");
 
-        // 6. Bump delay to 5 minutes -- MUST be last zero-delay operation
+        // 6. setTrustedOracle (PATCH-06: required for bindTag oracle signature verification)
+        {
+            bytes memory data = abi.encodeCall(TAGITCore.setTrustedOracle, (deployer));
+            bytes32 salt = keccak256("setTrustedOracle");
+            timelock.schedule(address(proxy), 0, data, bytes32(0), salt, 0);
+            timelock.execute(address(proxy), 0, data, bytes32(0), salt);
+        }
+        console2.log("6. setTrustedOracle done (oracle = deployer for testnet)");
+
+        // 7. Bump delay to 5 minutes -- MUST be last zero-delay operation
         {
             bytes memory data = abi.encodeCall(TimelockController.updateDelay, (5 minutes));
             bytes32 salt = keccak256("updateDelay");
             timelock.schedule(address(timelock), 0, data, bytes32(0), salt, 0);
             timelock.execute(address(timelock), 0, data, bytes32(0), salt);
         }
-        console2.log("6. updateDelay(300s) done");
+        console2.log("7. updateDelay(300s) done");
 
         // ============================================
         // PRE-AUDIT: Revoke deployer PROPOSER_ROLE + EXECUTOR_ROLE before mainnet
