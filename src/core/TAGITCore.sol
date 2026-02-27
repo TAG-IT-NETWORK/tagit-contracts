@@ -85,7 +85,8 @@ contract TAGITCore is
     bytes32 public constant AUDITOR_CAPABILITY = keccak256("AUDITOR");
 
     /// @notice Number of independent resolver approvals required before resolve() can execute
-    uint256 public constant RESOLVE_QUORUM = 2;
+    /// @dev Testnet: set to 1 for demo workflows. Mainnet: raise to 2 (2-of-3 multisig)
+    uint256 public constant RESOLVE_QUORUM = 1;
 
     /// @notice Maximum number of assets that can be minted in a single batch call
     /// @dev Prevents block gas limit DoS attacks on batchMint
