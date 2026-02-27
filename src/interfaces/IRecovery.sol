@@ -205,6 +205,18 @@ interface IRecovery {
         address indexed newTreasury
     );
 
+    /// @notice Emitted when core contract is updated
+    event CoreUpdated(
+        address indexed oldCore,
+        address indexed newCore
+    );
+
+    /// @notice Emitted when token contract is updated
+    event TokenUpdated(
+        address indexed oldToken,
+        address indexed newToken
+    );
+
     /// @notice Emitted when voting duration is updated
     event VotingDurationUpdated(
         uint256 oldDuration,

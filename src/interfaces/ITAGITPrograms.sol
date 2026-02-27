@@ -226,6 +226,12 @@ interface ITAGITPrograms {
         address indexed newCore
     );
 
+    /// @notice Emitted when token contract is updated
+    event TokenUpdated(
+        address indexed oldToken,
+        address indexed newToken
+    );
+
     /// @notice Emitted when recovery contract is updated
     event RecoveryContractUpdated(
         address indexed oldRecovery,

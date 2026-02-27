@@ -681,6 +681,32 @@ contract TAGITRecovery is
     }
 
     /**
+     * @notice Update core contract address
+     * @param newCore New TAGITCore address
+     * @custom:security Only owner can call
+     * @custom:emits CoreUpdated
+     */
+    function setCore(address newCore) external onlyOwner {
+        if (newCore == address(0)) revert ZeroAddress();
+        address oldCore = core;
+        core = newCore;
+        emit CoreUpdated(oldCore, newCore);
+    }
+
+    /**
+     * @notice Update token contract address
+     * @param newToken New TAGITToken address
+     * @custom:security Only owner can call
+     * @custom:emits TokenUpdated
+     */
+    function setToken(address newToken) external onlyOwner {
+        if (newToken == address(0)) revert ZeroAddress();
+        address oldToken = address(token);
+        token = IERC20(newToken);
+        emit TokenUpdated(oldToken, newToken);
+    }
+
+    /**
      * @notice Update voting duration
      * @param newDuration New voting duration in seconds
      * @custom:security Only governor can call

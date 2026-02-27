@@ -645,6 +645,17 @@ contract TAGITPrograms is
     }
 
     /**
+     * @notice Set token contract address
+     * @param newToken New TAGITToken address
+     */
+    function setToken(address newToken) external onlyOwner {
+        if (newToken == address(0)) revert ZeroAddress();
+        address oldToken = _tokenContract;
+        _tokenContract = newToken;
+        emit TokenUpdated(oldToken, newToken);
+    }
+
+    /**
      * @notice Set recovery contract for slashing authorization
      * @param recoveryAddress Recovery contract address
      */

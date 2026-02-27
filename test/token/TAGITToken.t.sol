@@ -270,7 +270,7 @@ contract TAGITTokenTest is Test {
     }
 
     function testFuzz_burn(uint256 amount) public {
-        vm.assume(amount > 0 && amount <= GENESIS_SUPPLY);
+        amount = bound(amount, 1, GENESIS_SUPPLY);
 
         vm.prank(treasury);
         token.burn(amount);
