@@ -41,11 +41,26 @@ contract MockBurner is ITAGITBurner {
     // ---- Stubs (unused by this test suite) ----
     function setBurnRate(uint256) external override {}
     function setTreasury(address) external override {}
-    function burnRate() external pure override returns (uint256) { return 3330; }
-    function totalBurned() external pure override returns (uint256) { return 0; }
-    function totalToTreasury() external pure override returns (uint256) { return 0; }
-    function treasury() external pure override returns (address) { return address(0); }
-    function governor() external pure override returns (address) { return address(0); }
+
+    function burnRate() external pure override returns (uint256) {
+        return 3330;
+    }
+
+    function totalBurned() external pure override returns (uint256) {
+        return 0;
+    }
+
+    function totalToTreasury() external pure override returns (uint256) {
+        return 0;
+    }
+
+    function treasury() external pure override returns (address) {
+        return address(0);
+    }
+
+    function governor() external pure override returns (address) {
+        return address(0);
+    }
 }
 
 // ============================================
@@ -163,12 +178,7 @@ contract IntegrationFactory_FeeBypassTest is Test {
 
         // Attempt processPayment without being authorized
         vm.prank(attacker);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IIntegrationFactory.NotAuthorizedIntegrator.selector,
-                attacker
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(IIntegrationFactory.NotAuthorizedIntegrator.selector, attacker));
         factory.processPayment(integrationId, PAYMENT_AMOUNT);
     }
 
@@ -189,18 +199,10 @@ contract IntegrationFactory_FeeBypassTest is Test {
         uint256 expectedPartnerShare = PAYMENT_AMOUNT - expectedProtocolFee;
 
         // Partner receives their share
-        assertEq(
-            token.balanceOf(partnerWallet) - partnerBalBefore,
-            expectedPartnerShare,
-            "partner share mismatch"
-        );
+        assertEq(token.balanceOf(partnerWallet) - partnerBalBefore, expectedPartnerShare, "partner share mismatch");
 
         // Burner receives protocol fee
-        assertEq(
-            token.balanceOf(address(burner)) - burnerBalBefore,
-            expectedProtocolFee,
-            "protocol fee mismatch"
-        );
+        assertEq(token.balanceOf(address(burner)) - burnerBalBefore, expectedProtocolFee, "protocol fee mismatch");
     }
 
     // ============================================
@@ -234,24 +236,14 @@ contract IntegrationFactory_FeeBypassTest is Test {
     /// @notice Non-owner cannot call grantIntegrator
     function test_nonOwner_cannot_grant() public {
         vm.prank(attacker);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Ownable.OwnableUnauthorizedAccount.selector,
-                attacker
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, attacker));
         factory.grantIntegrator(integrator);
     }
 
     /// @notice Non-owner cannot call revokeIntegrator
     function test_nonOwner_cannot_revoke() public {
         vm.prank(attacker);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Ownable.OwnableUnauthorizedAccount.selector,
-                attacker
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, attacker));
         factory.revokeIntegrator(integrator);
     }
 
@@ -309,16 +301,10 @@ contract IntegrationFactory_FeeBypassTest is Test {
         uint256 expectedPartnerShare = amount - expectedProtocolFee;
 
         assertEq(
-            token.balanceOf(partnerWallet) - partnerBalBefore,
-            expectedPartnerShare,
-            "fuzz: partner share mismatch"
+            token.balanceOf(partnerWallet) - partnerBalBefore, expectedPartnerShare, "fuzz: partner share mismatch"
         );
 
-        assertEq(
-            token.balanceOf(address(burner)) - burnerBalBefore,
-            expectedProtocolFee,
-            "fuzz: protocol fee mismatch"
-        );
+        assertEq(token.balanceOf(address(burner)) - burnerBalBefore, expectedProtocolFee, "fuzz: protocol fee mismatch");
     }
 
     // ============================================
@@ -338,12 +324,7 @@ contract IntegrationFactory_FeeBypassTest is Test {
         factory.revokeIntegrator(integrator);
 
         vm.prank(integrator);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IIntegrationFactory.NotAuthorizedIntegrator.selector,
-                integrator
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(IIntegrationFactory.NotAuthorizedIntegrator.selector, integrator));
         factory.processPayment(integrationId, PAYMENT_AMOUNT);
     }
 }

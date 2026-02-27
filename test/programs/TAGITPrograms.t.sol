@@ -64,10 +64,8 @@ contract TAGITProgramsTest is Test {
         TAGITPrograms impl = new TAGITPrograms();
 
         // Deploy proxy
-        bytes memory initData = abi.encodeCall(
-            TAGITPrograms.initialize,
-            (governor, core, address(token), address(access), staking, owner)
-        );
+        bytes memory initData =
+            abi.encodeCall(TAGITPrograms.initialize, (governor, core, address(token), address(access), staking, owner));
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
         programs = TAGITPrograms(address(proxy));
 
@@ -102,10 +100,10 @@ contract TAGITProgramsTest is Test {
         vm.prank(governor);
         bool success = programs.createProgram(
             SCAN_REWARDS,
-            10e18,      // 10 tokens per action
+            10e18, // 10 tokens per action
             100_000e18, // 100k budget
-            5,          // 5 claims per day
-            30 days     // 30 day duration
+            5, // 5 claims per day
+            30 days // 30 day duration
         );
 
         assertTrue(success, "createProgram should succeed");
@@ -243,7 +241,9 @@ contract TAGITProgramsTest is Test {
 
         // Second claim with same proof — proof consumed, so ActionProofNotVerified
         vm.prank(user1);
-        vm.expectRevert(abi.encodeWithSelector(ITAGITPrograms.ActionProofNotVerified.selector, SCAN_REWARDS, user1, actionProof));
+        vm.expectRevert(
+            abi.encodeWithSelector(ITAGITPrograms.ActionProofNotVerified.selector, SCAN_REWARDS, user1, actionProof)
+        );
         programs.claimReward(SCAN_REWARDS, actionProof);
     }
 
@@ -436,9 +436,9 @@ contract TAGITProgramsTest is Test {
     }
 
     function test_getTierMultiplier_allTiers() public view {
-        assertEq(programs.getTierMultiplier(ITAGITPrograms.ReputationTier.BRONZE), 10000);   // 1x
-        assertEq(programs.getTierMultiplier(ITAGITPrograms.ReputationTier.SILVER), 12500);   // 1.25x
-        assertEq(programs.getTierMultiplier(ITAGITPrograms.ReputationTier.GOLD), 15000);     // 1.5x
+        assertEq(programs.getTierMultiplier(ITAGITPrograms.ReputationTier.BRONZE), 10000); // 1x
+        assertEq(programs.getTierMultiplier(ITAGITPrograms.ReputationTier.SILVER), 12500); // 1.25x
+        assertEq(programs.getTierMultiplier(ITAGITPrograms.ReputationTier.GOLD), 15000); // 1.5x
         assertEq(programs.getTierMultiplier(ITAGITPrograms.ReputationTier.PLATINUM), 20000); // 2x
     }
 

@@ -7,12 +7,7 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 import {TAGITToken} from "../../src/token/TAGITToken.sol";
 import {TAGITVesting} from "../../src/token/TAGITVesting.sol";
 import {ITAGITVesting} from "../../src/interfaces/ITAGITVesting.sol";
-import {
-    GENESIS_SUPPLY,
-    STANDARD_CLIFF,
-    STANDARD_VESTING_DURATION,
-    VERSION
-} from "../../src/libraries/Constants.sol";
+import {GENESIS_SUPPLY, STANDARD_CLIFF, STANDARD_VESTING_DURATION, VERSION} from "../../src/libraries/Constants.sol";
 
 /**
  * @title TAGITVesting Unit Tests
@@ -35,11 +30,7 @@ contract TAGITVestingTest is Test {
 
     // Events
     event VestingCreated(
-        address indexed beneficiary,
-        uint256 amount,
-        uint256 startTime,
-        uint256 cliffDuration,
-        uint256 vestingDuration
+        address indexed beneficiary, uint256 amount, uint256 startTime, uint256 cliffDuration, uint256 vestingDuration
     );
     event TokensClaimed(address indexed beneficiary, uint256 amount);
 
@@ -52,11 +43,7 @@ contract TAGITVestingTest is Test {
 
         // Deploy TAGITToken
         tokenImpl = new TAGITToken();
-        bytes memory tokenInitData = abi.encodeWithSelector(
-            TAGITToken.initialize.selector,
-            treasury,
-            owner
-        );
+        bytes memory tokenInitData = abi.encodeWithSelector(TAGITToken.initialize.selector, treasury, owner);
         ERC1967Proxy tokenProxy = new ERC1967Proxy(address(tokenImpl), tokenInitData);
         token = TAGITToken(address(tokenProxy));
 
@@ -155,11 +142,7 @@ contract TAGITVestingTest is Test {
 
     function test_createVest_revert_cliffExceedsVesting() public {
         vm.prank(owner);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITVesting.CliffExceedsVesting.selector,
-            FOUR_YEARS,
-            ONE_YEAR
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITVesting.CliffExceedsVesting.selector, FOUR_YEARS, ONE_YEAR));
         vesting.createVest(alice, VEST_AMOUNT, FOUR_YEARS, ONE_YEAR);
     }
 
@@ -167,10 +150,7 @@ contract TAGITVestingTest is Test {
         vm.startPrank(owner);
         vesting.createVest(alice, VEST_AMOUNT, ONE_YEAR, FOUR_YEARS);
 
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITVesting.ScheduleAlreadyExists.selector,
-            alice
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITVesting.ScheduleAlreadyExists.selector, alice));
         vesting.createVest(alice, VEST_AMOUNT * 2, ONE_YEAR, FOUR_YEARS);
         vm.stopPrank();
     }
@@ -188,11 +168,7 @@ contract TAGITVestingTest is Test {
 
         uint256 cliffEnd = block.timestamp - 6 * 30 days + ONE_YEAR;
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITVesting.CliffNotReached.selector,
-            block.timestamp,
-            cliffEnd
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITVesting.CliffNotReached.selector, block.timestamp, cliffEnd));
         vesting.claim();
     }
 
@@ -271,10 +247,7 @@ contract TAGITVestingTest is Test {
 
     function test_claim_revert_noSchedule() public {
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITVesting.NoScheduleExists.selector,
-            alice
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITVesting.NoScheduleExists.selector, alice));
         vesting.claim();
     }
 
@@ -463,7 +436,7 @@ contract TAGITVestingTest is Test {
         times[4] = FOUR_YEARS;
 
         for (uint256 i = 0; i < times.length; i++) {
-            vm.warp(block.timestamp + (i == 0 ? times[i] : times[i] - times[i-1]));
+            vm.warp(block.timestamp + (i == 0 ? times[i] : times[i] - times[i - 1]));
 
             if (vesting.claimableAmount(alice) > 0) {
                 vm.prank(alice);

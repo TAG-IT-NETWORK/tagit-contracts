@@ -133,9 +133,7 @@ contract RateLimiterTest is Test {
         }
 
         // Next call should revert with UserLocked (not RateLimitExceeded)
-        vm.expectRevert(
-            abi.encodeWithSelector(RateLimiter.UserLocked.selector, user1, COOLDOWN_DURATION)
-        );
+        vm.expectRevert(abi.encodeWithSelector(RateLimiter.UserLocked.selector, user1, COOLDOWN_DURATION));
         harness.check(user1);
     }
 
@@ -149,9 +147,7 @@ contract RateLimiterTest is Test {
         vm.warp(block.timestamp + COOLDOWN_DURATION / 2);
 
         // Should revert with UserLocked
-        vm.expectRevert(
-            abi.encodeWithSelector(RateLimiter.UserLocked.selector, user1, COOLDOWN_DURATION / 2)
-        );
+        vm.expectRevert(abi.encodeWithSelector(RateLimiter.UserLocked.selector, user1, COOLDOWN_DURATION / 2));
         harness.check(user1);
     }
 
@@ -283,9 +279,7 @@ contract RateLimiterTest is Test {
 
         // Next call should hit global limit
         address newUser = address(uint160(2000));
-        vm.expectRevert(
-            abi.encodeWithSelector(RateLimiter.GlobalLimitExceeded.selector, GLOBAL_MAX, GLOBAL_MAX)
-        );
+        vm.expectRevert(abi.encodeWithSelector(RateLimiter.GlobalLimitExceeded.selector, GLOBAL_MAX, GLOBAL_MAX));
         harness.check(newUser);
     }
 
@@ -384,13 +378,13 @@ contract RateLimiterTest is Test {
             harness.check(user1);
         }
 
-        (,uint256 remaining,) = harness.canAct(user1);
+        (, uint256 remaining,) = harness.canAct(user1);
         assertEq(remaining, MAX_PER_WINDOW - 5, "Should have 5 less remaining");
 
         // Advance past window
         vm.warp(block.timestamp + WINDOW_DURATION + 1);
 
-        (,remaining,) = harness.canAct(user1);
+        (, remaining,) = harness.canAct(user1);
         assertEq(remaining, MAX_PER_WINDOW, "Should have full capacity in new window");
     }
 
@@ -447,13 +441,8 @@ contract RateLimiterTest is Test {
     function test_updateConfig_updatesValues() public {
         harness.updateConfig(20, 2 hours, 1 hours, 200);
 
-        (
-            uint64 maxPerWindow,
-            uint64 windowDuration,
-            uint64 cooldownDuration,
-            ,,,
-            uint64 globalMaxPerWindow
-        ) = harness.getConfig();
+        (uint64 maxPerWindow, uint64 windowDuration, uint64 cooldownDuration,,,, uint64 globalMaxPerWindow) =
+            harness.getConfig();
 
         assertEq(maxPerWindow, 20, "Max per window updated");
         assertEq(windowDuration, 2 hours, "Window duration updated");
@@ -464,13 +453,8 @@ contract RateLimiterTest is Test {
     function test_updateConfig_skipsZeroValues() public {
         harness.updateConfig(0, 0, 0, 50);
 
-        (
-            uint64 maxPerWindow,
-            uint64 windowDuration,
-            uint64 cooldownDuration,
-            ,,,
-            uint64 globalMaxPerWindow
-        ) = harness.getConfig();
+        (uint64 maxPerWindow, uint64 windowDuration, uint64 cooldownDuration,,,, uint64 globalMaxPerWindow) =
+            harness.getConfig();
 
         // Original values preserved
         assertEq(maxPerWindow, MAX_PER_WINDOW, "Max per window unchanged");
@@ -609,12 +593,9 @@ contract RateLimiterHarness {
     RateLimiter.Config private _config;
     mapping(address => RateLimiter.UserState) private _userStates;
 
-    function initialize(
-        uint64 maxPerWindow,
-        uint64 windowDuration,
-        uint64 cooldownDuration,
-        uint64 globalMax
-    ) external {
+    function initialize(uint64 maxPerWindow, uint64 windowDuration, uint64 cooldownDuration, uint64 globalMax)
+        external
+    {
         _config.initialize(maxPerWindow, windowDuration, cooldownDuration, globalMax);
     }
 
@@ -634,12 +615,9 @@ contract RateLimiterHarness {
         _config.setEnabled(enabled);
     }
 
-    function updateConfig(
-        uint64 maxPerWindow,
-        uint64 windowDuration,
-        uint64 cooldownDuration,
-        uint64 globalMax
-    ) external {
+    function updateConfig(uint64 maxPerWindow, uint64 windowDuration, uint64 cooldownDuration, uint64 globalMax)
+        external
+    {
         _config.updateConfig(maxPerWindow, windowDuration, cooldownDuration, globalMax);
     }
 
@@ -651,31 +629,27 @@ contract RateLimiterHarness {
         return _config.isEnabled();
     }
 
-    function getUserState(address user) external view returns (
-        uint64 count,
-        uint64 windowStart,
-        uint64 lockedUntil
-    ) {
+    function getUserState(address user) external view returns (uint64 count, uint64 windowStart, uint64 lockedUntil) {
         return RateLimiter.getUserState(_userStates, user);
     }
 
-    function getGlobalState() external view returns (
-        uint64 count,
-        uint64 windowStart,
-        uint256 remaining
-    ) {
+    function getGlobalState() external view returns (uint64 count, uint64 windowStart, uint256 remaining) {
         return _config.getGlobalState();
     }
 
-    function getConfig() external view returns (
-        uint64 maxPerWindow,
-        uint64 windowDuration,
-        uint64 cooldownDuration,
-        bool enabled,
-        uint64 globalCount,
-        uint64 globalWindowStart,
-        uint64 globalMaxPerWindow
-    ) {
+    function getConfig()
+        external
+        view
+        returns (
+            uint64 maxPerWindow,
+            uint64 windowDuration,
+            uint64 cooldownDuration,
+            bool enabled,
+            uint64 globalCount,
+            uint64 globalWindowStart,
+            uint64 globalMaxPerWindow
+        )
+    {
         return (
             _config.maxPerWindow,
             _config.windowDuration,

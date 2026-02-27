@@ -182,9 +182,7 @@ contract CapabilityBadgeTest is Test {
      * @dev Cannot revoke capability that was never granted
      */
     function test_revokeCapability_revert_notFound() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(ICapabilityBadge.CapabilityNotFound.selector, user1, CAP_MINT)
-        );
+        vm.expectRevert(abi.encodeWithSelector(ICapabilityBadge.CapabilityNotFound.selector, user1, CAP_MINT));
         capabilityBadge.revokeCapability(user1, CAP_MINT);
     }
 

@@ -104,13 +104,8 @@ contract TAGITCoreTest is Test {
         assertEq(tokenId, expectedTokenId, "Token ID should be 1");
 
         // Verify asset state
-        (
-            address assetOwner,
-            uint64 timestamp,
-            TAGITCore.State state,
-            uint8 flags,
-            uint16 reserved
-        ) = tagitCore.getAsset(tokenId);
+        (address assetOwner, uint64 timestamp, TAGITCore.State state, uint8 flags, uint16 reserved) =
+            tagitCore.getAsset(tokenId);
 
         assertEq(assetOwner, user1, "Owner should be user1");
         assertEq(uint8(state), uint8(TAGITCore.State.MINTED), "State should be MINTED");
@@ -145,12 +140,7 @@ contract TAGITCoreTest is Test {
 
         // Expect StateChanged event
         vm.expectEmit(true, false, false, true);
-        emit StateChanged(
-            expectedTokenId,
-            TAGITCore.State.NONE,
-            TAGITCore.State.MINTED,
-            manufacturer
-        );
+        emit StateChanged(expectedTokenId, TAGITCore.State.NONE, TAGITCore.State.MINTED, manufacturer);
 
         // Mint asset
         vm.prank(manufacturer);
@@ -189,7 +179,7 @@ contract TAGITCoreTest is Test {
         assertEq(tokenId, 1, "Token ID should be 1");
         assertEq(tagitCore.totalSupply(), 1, "Total supply should be 1");
 
-        (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.MINTED), "State should be MINTED");
     }
 
@@ -212,7 +202,7 @@ contract TAGITCoreTest is Test {
         tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
 
         // Verify asset state changed to BOUND
-        (, uint64 timestamp, TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (, uint64 timestamp, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.BOUND), "State should be BOUND");
         assertGt(timestamp, 0, "Timestamp should be updated");
 
@@ -253,10 +243,7 @@ contract TAGITCoreTest is Test {
         vm.prank(manufacturer);
         vm.expectRevert(
             abi.encodeWithSelector(
-                TAGITCore.InvalidState.selector,
-                tokenId,
-                TAGITCore.State.BOUND,
-                TAGITCore.State.MINTED
+                TAGITCore.InvalidState.selector, tokenId, TAGITCore.State.BOUND, TAGITCore.State.MINTED
             )
         );
         tagitCore.bindTag(tokenId, TAG_HASH_2, cr2, sig2);
@@ -318,12 +305,7 @@ contract TAGITCoreTest is Test {
 
         // Expect StateChanged event
         vm.expectEmit(true, false, false, true);
-        emit StateChanged(
-            tokenId,
-            TAGITCore.State.MINTED,
-            TAGITCore.State.BOUND,
-            manufacturer
-        );
+        emit StateChanged(tokenId, TAGITCore.State.MINTED, TAGITCore.State.BOUND, manufacturer);
 
         // Bind tag
         (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
@@ -349,7 +331,7 @@ contract TAGITCoreTest is Test {
         tagitCore.bindTag(tokenId, tagHash, cr, sig);
 
         // Verify state
-        (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.BOUND), "State should be BOUND");
 
         // Verify mappings
@@ -379,7 +361,7 @@ contract TAGITCoreTest is Test {
         vm.stopPrank();
 
         // Verify asset state changed to ACTIVATED
-        (, uint64 timestamp, TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (, uint64 timestamp, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.ACTIVATED), "State should be ACTIVATED");
         assertGt(timestamp, 0, "Timestamp should be updated");
     }
@@ -409,10 +391,7 @@ contract TAGITCoreTest is Test {
         vm.prank(manufacturer);
         vm.expectRevert(
             abi.encodeWithSelector(
-                TAGITCore.InvalidState.selector,
-                tokenId,
-                TAGITCore.State.MINTED,
-                TAGITCore.State.BOUND
+                TAGITCore.InvalidState.selector, tokenId, TAGITCore.State.MINTED, TAGITCore.State.BOUND
             )
         );
         tagitCore.activate(tokenId);
@@ -435,10 +414,7 @@ contract TAGITCoreTest is Test {
         vm.prank(manufacturer);
         vm.expectRevert(
             abi.encodeWithSelector(
-                TAGITCore.InvalidState.selector,
-                tokenId,
-                TAGITCore.State.MINTED,
-                TAGITCore.State.BOUND
+                TAGITCore.InvalidState.selector, tokenId, TAGITCore.State.MINTED, TAGITCore.State.BOUND
             )
         );
         tagitCore.activate(tokenId);
@@ -459,12 +435,7 @@ contract TAGITCoreTest is Test {
 
         // Expect StateChanged event
         vm.expectEmit(true, false, false, true);
-        emit StateChanged(
-            tokenId,
-            TAGITCore.State.BOUND,
-            TAGITCore.State.ACTIVATED,
-            manufacturer
-        );
+        emit StateChanged(tokenId, TAGITCore.State.BOUND, TAGITCore.State.ACTIVATED, manufacturer);
 
         // Activate asset
         tagitCore.activate(tokenId);
@@ -494,7 +465,7 @@ contract TAGITCoreTest is Test {
         vm.stopPrank();
 
         // Verify state
-        (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.ACTIVATED), "State should be ACTIVATED");
     }
 
@@ -522,7 +493,7 @@ contract TAGITCoreTest is Test {
         tagitCore.claim(tokenId, user1);
 
         // Verify asset state changed to CLAIMED
-        (address owner, uint64 timestamp, TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (address owner, uint64 timestamp, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.CLAIMED), "State should be CLAIMED");
         assertEq(owner, user1, "Asset owner should be updated to user1");
         assertGt(timestamp, 0, "Timestamp should be updated");
@@ -561,10 +532,7 @@ contract TAGITCoreTest is Test {
         vm.prank(manufacturer);
         vm.expectRevert(
             abi.encodeWithSelector(
-                TAGITCore.InvalidState.selector,
-                tokenId,
-                TAGITCore.State.BOUND,
-                TAGITCore.State.ACTIVATED
+                TAGITCore.InvalidState.selector, tokenId, TAGITCore.State.BOUND, TAGITCore.State.ACTIVATED
             )
         );
         tagitCore.claim(tokenId, user2);
@@ -607,7 +575,7 @@ contract TAGITCoreTest is Test {
 
         // Verify initial ownership
         assertEq(tagitCore.ownerOf(tokenId), manufacturer, "Initial ERC721 owner should be manufacturer");
-        (address assetOwner, , , , ) = tagitCore.getAsset(tokenId);
+        (address assetOwner,,,,) = tagitCore.getAsset(tokenId);
         assertEq(assetOwner, manufacturer, "Initial asset owner should be manufacturer");
 
         // Claim asset
@@ -616,7 +584,7 @@ contract TAGITCoreTest is Test {
 
         // Verify final ownership (both internal and ERC721)
         assertEq(tagitCore.ownerOf(tokenId), user1, "Final ERC721 owner should be user1");
-        (address finalAssetOwner, , , , ) = tagitCore.getAsset(tokenId);
+        (address finalAssetOwner,,,,) = tagitCore.getAsset(tokenId);
         assertEq(finalAssetOwner, user1, "Final asset owner should be user1");
     }
 
@@ -636,12 +604,7 @@ contract TAGITCoreTest is Test {
 
         // Expect StateChanged event
         vm.expectEmit(true, false, false, true);
-        emit StateChanged(
-            tokenId,
-            TAGITCore.State.ACTIVATED,
-            TAGITCore.State.CLAIMED,
-            manufacturer
-        );
+        emit StateChanged(tokenId, TAGITCore.State.ACTIVATED, TAGITCore.State.CLAIMED, manufacturer);
 
         // Claim asset
         tagitCore.claim(tokenId, user1);
@@ -675,7 +638,7 @@ contract TAGITCoreTest is Test {
         tagitCore.claim(tokenId, claimer);
 
         // Verify state and ownership
-        (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.CLAIMED), "State should be CLAIMED");
         assertEq(tagitCore.ownerOf(tokenId), claimer, "ERC721 owner should be claimer");
     }
@@ -705,7 +668,7 @@ contract TAGITCoreTest is Test {
         tagitCore.flag(tokenId);
 
         // Verify asset state changed to FLAGGED
-        (, uint64 timestamp, TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (, uint64 timestamp, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.FLAGGED), "State should be FLAGGED");
         assertGt(timestamp, 0, "Timestamp should be updated");
     }
@@ -741,10 +704,7 @@ contract TAGITCoreTest is Test {
         vm.prank(manufacturer);
         vm.expectRevert(
             abi.encodeWithSelector(
-                TAGITCore.InvalidState.selector,
-                tokenId,
-                TAGITCore.State.ACTIVATED,
-                TAGITCore.State.CLAIMED
+                TAGITCore.InvalidState.selector, tokenId, TAGITCore.State.ACTIVATED, TAGITCore.State.CLAIMED
             )
         );
         tagitCore.flag(tokenId);
@@ -768,12 +728,7 @@ contract TAGITCoreTest is Test {
 
         // Expect StateChanged event
         vm.expectEmit(true, false, false, true);
-        emit StateChanged(
-            tokenId,
-            TAGITCore.State.CLAIMED,
-            TAGITCore.State.FLAGGED,
-            manufacturer
-        );
+        emit StateChanged(tokenId, TAGITCore.State.CLAIMED, TAGITCore.State.FLAGGED, manufacturer);
 
         // Flag asset
         vm.prank(manufacturer);
@@ -806,7 +761,7 @@ contract TAGITCoreTest is Test {
         tagitCore.flag(tokenId);
 
         // Verify state
-        (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.FLAGGED), "State should be FLAGGED");
     }
 
@@ -842,7 +797,7 @@ contract TAGITCoreTest is Test {
         tagitCore.resolve(tokenId, user2);
 
         // Verify asset state changed to CLAIMED
-        (address assetOwner, uint64 timestamp, TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (address assetOwner, uint64 timestamp, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.CLAIMED), "State should be CLAIMED");
         assertEq(assetOwner, user2, "Owner should be updated to new owner");
         assertGt(timestamp, 0, "Timestamp should be updated");
@@ -881,10 +836,7 @@ contract TAGITCoreTest is Test {
         vm.prank(manufacturer);
         vm.expectRevert(
             abi.encodeWithSelector(
-                TAGITCore.InvalidState.selector,
-                tokenId,
-                TAGITCore.State.CLAIMED,
-                TAGITCore.State.FLAGGED
+                TAGITCore.InvalidState.selector, tokenId, TAGITCore.State.CLAIMED, TAGITCore.State.FLAGGED
             )
         );
         tagitCore.resolve(tokenId, user2);
@@ -977,7 +929,7 @@ contract TAGITCoreTest is Test {
         tagitCore.resolve(tokenId, recoveryOwner);
 
         // Verify final state
-        (address assetOwner, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (address assetOwner,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.CLAIMED), "State should be CLAIMED");
         assertEq(assetOwner, recoveryOwner, "Owner should be recovery owner");
         assertEq(tagitCore.ownerOf(tokenId), recoveryOwner, "ERC721 owner should be recovery owner");
@@ -1008,7 +960,7 @@ contract TAGITCoreTest is Test {
         tagitCore.recycle(tokenId);
 
         // Verify asset state changed to RECYCLED
-        (address assetOwner, uint64 timestamp, TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (address assetOwner, uint64 timestamp, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.RECYCLED), "State should be RECYCLED");
         assertEq(assetOwner, user1, "Owner should remain unchanged");
         assertGt(timestamp, 0, "Timestamp should be updated");
@@ -1036,7 +988,7 @@ contract TAGITCoreTest is Test {
         tagitCore.recycle(tokenId);
 
         // Verify asset state changed to RECYCLED
-        (address assetOwner, uint64 timestamp, TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (address assetOwner, uint64 timestamp, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.RECYCLED), "State should be RECYCLED");
         assertEq(assetOwner, user1, "Owner should remain unchanged");
         assertGt(timestamp, 0, "Timestamp should be updated");
@@ -1139,7 +1091,7 @@ contract TAGITCoreTest is Test {
         vm.stopPrank();
 
         // Verify final state
-        (address assetOwner, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (address assetOwner,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.RECYCLED), "State should be RECYCLED");
         assertEq(assetOwner, to, "Owner should remain unchanged");
     }
@@ -1302,7 +1254,7 @@ contract TAGITCoreTest is Test {
         bypassCore.activate(tokenId);
 
         // Verify success
-        (, , TAGITCore.State state, , ) = bypassCore.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = bypassCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.ACTIVATED), "State should be ACTIVATED in bypass mode");
     }
 
@@ -1330,7 +1282,10 @@ contract TAGITCoreTest is Test {
     // HELPER FUNCTIONS
     // ============================================
 
-    function _oracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory challengeResponse, bytes memory oracleSignature) {
+    function _oracleSign(uint256 tokenId, bytes32 tagHash)
+        internal
+        returns (bytes memory challengeResponse, bytes memory oracleSignature)
+    {
         challengeResponse = abi.encodePacked("challenge", tokenId);
         bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
         bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);

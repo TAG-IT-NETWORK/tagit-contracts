@@ -37,8 +37,12 @@ contract TAGITAgentValidationTest is Test {
     bytes32 constant VALIDATOR_CAPABILITY = keccak256("AGENT_VALIDATOR");
 
     // Events
-    event ValidationRequested(uint256 indexed requestId, uint256 indexed agentId, address indexed requester, bool isDefense);
-    event ValidationResponseSubmitted(uint256 indexed requestId, uint256 indexed agentId, address indexed validator, uint8 score);
+    event ValidationRequested(
+        uint256 indexed requestId, uint256 indexed agentId, address indexed requester, bool isDefense
+    );
+    event ValidationResponseSubmitted(
+        uint256 indexed requestId, uint256 indexed agentId, address indexed validator, uint8 score
+    );
     event ValidationFinalized(uint256 indexed requestId, uint256 indexed agentId, bool passed, uint256 finalScore);
 
     function setUp() public {

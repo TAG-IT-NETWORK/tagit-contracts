@@ -208,9 +208,8 @@ contract TAGITInvariants {
 
     /// @notice Sum of known balances should not exceed total supply
     function echidna_balance_sum_bounded() public view returns (bool) {
-        uint256 sum = token.balanceOf(address(this)) +
-                     token.balanceOf(address(staking)) +
-                     token.balanceOf(address(burner));
+        uint256 sum =
+            token.balanceOf(address(this)) + token.balanceOf(address(staking)) + token.balanceOf(address(burner));
         return sum <= token.totalSupply();
     }
 

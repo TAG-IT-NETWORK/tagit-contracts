@@ -70,10 +70,14 @@ contract TAGITTreasuryFuzzTest is Test {
             signerArray[i] = signers[i];
         }
         treasuryImpl = new TAGITTreasury();
-        treasury = TAGITTreasury(payable(address(new ERC1967Proxy(
-            address(treasuryImpl),
-            abi.encodeCall(TAGITTreasury.initialize, (governor, address(token), signerArray))
-        ))));
+        treasury = TAGITTreasury(
+            payable(address(
+                    new ERC1967Proxy(
+                        address(treasuryImpl),
+                        abi.encodeCall(TAGITTreasury.initialize, (governor, address(token), signerArray))
+                    )
+                ))
+        );
 
         // Fund treasury with 10M tokens
         token.transfer(address(treasury), INITIAL_BALANCE);
@@ -105,19 +109,16 @@ contract TAGITTreasuryFuzzTest is Test {
     // HELPER: Build emergency sweep signatures
     // ============================================
 
-    function _buildSweepSignatures(
-        address tokenAddr,
-        address to,
-        uint256 count
-    ) internal view returns (bytes[] memory sigs) {
-        bytes32 sweepHash = keccak256(abi.encodePacked(
-            "TAGIT_EMERGENCY_SWEEP",
-            block.chainid,
-            address(treasury),
-            tokenAddr,
-            to,
-            treasury.sweepNonce()
-        ));
+    function _buildSweepSignatures(address tokenAddr, address to, uint256 count)
+        internal
+        view
+        returns (bytes[] memory sigs)
+    {
+        bytes32 sweepHash = keccak256(
+            abi.encodePacked(
+                "TAGIT_EMERGENCY_SWEEP", block.chainid, address(treasury), tokenAddr, to, treasury.sweepNonce()
+            )
+        );
         bytes32 ethHash = sweepHash.toEthSignedMessageHash();
 
         sigs = new bytes[](count);
@@ -288,16 +289,8 @@ contract TAGITTreasuryFuzzTest is Test {
         treasury.executeWithdrawal(withdrawalId);
 
         // Verify tokens transferred
-        assertEq(
-            token.balanceOf(recipient1),
-            recipientBalanceBefore + amount,
-            "Recipient did not receive tokens"
-        );
-        assertEq(
-            token.balanceOf(address(treasury)),
-            treasuryBalanceBefore - amount,
-            "Treasury balance not reduced"
-        );
+        assertEq(token.balanceOf(recipient1), recipientBalanceBefore + amount, "Recipient did not receive tokens");
+        assertEq(token.balanceOf(address(treasury)), treasuryBalanceBefore - amount, "Treasury balance not reduced");
 
         // Verify withdrawal status
         ITAGITTreasury.PendingWithdrawal memory w = treasury.getWithdrawal(withdrawalId);
@@ -429,18 +422,14 @@ contract TAGITTreasuryFuzzTest is Test {
         if (signerCount == 0) {
             // Zero signatures: pass an empty array
             bytes[] memory emptySigs = new bytes[](0);
-            vm.expectRevert(
-                abi.encodeWithSelector(ITAGITTreasury.InsufficientSigners.selector, REQUIRED_SIGNERS, 0)
-            );
+            vm.expectRevert(abi.encodeWithSelector(ITAGITTreasury.InsufficientSigners.selector, REQUIRED_SIGNERS, 0));
             treasury.emergencySweep(address(token), sweepRecipient, emptySigs);
         } else {
             // 1-5 valid signatures
             bytes[] memory sigs = _buildSweepSignatures(address(token), sweepRecipient, signerCount);
             vm.expectRevert(
                 abi.encodeWithSelector(
-                    ITAGITTreasury.InsufficientSigners.selector,
-                    REQUIRED_SIGNERS,
-                    uint256(signerCount)
+                    ITAGITTreasury.InsufficientSigners.selector, REQUIRED_SIGNERS, uint256(signerCount)
                 )
             );
             treasury.emergencySweep(address(token), sweepRecipient, sigs);
@@ -462,9 +451,7 @@ contract TAGITTreasuryFuzzTest is Test {
         amount = bound(amount, INITIAL_BALANCE + 1, type(uint128).max);
 
         vm.prank(governor);
-        vm.expectRevert(
-            abi.encodeWithSelector(ITAGITTreasury.ExceedsBalance.selector, amount, INITIAL_BALANCE)
-        );
+        vm.expectRevert(abi.encodeWithSelector(ITAGITTreasury.ExceedsBalance.selector, amount, INITIAL_BALANCE));
         treasury.createAllocation(ECOSYSTEM_GRANTS, amount, recipient1, 30 days);
 
         // Case 2: first allocation uses most of balance, second exceeds remainder
@@ -476,9 +463,7 @@ contract TAGITTreasuryFuzzTest is Test {
         uint256 overAmount = remaining + 1; // 1e18 + 1
 
         vm.prank(governor);
-        vm.expectRevert(
-            abi.encodeWithSelector(ITAGITTreasury.ExceedsBalance.selector, overAmount, remaining)
-        );
+        vm.expectRevert(abi.encodeWithSelector(ITAGITTreasury.ExceedsBalance.selector, overAmount, remaining));
         treasury.createAllocation(ECOSYSTEM_GRANTS, overAmount, recipient1, 30 days);
     }
 
@@ -537,13 +522,10 @@ contract TAGITTreasuryFuzzTest is Test {
         assertEq(treasury.remainingAllocation(allocationId), 0, "Cycle: remaining should be 0 after full withdrawal");
 
         // --- Step 3: Execution before timelock should revert ---
-        (uint48 timelockForAmount, ) = treasury.getTimelockForAmount(amount);
+        (uint48 timelockForAmount,) = treasury.getTimelockForAmount(amount);
         vm.expectRevert(
             abi.encodeWithSelector(
-                ITAGITTreasury.TimelockNotPassed.selector,
-                withdrawalId,
-                w.executesAt,
-                uint48(block.timestamp)
+                ITAGITTreasury.TimelockNotPassed.selector, withdrawalId, w.executesAt, uint48(block.timestamp)
             )
         );
         treasury.executeWithdrawal(withdrawalId);
@@ -556,24 +538,14 @@ contract TAGITTreasuryFuzzTest is Test {
         treasury.executeWithdrawal(withdrawalId);
 
         // --- Step 5: Verify token balances ---
+        assertEq(token.balanceOf(recipient1), recipientBalanceBefore + amount, "Cycle: recipient balance incorrect");
         assertEq(
-            token.balanceOf(recipient1),
-            recipientBalanceBefore + amount,
-            "Cycle: recipient balance incorrect"
-        );
-        assertEq(
-            token.balanceOf(address(treasury)),
-            treasuryBalanceBefore - amount,
-            "Cycle: treasury balance incorrect"
+            token.balanceOf(address(treasury)), treasuryBalanceBefore - amount, "Cycle: treasury balance incorrect"
         );
 
         // --- Step 6: Verify global accounting ---
         assertEq(treasury.totalAllocated(), 0, "Cycle: totalAllocated should be 0 after execution");
-        assertEq(
-            treasury.totalUnallocated(),
-            treasuryBalanceBefore - amount,
-            "Cycle: totalUnallocated incorrect"
-        );
+        assertEq(treasury.totalUnallocated(), treasuryBalanceBefore - amount, "Cycle: totalUnallocated incorrect");
 
         // --- Step 7: Double execution should revert ---
         w = treasury.getWithdrawal(withdrawalId);
@@ -581,9 +553,7 @@ contract TAGITTreasuryFuzzTest is Test {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                ITAGITTreasury.WithdrawalNotPending.selector,
-                withdrawalId,
-                ITAGITTreasury.WithdrawalStatus.EXECUTED
+                ITAGITTreasury.WithdrawalNotPending.selector, withdrawalId, ITAGITTreasury.WithdrawalStatus.EXECUTED
             )
         );
         treasury.executeWithdrawal(withdrawalId);

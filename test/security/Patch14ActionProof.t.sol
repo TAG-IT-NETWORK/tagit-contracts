@@ -58,8 +58,7 @@ contract Patch14ActionProofTest is Test {
         // Deploy programs via proxy
         TAGITPrograms programsImpl = new TAGITPrograms();
         bytes memory initData = abi.encodeCall(
-            TAGITPrograms.initialize,
-            (governor, core, address(token), address(access), address(staking), owner)
+            TAGITPrograms.initialize, (governor, core, address(token), address(access), address(staking), owner)
         );
         ERC1967Proxy proxy = new ERC1967Proxy(address(programsImpl), initData);
         programs = TAGITPrograms(address(proxy));
@@ -82,12 +81,9 @@ contract Patch14ActionProofTest is Test {
 
     function test_claimReward_reverts_without_approved_proof() public {
         vm.prank(claimant);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITPrograms.ActionProofNotVerified.selector,
-            PROGRAM_ID,
-            claimant,
-            ACTION_PROOF
-        ));
+        vm.expectRevert(
+            abi.encodeWithSelector(ITAGITPrograms.ActionProofNotVerified.selector, PROGRAM_ID, claimant, ACTION_PROOF)
+        );
         programs.claimReward(PROGRAM_ID, ACTION_PROOF);
     }
 
@@ -106,12 +102,9 @@ contract Patch14ActionProofTest is Test {
     function test_attacker_cannot_claim_with_random_proof() public {
         bytes32 fakeProof = keccak256("attacker_fake_proof");
         vm.prank(attacker);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITPrograms.ActionProofNotVerified.selector,
-            PROGRAM_ID,
-            attacker,
-            fakeProof
-        ));
+        vm.expectRevert(
+            abi.encodeWithSelector(ITAGITPrograms.ActionProofNotVerified.selector, PROGRAM_ID, attacker, fakeProof)
+        );
         programs.claimReward(PROGRAM_ID, fakeProof);
     }
 
@@ -125,20 +118,15 @@ contract Patch14ActionProofTest is Test {
 
         // Second claim fails — proof consumed
         vm.prank(claimant);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITPrograms.ActionProofNotVerified.selector,
-            PROGRAM_ID,
-            claimant,
-            ACTION_PROOF
-        ));
+        vm.expectRevert(
+            abi.encodeWithSelector(ITAGITPrograms.ActionProofNotVerified.selector, PROGRAM_ID, claimant, ACTION_PROOF)
+        );
         programs.claimReward(PROGRAM_ID, ACTION_PROOF);
     }
 
     function test_approveAction_requires_authorization() public {
         vm.prank(attacker);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITPrograms.NotAuthorizedUpdater.selector, attacker
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITPrograms.NotAuthorizedUpdater.selector, attacker));
         programs.approveAction(PROGRAM_ID, claimant, ACTION_PROOF);
     }
 
@@ -147,8 +135,7 @@ contract Patch14ActionProofTest is Test {
         programs.approveAction(PROGRAM_ID, claimant, ACTION_PROOF);
 
         assertTrue(
-            programs.isActionApproved(PROGRAM_ID, claimant, ACTION_PROOF),
-            "Governor-approved action should be valid"
+            programs.isActionApproved(PROGRAM_ID, claimant, ACTION_PROOF), "Governor-approved action should be valid"
         );
     }
 
@@ -178,12 +165,9 @@ contract Patch14ActionProofTest is Test {
 
         // Attacker tries to use claimant's proof — different user in proofKey
         vm.prank(attacker);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITPrograms.ActionProofNotVerified.selector,
-            PROGRAM_ID,
-            attacker,
-            ACTION_PROOF
-        ));
+        vm.expectRevert(
+            abi.encodeWithSelector(ITAGITPrograms.ActionProofNotVerified.selector, PROGRAM_ID, attacker, ACTION_PROOF)
+        );
         programs.claimReward(PROGRAM_ID, ACTION_PROOF);
     }
 

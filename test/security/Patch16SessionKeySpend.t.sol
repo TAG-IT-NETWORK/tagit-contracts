@@ -122,12 +122,11 @@ contract Patch16SessionKeySpendTest is Test {
     }
 
     /// @dev Build a PackedUserOperation with execute calldata and sign with given key
-    function _buildUserOp(
-        uint256 privateKey,
-        address dest,
-        uint256 value,
-        bytes memory func
-    ) internal view returns (PackedUserOperation memory userOp, bytes32 userOpHash) {
+    function _buildUserOp(uint256 privateKey, address dest, uint256 value, bytes memory func)
+        internal
+        view
+        returns (PackedUserOperation memory userOp, bytes32 userOpHash)
+    {
         // Encode execute(address,uint256,bytes)
         bytes memory callData = abi.encodeWithSelector(EXEC_SELECTOR, dest, value, func);
 
@@ -178,8 +177,7 @@ contract Patch16SessionKeySpendTest is Test {
         uint256 half = SPEND_LIMIT / 2;
 
         // First spend: half
-        (PackedUserOperation memory userOp1, bytes32 hash1) =
-            _buildUserOp(sessionKeyPrivateKey, address(0x1), half, "");
+        (PackedUserOperation memory userOp1, bytes32 hash1) = _buildUserOp(sessionKeyPrivateKey, address(0x1), half, "");
         vm.prank(address(entryPoint));
         uint256 result1 = account.validateUserOp(userOp1, hash1, 0);
         assertEq(result1 & 1, 0, "First half spend should succeed");

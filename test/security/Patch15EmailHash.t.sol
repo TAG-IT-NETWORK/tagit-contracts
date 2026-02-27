@@ -78,17 +78,13 @@ contract Patch15EmailHashTest is Test {
 
     function test_deployAccount_reverts_without_verification() public {
         vm.prank(user);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITAccountFactory.EmailNotVerified.selector, EMAIL_HASH
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITAccountFactory.EmailNotVerified.selector, EMAIL_HASH));
         factory.createAccount(EMAIL_HASH, SALT);
     }
 
     function test_deployAccountWithOwner_reverts_without_verification() public {
         vm.prank(user);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITAccountFactory.EmailNotVerified.selector, EMAIL_HASH
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITAccountFactory.EmailNotVerified.selector, EMAIL_HASH));
         factory.createAccountWithOwner(EMAIL_HASH, SALT, user);
     }
 
@@ -111,9 +107,7 @@ contract Patch15EmailHashTest is Test {
 
     function test_verifyEmail_requires_authorization() public {
         vm.prank(attacker);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITAccountFactory.NotAuthorized.selector, attacker
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITAccountFactory.NotAuthorized.selector, attacker));
         factory.verifyEmail(EMAIL_HASH);
     }
 
@@ -127,18 +121,14 @@ contract Patch15EmailHashTest is Test {
         // Second deploy with different salt — hash was consumed
         bytes32 emailHash2 = keccak256("another@company.com");
         vm.prank(user);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITAccountFactory.EmailNotVerified.selector, emailHash2
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITAccountFactory.EmailNotVerified.selector, emailHash2));
         factory.createAccount(emailHash2, SALT + 1);
     }
 
     function test_frontrun_blocked() public {
         // Attacker tries to deploy before verification — blocked
         vm.prank(attacker);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITAccountFactory.EmailNotVerified.selector, EMAIL_HASH
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITAccountFactory.EmailNotVerified.selector, EMAIL_HASH));
         factory.createAccountWithOwner(EMAIL_HASH, SALT, attacker);
 
         // Verifier approves
@@ -166,9 +156,7 @@ contract Patch15EmailHashTest is Test {
         address newVerifier = makeAddr("newVerifier");
 
         vm.prank(attacker);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITAccountFactory.NotAuthorized.selector, attacker
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITAccountFactory.NotAuthorized.selector, attacker));
         factory.setEmailVerifier(newVerifier);
 
         vm.prank(governor);

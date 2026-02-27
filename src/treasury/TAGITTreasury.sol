@@ -32,12 +32,7 @@ import {DrainDetector} from "../libraries/DrainDetector.sol";
  * - $50k - $250k: 72 hours
  * - > $250k: 7 days + 6/8 multisig approval
  */
-contract TAGITTreasury is
-    Initializable,
-    ReentrancyGuard,
-    PausableUpgradeable,
-    ITAGITTreasury
-{
+contract TAGITTreasury is Initializable, ReentrancyGuard, PausableUpgradeable, ITAGITTreasury {
     using SafeERC20 for IERC20;
     using ECDSA for bytes32;
     using MessageHashUtils for bytes32;
@@ -132,12 +127,7 @@ contract TAGITTreasury is
     // ============================================
 
     /// @notice Emitted when drain is detected and withdrawal blocked
-    event DrainDetected(
-        uint256 indexed withdrawalId,
-        address indexed recipient,
-        uint256 amount,
-        uint8 reason
-    );
+    event DrainDetected(uint256 indexed withdrawalId, address indexed recipient, uint256 amount, uint8 reason);
 
     /// @notice Emitted when drain detector is reset
     event DrainDetectorReset(address indexed admin);
@@ -164,11 +154,10 @@ contract TAGITTreasury is
      * @param tokenAddress TAGIT token address
      * @param initialSigners Initial multisig signers (should be 8)
      */
-    function initialize(
-        address governorAddress,
-        address tokenAddress,
-        address[] calldata initialSigners
-    ) external initializer {
+    function initialize(address governorAddress, address tokenAddress, address[] calldata initialSigners)
+        external
+        initializer
+    {
         if (governorAddress == address(0)) revert ZeroAddress();
         if (tokenAddress == address(0)) revert ZeroAddress();
 
@@ -192,12 +181,12 @@ contract TAGITTreasury is
         // Initialize drain detector (NIST SI-4)
         // Conservative defaults for treasury protection
         _drainConfig.initialize(
-            DEFAULT_WINDOW_DURATION,      // 1 hour window
-            DEFAULT_SPIKE_THRESHOLD,      // 30% spike threshold
-            DEFAULT_VELOCITY_THRESHOLD,   // 50% velocity threshold
-            DEFAULT_MAX_TXS_PER_WINDOW,   // 10 txs per window
-            DEFAULT_COOLDOWN,             // 1 hour cooldown
-            INITIAL_TRACKED_BALANCE       // Initial tracked balance
+            DEFAULT_WINDOW_DURATION, // 1 hour window
+            DEFAULT_SPIKE_THRESHOLD, // 30% spike threshold
+            DEFAULT_VELOCITY_THRESHOLD, // 50% velocity threshold
+            DEFAULT_MAX_TXS_PER_WINDOW, // 10 txs per window
+            DEFAULT_COOLDOWN, // 1 hour cooldown
+            INITIAL_TRACKED_BALANCE // Initial tracked balance
         );
     }
 
@@ -253,12 +242,13 @@ contract TAGITTreasury is
     /**
      * @inheritdoc ITAGITTreasury
      */
-    function createAllocation(
-        bytes32 programId,
-        uint256 amount,
-        address recipient,
-        uint48 duration
-    ) external override onlyGovernor nonReentrant returns (uint256 allocationId) {
+    function createAllocation(bytes32 programId, uint256 amount, address recipient, uint48 duration)
+        external
+        override
+        onlyGovernor
+        nonReentrant
+        returns (uint256 allocationId)
+    {
         if (amount == 0) revert ZeroAmount();
         if (recipient == address(0)) revert ZeroAddress();
         if (duration == 0 || duration > MAX_DURATION) revert InvalidDuration(duration);
@@ -319,12 +309,13 @@ contract TAGITTreasury is
     /**
      * @inheritdoc ITAGITTreasury
      */
-    function queueWithdrawal(
-        uint256 allocationId,
-        address token,
-        uint256 amount,
-        address to
-    ) external override nonReentrant whenNotPaused returns (uint256 withdrawalId) {
+    function queueWithdrawal(uint256 allocationId, address token, uint256 amount, address to)
+        external
+        override
+        nonReentrant
+        whenNotPaused
+        returns (uint256 withdrawalId)
+    {
         if (amount == 0) revert ZeroAmount();
         if (to == address(0)) revert ZeroAddress();
 
@@ -353,7 +344,7 @@ contract TAGITTreasury is
         }
 
         // Calculate timelock
-        (uint48 timelockSeconds, ) = getTimelockForAmount(amount);
+        (uint48 timelockSeconds,) = getTimelockForAmount(amount);
 
         withdrawalId = _nextWithdrawalId++;
 
@@ -370,14 +361,7 @@ contract TAGITTreasury is
         // Pre-commit the spend (CEI pattern)
         alloc.spent += amount;
 
-        emit WithdrawalQueued(
-            withdrawalId,
-            allocationId,
-            to,
-            token,
-            amount,
-            uint48(block.timestamp) + timelockSeconds
-        );
+        emit WithdrawalQueued(withdrawalId, allocationId, to, token, amount, uint48(block.timestamp) + timelockSeconds);
     }
 
     /**
@@ -430,7 +414,7 @@ contract TAGITTreasury is
         // INTERACTIONS: Transfer funds
         if (withdrawal.token == address(0)) {
             // ETH transfer
-            (bool success, ) = withdrawal.to.call{value: withdrawal.amount}("");
+            (bool success,) = withdrawal.to.call{value: withdrawal.amount}("");
             if (!success) revert ETHTransferFailed(withdrawal.to, withdrawal.amount);
         } else {
             // Token transfer
@@ -472,25 +456,15 @@ contract TAGITTreasury is
     /**
      * @inheritdoc ITAGITTreasury
      */
-    function emergencySweep(
-        address token,
-        address to,
-        bytes[] calldata signatures
-    ) external override nonReentrant {
+    function emergencySweep(address token, address to, bytes[] calldata signatures) external override nonReentrant {
         if (to == address(0)) revert ZeroAddress();
         if (signatures.length < REQUIRED_SIGNERS) {
             revert InsufficientSigners(REQUIRED_SIGNERS, signatures.length);
         }
 
         // PATCH-08: Create message hash with counter-based nonce (replaces day-based)
-        bytes32 messageHash = keccak256(abi.encodePacked(
-            "TAGIT_EMERGENCY_SWEEP",
-            block.chainid,
-            address(this),
-            token,
-            to,
-            _sweepNonce
-        ));
+        bytes32 messageHash =
+            keccak256(abi.encodePacked("TAGIT_EMERGENCY_SWEEP", block.chainid, address(this), token, to, _sweepNonce));
         bytes32 ethSignedHash = messageHash.toEthSignedMessageHash();
 
         // Verify signatures
@@ -539,7 +513,7 @@ contract TAGITTreasury is
 
         // INTERACTIONS: Execute sweep
         if (token == address(0)) {
-            (bool success, ) = to.call{value: amount}("");
+            (bool success,) = to.call{value: amount}("");
             if (!success) revert ETHTransferFailed(to, amount);
         } else {
             IERC20(token).safeTransfer(to, amount);
@@ -565,11 +539,10 @@ contract TAGITTreasury is
      * @param velocityThreshold New velocity threshold (basis points, e.g., 5000 = 50%)
      * @param maxTxsPerWindow Maximum transactions per window
      */
-    function setDrainThresholds(
-        uint16 spikeThreshold,
-        uint16 velocityThreshold,
-        uint32 maxTxsPerWindow
-    ) external onlyGovernor {
+    function setDrainThresholds(uint16 spikeThreshold, uint16 velocityThreshold, uint32 maxTxsPerWindow)
+        external
+        onlyGovernor
+    {
         _drainConfig.updateThresholds(spikeThreshold, velocityThreshold, maxTxsPerWindow);
     }
 
@@ -718,10 +691,12 @@ contract TAGITTreasury is
     /**
      * @inheritdoc ITAGITTreasury
      */
-    function getTimelockForAmount(uint256 amount) public pure override returns (
-        uint48 timelockSeconds,
-        bool requiresMultisig
-    ) {
+    function getTimelockForAmount(uint256 amount)
+        public
+        pure
+        override
+        returns (uint48 timelockSeconds, bool requiresMultisig)
+    {
         if (amount >= THRESHOLD_LARGE) {
             return (TIMELOCK_LARGE, true);
         } else if (amount >= THRESHOLD_MEDIUM) {
@@ -774,12 +749,11 @@ contract TAGITTreasury is
      * @return windowStart_ Start of current window
      * @return windowRemaining Seconds remaining in current window
      */
-    function getDrainDetectorWindowStats() external view returns (
-        uint256 outflow,
-        uint32 txCount,
-        uint64 windowStart_,
-        uint256 windowRemaining
-    ) {
+    function getDrainDetectorWindowStats()
+        external
+        view
+        returns (uint256 outflow, uint32 txCount, uint64 windowStart_, uint256 windowRemaining)
+    {
         return _drainConfig.windowStats();
     }
 
@@ -789,11 +763,11 @@ contract TAGITTreasury is
      * @return velocityCapacity Remaining cumulative outflow allowed
      * @return txCapacity Remaining transactions allowed
      */
-    function getDrainDetectorCapacity() external view returns (
-        uint256 spikeCapacity,
-        uint256 velocityCapacity,
-        uint32 txCapacity
-    ) {
+    function getDrainDetectorCapacity()
+        external
+        view
+        returns (uint256 spikeCapacity, uint256 velocityCapacity, uint32 txCapacity)
+    {
         return _drainConfig.remainingCapacity();
     }
 

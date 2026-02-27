@@ -80,12 +80,10 @@ contract TAGITVesting is ITAGITVesting, Ownable, ReentrancyGuard {
      * @custom:security Schedule cannot be modified after creation
      * @custom:emits VestingCreated
      */
-    function createVest(
-        address beneficiary,
-        uint256 amount,
-        uint256 cliffDuration,
-        uint256 vestingDuration
-    ) external onlyOwner {
+    function createVest(address beneficiary, uint256 amount, uint256 cliffDuration, uint256 vestingDuration)
+        external
+        onlyOwner
+    {
         if (beneficiary == address(0)) revert ZeroAddress();
         if (amount == 0) revert ZeroAmount();
         if (vestingDuration == 0) revert ZeroDuration();

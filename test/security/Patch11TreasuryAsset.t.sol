@@ -40,10 +40,7 @@ contract Patch11TreasuryAssetTest is Test {
 
         // Deploy treasury via proxy
         TAGITTreasury treasuryImpl = new TAGITTreasury();
-        bytes memory initData = abi.encodeCall(
-            TAGITTreasury.initialize,
-            (governor, address(tagitToken), signers)
-        );
+        bytes memory initData = abi.encodeCall(TAGITTreasury.initialize, (governor, address(tagitToken), signers));
         ERC1967Proxy proxy = new ERC1967Proxy(address(treasuryImpl), initData);
         treasury = TAGITTreasury(payable(address(proxy)));
 
@@ -61,12 +58,7 @@ contract Patch11TreasuryAssetTest is Test {
     function test_queueWithdrawal_correct_asset_succeeds() public {
         // Create allocation
         vm.prank(governor);
-        uint256 allocId = treasury.createAllocation(
-            keccak256("GRANTS"),
-            10_000e18,
-            recipient,
-            uint48(365 days)
-        );
+        uint256 allocId = treasury.createAllocation(keccak256("GRANTS"), 10_000e18, recipient, uint48(365 days));
 
         // Queue withdrawal with TAGIT token — should succeed
         vm.prank(recipient);
@@ -77,20 +69,11 @@ contract Patch11TreasuryAssetTest is Test {
     function test_queueWithdrawal_wrong_asset_reverts() public {
         // Create allocation (implicitly for TAGIT)
         vm.prank(governor);
-        uint256 allocId = treasury.createAllocation(
-            keccak256("GRANTS"),
-            10_000e18,
-            recipient,
-            uint48(365 days)
-        );
+        uint256 allocId = treasury.createAllocation(keccak256("GRANTS"), 10_000e18, recipient, uint48(365 days));
 
         // Try to withdraw ETH using TAGIT allocation — must revert
         vm.prank(recipient);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITTreasury.AssetMismatch.selector,
-            address(tagitToken),
-            address(0)
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITTreasury.AssetMismatch.selector, address(tagitToken), address(0)));
         treasury.queueWithdrawal(allocId, address(0), 10_000e18, recipient);
     }
 
@@ -98,20 +81,13 @@ contract Patch11TreasuryAssetTest is Test {
         MockTokenP11 otherToken = new MockTokenP11();
 
         vm.prank(governor);
-        uint256 allocId = treasury.createAllocation(
-            keccak256("GRANTS"),
-            10_000e18,
-            recipient,
-            uint48(365 days)
-        );
+        uint256 allocId = treasury.createAllocation(keccak256("GRANTS"), 10_000e18, recipient, uint48(365 days));
 
         // Try to withdraw a different ERC20 using TAGIT allocation
         vm.prank(recipient);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITTreasury.AssetMismatch.selector,
-            address(tagitToken),
-            address(otherToken)
-        ));
+        vm.expectRevert(
+            abi.encodeWithSelector(ITAGITTreasury.AssetMismatch.selector, address(tagitToken), address(otherToken))
+        );
         treasury.queueWithdrawal(allocId, address(otherToken), 5_000e18, recipient);
     }
 
@@ -119,19 +95,10 @@ contract Patch11TreasuryAssetTest is Test {
         vm.assume(wrongToken != address(tagitToken));
 
         vm.prank(governor);
-        uint256 allocId = treasury.createAllocation(
-            keccak256("GRANTS"),
-            10_000e18,
-            recipient,
-            uint48(365 days)
-        );
+        uint256 allocId = treasury.createAllocation(keccak256("GRANTS"), 10_000e18, recipient, uint48(365 days));
 
         vm.prank(recipient);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITTreasury.AssetMismatch.selector,
-            address(tagitToken),
-            wrongToken
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITTreasury.AssetMismatch.selector, address(tagitToken), wrongToken));
         treasury.queueWithdrawal(allocId, wrongToken, 5_000e18, recipient);
     }
 }

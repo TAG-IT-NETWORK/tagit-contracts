@@ -44,13 +44,13 @@ library CircuitBreaker {
      */
     struct Config {
         // Slot 1
-        uint64 windowStart;      // Start of current monitoring window
-        uint64 cooldownEnds;     // When cooldown period ends (0 if not tripped)
-        uint64 count;            // Events in current window
-        uint32 threshold;        // Max events before trip
-        bool tripped;            // Whether circuit is currently tripped
+        uint64 windowStart; // Start of current monitoring window
+        uint64 cooldownEnds; // When cooldown period ends (0 if not tripped)
+        uint64 count; // Events in current window
+        uint32 threshold; // Max events before trip
+        bool tripped; // Whether circuit is currently tripped
         // Slot 2
-        uint64 windowDuration;   // Duration of monitoring window
+        uint64 windowDuration; // Duration of monitoring window
         uint64 cooldownDuration; // Duration of cooldown after trip
     }
 
@@ -81,32 +81,21 @@ library CircuitBreaker {
      * @param threshold Configured threshold
      * @param cooldownEnds When the cooldown period ends
      */
-    event CircuitTripped(
-        uint256 indexed timestamp,
-        uint256 count,
-        uint256 threshold,
-        uint256 cooldownEnds
-    );
+    event CircuitTripped(uint256 indexed timestamp, uint256 count, uint256 threshold, uint256 cooldownEnds);
 
     /**
      * @notice Emitted when circuit breaker resets after cooldown
      * @param timestamp When the reset occurred
      * @param previousCooldownEnds When the cooldown was scheduled to end
      */
-    event CircuitReset(
-        uint256 indexed timestamp,
-        uint256 previousCooldownEnds
-    );
+    event CircuitReset(uint256 indexed timestamp, uint256 previousCooldownEnds);
 
     /**
      * @notice Emitted when circuit breaker is force-reset by admin
      * @param timestamp When the force reset occurred
      * @param admin Address that performed the reset
      */
-    event CircuitForceReset(
-        uint256 indexed timestamp,
-        address indexed admin
-    );
+    event CircuitForceReset(uint256 indexed timestamp, address indexed admin);
 
     /**
      * @notice Emitted when approaching threshold (early warning)
@@ -114,11 +103,7 @@ library CircuitBreaker {
      * @param count Current event count
      * @param threshold Configured threshold
      */
-    event CircuitWarning(
-        uint256 indexed timestamp,
-        uint256 count,
-        uint256 threshold
-    );
+    event CircuitWarning(uint256 indexed timestamp, uint256 count, uint256 threshold);
 
     // ============================================
     // INITIALIZATION
@@ -132,12 +117,9 @@ library CircuitBreaker {
      * @param windowDuration_ Duration of monitoring window in seconds
      * @param cooldownDuration_ Duration of cooldown after trip in seconds
      */
-    function initialize(
-        Config storage self,
-        uint32 threshold_,
-        uint64 windowDuration_,
-        uint64 cooldownDuration_
-    ) internal {
+    function initialize(Config storage self, uint32 threshold_, uint64 windowDuration_, uint64 cooldownDuration_)
+        internal
+    {
         if (threshold_ == 0) revert InvalidConfig("threshold cannot be 0");
         if (windowDuration_ == 0) revert InvalidConfig("window cannot be 0");
         if (cooldownDuration_ == 0) revert InvalidConfig("cooldown cannot be 0");
@@ -207,10 +189,7 @@ library CircuitBreaker {
      * @return isTripped Whether circuit is tripped
      * @return cooldownRemaining Seconds until cooldown ends (0 if not tripped)
      */
-    function status(Config storage self) internal view returns (
-        bool isTripped,
-        uint256 cooldownRemaining
-    ) {
+    function status(Config storage self) internal view returns (bool isTripped, uint256 cooldownRemaining) {
         if (!self.tripped) {
             return (false, 0);
         }
@@ -327,12 +306,7 @@ library CircuitBreaker {
         self.tripped = true;
         self.cooldownEnds = uint64(block.timestamp) + self.cooldownDuration;
 
-        emit CircuitTripped(
-            block.timestamp,
-            self.count,
-            self.threshold,
-            self.cooldownEnds
-        );
+        emit CircuitTripped(block.timestamp, self.count, self.threshold, self.cooldownEnds);
     }
 
     /**

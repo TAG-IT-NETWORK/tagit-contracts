@@ -140,14 +140,7 @@ contract EntryPointForkTest is ForkBase {
      */
     function test_factoryCannotReinitialize() public {
         vm.expectRevert();
-        factory.initialize(
-            ENTRYPOINT_V07,
-            address(accountImpl),
-            protocolGuardian,
-            mockCore,
-            governor,
-            deployer
-        );
+        factory.initialize(ENTRYPOINT_V07, address(accountImpl), protocolGuardian, mockCore, governor, deployer);
     }
 
     // ============================================
@@ -330,8 +323,7 @@ contract EntryPointForkTest is ForkBase {
         tagitAccount.addSessionKey(sessionKey);
 
         assertTrue(
-            tagitAccount.isValidSessionKey(sessionKeyAddr, TAGITAccount.execute.selector),
-            "Session key should be valid"
+            tagitAccount.isValidSessionKey(sessionKeyAddr, TAGITAccount.execute.selector), "Session key should be valid"
         );
     }
 

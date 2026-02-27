@@ -39,11 +39,7 @@ contract TAGITTokenTest is Test {
         tokenImpl = new TAGITToken();
 
         // Deploy proxy
-        bytes memory initData = abi.encodeWithSelector(
-            TAGITToken.initialize.selector,
-            treasury,
-            owner
-        );
+        bytes memory initData = abi.encodeWithSelector(TAGITToken.initialize.selector, treasury, owner);
         ERC1967Proxy proxy = new ERC1967Proxy(address(tokenImpl), initData);
         token = TAGITToken(address(proxy));
     }
@@ -68,11 +64,7 @@ contract TAGITTokenTest is Test {
 
     function test_initialize_revert_zeroTreasury() public {
         TAGITToken newImpl = new TAGITToken();
-        bytes memory initData = abi.encodeWithSelector(
-            TAGITToken.initialize.selector,
-            address(0),
-            owner
-        );
+        bytes memory initData = abi.encodeWithSelector(TAGITToken.initialize.selector, address(0), owner);
 
         vm.expectRevert(TAGITToken.ZeroAddress.selector);
         new ERC1967Proxy(address(newImpl), initData);
@@ -80,11 +72,7 @@ contract TAGITTokenTest is Test {
 
     function test_initialize_revert_zeroOwner() public {
         TAGITToken newImpl = new TAGITToken();
-        bytes memory initData = abi.encodeWithSelector(
-            TAGITToken.initialize.selector,
-            treasury,
-            address(0)
-        );
+        bytes memory initData = abi.encodeWithSelector(TAGITToken.initialize.selector, treasury, address(0));
 
         vm.expectRevert(TAGITToken.ZeroAddress.selector);
         new ERC1967Proxy(address(newImpl), initData);
@@ -157,21 +145,13 @@ contract TAGITTokenTest is Test {
         token.setEmissionsAddress(emissions);
 
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(
-            TAGITToken.OnlyEmissionsCanMint.selector,
-            alice,
-            emissions
-        ));
+        vm.expectRevert(abi.encodeWithSelector(TAGITToken.OnlyEmissionsCanMint.selector, alice, emissions));
         token.mint(bob, 1000 ether);
     }
 
     function test_mint_revert_emissionsNotSet() public {
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(
-            TAGITToken.OnlyEmissionsCanMint.selector,
-            alice,
-            address(0)
-        ));
+        vm.expectRevert(abi.encodeWithSelector(TAGITToken.OnlyEmissionsCanMint.selector, alice, address(0)));
         token.mint(bob, 1000 ether);
     }
 

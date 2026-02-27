@@ -16,10 +16,10 @@ interface ICCIPAdapter {
      * @notice Type of cross-chain request
      */
     enum RequestType {
-        VERIFY,     // Verify asset authenticity
-        STATUS,     // Get asset lifecycle status
-        OWNERSHIP,  // Get current owner
-        FULL        // Full asset data
+        VERIFY, // Verify asset authenticity
+        STATUS, // Get asset lifecycle status
+        OWNERSHIP, // Get current owner
+        FULL // Full asset data
     }
 
     // ============================================
@@ -142,51 +142,28 @@ interface ICCIPAdapter {
 
     /// @notice Emitted when verification response is received
     event VerificationResponseReceived(
-        bytes32 indexed requestId,
-        uint64 indexed sourceChain,
-        uint256 indexed tokenId,
-        bool valid
+        bytes32 indexed requestId, uint64 indexed sourceChain, uint256 indexed tokenId, bool valid
     );
 
     /// @notice Emitted when verification request is processed
     event VerificationRequestProcessed(
-        bytes32 indexed requestId,
-        uint64 indexed sourceChain,
-        uint256 indexed tokenId,
-        bool success
+        bytes32 indexed requestId, uint64 indexed sourceChain, uint256 indexed tokenId, bool success
     );
 
     /// @notice Emitted when a CCIP message is processed with chain-bound tracking
-    event CcipMessageProcessed(
-        bytes32 indexed messageId,
-        uint64 indexed sourceChainSelector,
-        uint256 chainId
-    );
+    event CcipMessageProcessed(bytes32 indexed messageId, uint64 indexed sourceChainSelector, uint256 chainId);
 
     /// @notice Emitted when chain addition is scheduled
-    event ChainAdditionScheduled(
-        uint64 indexed chainSelector,
-        address adapter,
-        uint48 scheduledAt,
-        uint48 readyAt
-    );
+    event ChainAdditionScheduled(uint64 indexed chainSelector, address adapter, uint48 scheduledAt, uint48 readyAt);
 
     /// @notice Emitted when chain is added
-    event ChainAdded(
-        uint64 indexed chainSelector,
-        address indexed adapter,
-        uint256 gasLimit
-    );
+    event ChainAdded(uint64 indexed chainSelector, address indexed adapter, uint256 gasLimit);
 
     /// @notice Emitted when chain is removed
     event ChainRemoved(uint64 indexed chainSelector);
 
     /// @notice Emitted when chain gas limit is updated
-    event ChainGasLimitUpdated(
-        uint64 indexed chainSelector,
-        uint256 oldLimit,
-        uint256 newLimit
-    );
+    event ChainGasLimitUpdated(uint64 indexed chainSelector, uint256 oldLimit, uint256 newLimit);
 
     /// @notice Emitted when rate limit is updated
     event RateLimitUpdated(uint256 oldLimit, uint256 newLimit);
@@ -210,10 +187,7 @@ interface ICCIPAdapter {
      * @param tokenId Asset token ID to verify
      * @return requestId Unique request identifier
      */
-    function requestVerification(
-        uint64 destChain,
-        uint256 tokenId
-    ) external payable returns (bytes32 requestId);
+    function requestVerification(uint64 destChain, uint256 tokenId) external payable returns (bytes32 requestId);
 
     /**
      * @notice Send status request to another chain
@@ -221,10 +195,7 @@ interface ICCIPAdapter {
      * @param tokenId Asset token ID
      * @return requestId Unique request identifier
      */
-    function requestStatus(
-        uint64 destChain,
-        uint256 tokenId
-    ) external payable returns (bytes32 requestId);
+    function requestStatus(uint64 destChain, uint256 tokenId) external payable returns (bytes32 requestId);
 
     /**
      * @notice Send full data request to another chain
@@ -233,11 +204,10 @@ interface ICCIPAdapter {
      * @param reqType Type of data requested
      * @return requestId Unique request identifier
      */
-    function requestData(
-        uint64 destChain,
-        uint256 tokenId,
-        RequestType reqType
-    ) external payable returns (bytes32 requestId);
+    function requestData(uint64 destChain, uint256 tokenId, RequestType reqType)
+        external
+        payable
+        returns (bytes32 requestId);
 
     // ============================================
     // CHAIN MANAGEMENT (Governor only + Timelock)

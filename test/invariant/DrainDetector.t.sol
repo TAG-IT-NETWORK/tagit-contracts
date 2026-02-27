@@ -134,10 +134,7 @@ contract DrainDetectorInvariantTest is Test {
 
         // Deploy treasury via proxy
         TAGITTreasury treasuryImpl = new TAGITTreasury();
-        bytes memory initData = abi.encodeCall(
-            TAGITTreasury.initialize,
-            (governor, address(token), signers)
-        );
+        bytes memory initData = abi.encodeCall(TAGITTreasury.initialize, (governor, address(token), signers));
         ERC1967Proxy proxy = new ERC1967Proxy(address(treasuryImpl), initData);
         treasury = TAGITTreasury(payable(address(proxy)));
 
@@ -175,11 +172,7 @@ contract DrainDetectorInvariantTest is Test {
         // Tracked balance should never exceed actual balance.
         // It CAN be LESS than actual (when untracked inflows occur).
         // After governor sync, they align exactly.
-        assertLe(
-            trackedBalance,
-            actualBalance,
-            "INVARIANT VIOLATED: tracked balance exceeds actual balance"
-        );
+        assertLe(trackedBalance, actualBalance, "INVARIANT VIOLATED: tracked balance exceeds actual balance");
     }
 
     /**
@@ -194,10 +187,6 @@ contract DrainDetectorInvariantTest is Test {
         uint256 actualBalance = token.balanceOf(address(treasury));
         uint256 trackedBalance = treasury.getDrainDetectorBalance();
 
-        assertEq(
-            uint256(trackedBalance),
-            actualBalance,
-            "INVARIANT VIOLATED: sync did not align tracked to actual"
-        );
+        assertEq(uint256(trackedBalance), actualBalance, "INVARIANT VIOLATED: sync did not align tracked to actual");
     }
 }

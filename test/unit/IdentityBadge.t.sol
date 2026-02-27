@@ -113,9 +113,7 @@ contract IdentityBadgeTest is Test {
         identityBadge.grantIdentity(user1, BADGE_KYC_L1);
 
         // Try to grant same badge again
-        vm.expectRevert(
-            abi.encodeWithSelector(IIdentityBadge.BadgeAlreadyGranted.selector, user1, BADGE_KYC_L1)
-        );
+        vm.expectRevert(abi.encodeWithSelector(IIdentityBadge.BadgeAlreadyGranted.selector, user1, BADGE_KYC_L1));
         identityBadge.grantIdentity(user1, BADGE_KYC_L1);
     }
 
@@ -196,9 +194,7 @@ contract IdentityBadgeTest is Test {
      * @dev Cannot revoke badge that was never granted
      */
     function test_revokeIdentity_revert_notFound() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(IIdentityBadge.BadgeNotFound.selector, user1, BADGE_KYC_L1)
-        );
+        vm.expectRevert(abi.encodeWithSelector(IIdentityBadge.BadgeNotFound.selector, user1, BADGE_KYC_L1));
         identityBadge.revokeIdentity(user1, BADGE_KYC_L1);
     }
 

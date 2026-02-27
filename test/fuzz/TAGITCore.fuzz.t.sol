@@ -171,13 +171,8 @@ contract TAGITCoreFuzzTest is Test {
         assertEq(tagitCore.ownerOf(tokenId), recipient, "ERC721 owner should be recipient");
 
         // Assert: asset state is MINTED
-        (
-            address assetOwner,
-            uint64 timestamp,
-            TAGITCore.State state,
-            uint8 flags,
-            uint16 reserved
-        ) = tagitCore.getAsset(tokenId);
+        (address assetOwner, uint64 timestamp, TAGITCore.State state, uint8 flags, uint16 reserved) =
+            tagitCore.getAsset(tokenId);
         assertEq(assetOwner, recipient, "Asset owner should be recipient");
         assertEq(uint8(state), uint8(TAGITCore.State.MINTED), "State should be MINTED");
         assertGt(timestamp, 0, "Timestamp should be set");
@@ -214,7 +209,7 @@ contract TAGITCoreFuzzTest is Test {
         tagitCore.bindTag(tokenId, tagHash, cr, sig);
 
         // Assert: state transitioned to BOUND
-        (, uint64 timestamp, TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (, uint64 timestamp, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.BOUND), "State should be BOUND");
         assertGt(timestamp, 0, "Timestamp should be updated");
 
@@ -242,7 +237,7 @@ contract TAGITCoreFuzzTest is Test {
         vm.prank(manufacturer);
         uint256 tokenId = tagitCore.mint(manufacturer, metadata);
 
-        (, , TAGITCore.State stateAfterMint, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State stateAfterMint,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(stateAfterMint), uint8(TAGITCore.State.MINTED), "After mint: state should be MINTED");
 
         // Step 2: Bind tag
@@ -250,7 +245,7 @@ contract TAGITCoreFuzzTest is Test {
         vm.prank(manufacturer);
         tagitCore.bindTag(tokenId, tagHash, cr, sig);
 
-        (, , TAGITCore.State stateAfterBind, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State stateAfterBind,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(stateAfterBind), uint8(TAGITCore.State.BOUND), "After bind: state should be BOUND");
         assertEq(tagitCore.getTokenByTag(tagHash), tokenId, "Tag mapping should be set");
 
@@ -258,14 +253,16 @@ contract TAGITCoreFuzzTest is Test {
         vm.prank(manufacturer);
         tagitCore.activate(tokenId);
 
-        (, , TAGITCore.State stateAfterActivate, , ) = tagitCore.getAsset(tokenId);
-        assertEq(uint8(stateAfterActivate), uint8(TAGITCore.State.ACTIVATED), "After activate: state should be ACTIVATED");
+        (,, TAGITCore.State stateAfterActivate,,) = tagitCore.getAsset(tokenId);
+        assertEq(
+            uint8(stateAfterActivate), uint8(TAGITCore.State.ACTIVATED), "After activate: state should be ACTIVATED"
+        );
 
         // Step 4: Claim
         vm.prank(manufacturer);
         tagitCore.claim(tokenId, consumer);
 
-        (address assetOwner, , TAGITCore.State stateAfterClaim, , ) = tagitCore.getAsset(tokenId);
+        (address assetOwner,, TAGITCore.State stateAfterClaim,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(stateAfterClaim), uint8(TAGITCore.State.CLAIMED), "After claim: state should be CLAIMED");
         assertEq(assetOwner, consumer, "Asset owner should be consumer");
         assertEq(tagitCore.ownerOf(tokenId), consumer, "ERC721 owner should be consumer");
@@ -301,14 +298,9 @@ contract TAGITCoreFuzzTest is Test {
         // (5->4) FLAGGED->CLAIMED: via resolve (only backward transition)
         // (4->6) CLAIMED->RECYCLED: via recycle
         // (5->6) FLAGGED->RECYCLED: via recycle
-        bool isValidTransition = (fromState == 0 && toState == 1) ||
-            (fromState == 1 && toState == 2) ||
-            (fromState == 2 && toState == 3) ||
-            (fromState == 3 && toState == 4) ||
-            (fromState == 4 && toState == 5) ||
-            (fromState == 5 && toState == 4) ||
-            (fromState == 4 && toState == 6) ||
-            (fromState == 5 && toState == 6);
+        bool isValidTransition = (fromState == 0 && toState == 1) || (fromState == 1 && toState == 2)
+            || (fromState == 2 && toState == 3) || (fromState == 3 && toState == 4) || (fromState == 4 && toState == 5)
+            || (fromState == 5 && toState == 4) || (fromState == 4 && toState == 6) || (fromState == 5 && toState == 6);
 
         // Skip valid transitions (tested by other fuzz tests)
         if (isValidTransition) return;
@@ -476,12 +468,7 @@ contract TAGITCoreFuzzTest is Test {
             assertEq(tagitCore.ownerOf(tokenId), recipients[i], "ERC721 owner should match recipient");
 
             // Asset state should be MINTED
-            (
-                address assetOwner,
-                uint64 timestamp,
-                TAGITCore.State state,
-                ,
-            ) = tagitCore.getAsset(tokenId);
+            (address assetOwner, uint64 timestamp, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
             assertEq(assetOwner, recipients[i], "Asset owner should match recipient");
             assertEq(uint8(state), uint8(TAGITCore.State.MINTED), "State should be MINTED");
             assertGt(timestamp, 0, "Timestamp should be set");
@@ -509,7 +496,7 @@ contract TAGITCoreFuzzTest is Test {
 
         // Verify pre-claim state
         assertEq(tagitCore.ownerOf(tokenId), manufacturer, "Pre-claim: ERC721 owner should be manufacturer");
-        (, , TAGITCore.State preState, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State preState,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(preState), uint8(TAGITCore.State.ACTIVATED), "Pre-claim: state should be ACTIVATED");
 
         // Act
@@ -517,7 +504,7 @@ contract TAGITCoreFuzzTest is Test {
         tagitCore.claim(tokenId, newOwner);
 
         // Assert: state transitioned to CLAIMED
-        (address assetOwner, uint64 timestamp, TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (address assetOwner, uint64 timestamp, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.CLAIMED), "State should be CLAIMED");
         assertEq(assetOwner, newOwner, "Asset owner should be newOwner");
         assertGt(timestamp, 0, "Timestamp should be updated");
@@ -546,7 +533,7 @@ contract TAGITCoreFuzzTest is Test {
         uint256 tokenId = _fullLifecycleToFlagged(manufacturer, originalClaimer, DEFAULT_METADATA, tagHash);
 
         // Verify pre-resolve state
-        (, , TAGITCore.State preState, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State preState,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(preState), uint8(TAGITCore.State.FLAGGED), "Pre-resolve: state should be FLAGGED");
 
         // Approve resolve: 2-of-3 quorum (manufacturer + resolver2)
@@ -567,7 +554,7 @@ contract TAGITCoreFuzzTest is Test {
         tagitCore.resolve(tokenId, newOwner);
 
         // Assert: state reverted to CLAIMED (the only backward transition)
-        (address assetOwner, uint64 timestamp, TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (address assetOwner, uint64 timestamp, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.CLAIMED), "State should be CLAIMED after resolve");
         assertEq(assetOwner, newOwner, "Asset owner should be newOwner");
         assertGt(timestamp, 0, "Timestamp should be updated");
@@ -576,7 +563,7 @@ contract TAGITCoreFuzzTest is Test {
         assertEq(tagitCore.ownerOf(tokenId), newOwner, "ERC721 owner should be newOwner");
 
         // Assert: resolve approval state is cleared (nonce incremented)
-        (uint256 postApprovalCount, , bool postQuorum) = tagitCore.getResolveApprovalStatus(tokenId);
+        (uint256 postApprovalCount,, bool postQuorum) = tagitCore.getResolveApprovalStatus(tokenId);
         assertEq(postApprovalCount, 0, "Approval count should be reset after resolve");
         assertFalse(postQuorum, "Quorum should not be reached after reset");
     }
@@ -600,26 +587,26 @@ contract TAGITCoreFuzzTest is Test {
             tokenId = _fullLifecycleToFlagged(manufacturer, claimRecipient, DEFAULT_METADATA, tagHash);
 
             // Verify pre-recycle state
-            (, , TAGITCore.State preState, , ) = tagitCore.getAsset(tokenId);
+            (,, TAGITCore.State preState,,) = tagitCore.getAsset(tokenId);
             assertEq(uint8(preState), uint8(TAGITCore.State.FLAGGED), "Pre-recycle: state should be FLAGGED");
         } else {
             // Setup: advance to CLAIMED
             tokenId = _fullLifecycleToClaimed(manufacturer, claimRecipient, DEFAULT_METADATA, tagHash);
 
             // Verify pre-recycle state
-            (, , TAGITCore.State preState, , ) = tagitCore.getAsset(tokenId);
+            (,, TAGITCore.State preState,,) = tagitCore.getAsset(tokenId);
             assertEq(uint8(preState), uint8(TAGITCore.State.CLAIMED), "Pre-recycle: state should be CLAIMED");
         }
 
         // Capture owner before recycle
-        (address ownerBefore, , , , ) = tagitCore.getAsset(tokenId);
+        (address ownerBefore,,,,) = tagitCore.getAsset(tokenId);
 
         // Act
         vm.prank(manufacturer);
         tagitCore.recycle(tokenId);
 
         // Assert: state is RECYCLED (terminal)
-        (address assetOwner, uint64 timestamp, TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (address assetOwner, uint64 timestamp, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.RECYCLED), "State should be RECYCLED");
         assertGt(timestamp, 0, "Timestamp should be updated");
 
@@ -675,7 +662,7 @@ contract TAGITCoreFuzzTest is Test {
         tagitCore.bindTag(tokenId, tagHash, challengeResponse, wrongSignature);
 
         // Verify token state unchanged
-        (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.MINTED), "State should remain MINTED after failed bind");
 
         // Verify no tag was bound
@@ -800,7 +787,7 @@ contract TAGITCoreFuzzTest is Test {
 
     /// @dev Helper to assert a token is in the expected state (reduces stack depth in callers)
     function _assertState(uint256 tokenId, TAGITCore.State expected, string memory message) internal view {
-        (, , TAGITCore.State actual, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State actual,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(actual), uint8(expected), message);
     }
 }

@@ -7,13 +7,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 
 import {ITAGITEmissions} from "../interfaces/ITAGITEmissions.sol";
 import {TAGITToken} from "./TAGITToken.sol";
-import {
-    INFLATION_RATE,
-    EPOCHS_PER_YEAR,
-    EPOCH_DURATION,
-    BASIS_POINTS,
-    VERSION
-} from "../libraries/Constants.sol";
+import {INFLATION_RATE, EPOCHS_PER_YEAR, EPOCH_DURATION, BASIS_POINTS, VERSION} from "../libraries/Constants.sol";
 
 /**
  * @title TAGITEmissions
@@ -39,12 +33,7 @@ import {
  *
  * @custom:security-contact security@tagit.network
  */
-contract TAGITEmissions is
-    ITAGITEmissions,
-    OwnableUpgradeable,
-    UUPSUpgradeable,
-    ReentrancyGuard
-{
+contract TAGITEmissions is ITAGITEmissions, OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard {
     // ============================================
     // STATE VARIABLES
     // ============================================
@@ -96,11 +85,7 @@ contract TAGITEmissions is
      * @param _governor Address authorized to update allocations
      * @param initialOwner Owner of the contract (for upgrades)
      */
-    function initialize(
-        address _token,
-        address _governor,
-        address initialOwner
-    ) public initializer {
+    function initialize(address _token, address _governor, address initialOwner) public initializer {
         if (_token == address(0)) revert ZeroAddress();
         if (_governor == address(0)) revert ZeroAddress();
         if (initialOwner == address(0)) revert ZeroAddress();
@@ -154,9 +139,7 @@ contract TAGITEmissions is
 
         // PATCH-10: Calculate how many epochs to catch up, capped at MAX_CATCH_UP_EPOCHS
         uint256 pendingEpochs = current - _lastDistributedEpoch;
-        uint256 epochsToDistribute = pendingEpochs > MAX_CATCH_UP_EPOCHS
-            ? MAX_CATCH_UP_EPOCHS
-            : pendingEpochs;
+        uint256 epochsToDistribute = pendingEpochs > MAX_CATCH_UP_EPOCHS ? MAX_CATCH_UP_EPOCHS : pendingEpochs;
 
         uint256 startEpoch = _lastDistributedEpoch + 1;
 
@@ -174,7 +157,9 @@ contract TAGITEmissions is
                 if (share > 0) {
                     token.mint(_allocations[j].recipient, share);
                 }
-                unchecked { ++j; }
+                unchecked {
+                    ++j;
+                }
             }
 
             _epochDistributions[epoch] = weeklyAmount;
@@ -183,7 +168,9 @@ contract TAGITEmissions is
 
             emit EpochDistributed(epoch, weeklyAmount, block.timestamp);
 
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
 
         // Update last distributed epoch (may not reach currentEpoch if capped)
@@ -204,10 +191,7 @@ contract TAGITEmissions is
      * @custom:security Validates no zero addresses and weights sum correctly
      * @custom:emits AllocationsUpdated
      */
-    function setAllocationWeights(
-        address[] calldata recipients,
-        uint256[] calldata weights
-    ) external onlyGovernor {
+    function setAllocationWeights(address[] calldata recipients, uint256[] calldata weights) external onlyGovernor {
         if (recipients.length == 0) revert EmptyAllocations();
         if (recipients.length != weights.length) revert ArrayLengthMismatch();
 
@@ -217,7 +201,9 @@ contract TAGITEmissions is
         for (uint256 i = 0; i < len;) {
             if (recipients[i] == address(0)) revert ZeroAddress();
             totalWeight += weights[i];
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
 
         if (totalWeight != BASIS_POINTS) {
@@ -229,11 +215,10 @@ contract TAGITEmissions is
 
         // Set new allocations
         for (uint256 i = 0; i < len;) {
-            _allocations.push(Allocation({
-                recipient: recipients[i],
-                weight: weights[i]
-            }));
-            unchecked { ++i; }
+            _allocations.push(Allocation({recipient: recipients[i], weight: weights[i]}));
+            unchecked {
+                ++i;
+            }
         }
 
         emit AllocationsUpdated(recipients, weights);
@@ -343,9 +328,7 @@ contract TAGITEmissions is
             return 0;
         }
         uint256 pendingEpochs = current - _lastDistributedEpoch;
-        uint256 epochsToEstimate = pendingEpochs > MAX_CATCH_UP_EPOCHS
-            ? MAX_CATCH_UP_EPOCHS
-            : pendingEpochs;
+        uint256 epochsToEstimate = pendingEpochs > MAX_CATCH_UP_EPOCHS ? MAX_CATCH_UP_EPOCHS : pendingEpochs;
         uint256 weeklyRate = INFLATION_RATE;
         uint256 supply = token.totalSupply();
         uint256 total = 0;
@@ -353,7 +336,9 @@ contract TAGITEmissions is
             uint256 amount = (supply * weeklyRate) / (BASIS_POINTS * EPOCHS_PER_YEAR);
             total += amount;
             supply += amount; // simulate compounding
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
         return total;
     }
@@ -385,10 +370,12 @@ contract TAGITEmissions is
         // call setAllocationWeights with actual contract addresses
 
         // For now, all goes to owner (will be updated post-deployment)
-        _allocations.push(Allocation({
-            recipient: msg.sender,  // Placeholder - update via setAllocationWeights
-            weight: BASIS_POINTS    // 100% until properly configured
-        }));
+        _allocations.push(
+            Allocation({
+                recipient: msg.sender, // Placeholder - update via setAllocationWeights
+                weight: BASIS_POINTS // 100% until properly configured
+            })
+        );
     }
 
     // ============================================

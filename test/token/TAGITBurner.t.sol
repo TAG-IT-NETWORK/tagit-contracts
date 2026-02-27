@@ -7,13 +7,7 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 import {TAGITToken} from "../../src/token/TAGITToken.sol";
 import {TAGITBurner} from "../../src/token/TAGITBurner.sol";
 import {ITAGITBurner} from "../../src/interfaces/ITAGITBurner.sol";
-import {
-    GENESIS_SUPPLY,
-    BURN_FLOOR,
-    DEFAULT_BURN_RATE,
-    BASIS_POINTS,
-    VERSION
-} from "../../src/libraries/Constants.sol";
+import {GENESIS_SUPPLY, BURN_FLOOR, DEFAULT_BURN_RATE, BASIS_POINTS, VERSION} from "../../src/libraries/Constants.sol";
 
 /**
  * @title TAGITBurner Unit Tests
@@ -46,23 +40,14 @@ contract TAGITBurnerTest is Test {
 
         // Deploy TAGITToken
         tokenImpl = new TAGITToken();
-        bytes memory tokenInitData = abi.encodeWithSelector(
-            TAGITToken.initialize.selector,
-            treasury,
-            owner
-        );
+        bytes memory tokenInitData = abi.encodeWithSelector(TAGITToken.initialize.selector, treasury, owner);
         ERC1967Proxy tokenProxy = new ERC1967Proxy(address(tokenImpl), tokenInitData);
         token = TAGITToken(address(tokenProxy));
 
         // Deploy TAGITBurner
         burnerImpl = new TAGITBurner();
-        bytes memory burnerInitData = abi.encodeWithSelector(
-            TAGITBurner.initialize.selector,
-            address(token),
-            treasury,
-            governor,
-            owner
-        );
+        bytes memory burnerInitData =
+            abi.encodeWithSelector(TAGITBurner.initialize.selector, address(token), treasury, governor, owner);
         ERC1967Proxy burnerProxy = new ERC1967Proxy(address(burnerImpl), burnerInitData);
         burner = TAGITBurner(address(burnerProxy));
     }
@@ -94,13 +79,8 @@ contract TAGITBurnerTest is Test {
 
     function test_initialize_revert_zeroToken() public {
         TAGITBurner newImpl = new TAGITBurner();
-        bytes memory initData = abi.encodeWithSelector(
-            TAGITBurner.initialize.selector,
-            address(0),
-            treasury,
-            governor,
-            owner
-        );
+        bytes memory initData =
+            abi.encodeWithSelector(TAGITBurner.initialize.selector, address(0), treasury, governor, owner);
 
         vm.expectRevert(ITAGITBurner.ZeroAddress.selector);
         new ERC1967Proxy(address(newImpl), initData);
@@ -108,13 +88,8 @@ contract TAGITBurnerTest is Test {
 
     function test_initialize_revert_zeroTreasury() public {
         TAGITBurner newImpl = new TAGITBurner();
-        bytes memory initData = abi.encodeWithSelector(
-            TAGITBurner.initialize.selector,
-            address(token),
-            address(0),
-            governor,
-            owner
-        );
+        bytes memory initData =
+            abi.encodeWithSelector(TAGITBurner.initialize.selector, address(token), address(0), governor, owner);
 
         vm.expectRevert(ITAGITBurner.ZeroAddress.selector);
         new ERC1967Proxy(address(newImpl), initData);
@@ -122,13 +97,8 @@ contract TAGITBurnerTest is Test {
 
     function test_initialize_revert_zeroGovernor() public {
         TAGITBurner newImpl = new TAGITBurner();
-        bytes memory initData = abi.encodeWithSelector(
-            TAGITBurner.initialize.selector,
-            address(token),
-            treasury,
-            address(0),
-            owner
-        );
+        bytes memory initData =
+            abi.encodeWithSelector(TAGITBurner.initialize.selector, address(token), treasury, address(0), owner);
 
         vm.expectRevert(ITAGITBurner.ZeroAddress.selector);
         new ERC1967Proxy(address(newImpl), initData);
@@ -136,13 +106,8 @@ contract TAGITBurnerTest is Test {
 
     function test_initialize_revert_zeroOwner() public {
         TAGITBurner newImpl = new TAGITBurner();
-        bytes memory initData = abi.encodeWithSelector(
-            TAGITBurner.initialize.selector,
-            address(token),
-            treasury,
-            governor,
-            address(0)
-        );
+        bytes memory initData =
+            abi.encodeWithSelector(TAGITBurner.initialize.selector, address(token), treasury, governor, address(0));
 
         vm.expectRevert(ITAGITBurner.ZeroAddress.selector);
         new ERC1967Proxy(address(newImpl), initData);
@@ -319,21 +284,13 @@ contract TAGITBurnerTest is Test {
         uint256 belowFloor = BURN_FLOOR - 1;
 
         vm.prank(governor);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITBurner.BurnRateBelowFloor.selector,
-            belowFloor,
-            BURN_FLOOR
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITBurner.BurnRateBelowFloor.selector, belowFloor, BURN_FLOOR));
         burner.setBurnRate(belowFloor);
     }
 
     function test_setBurnRate_revert_zeroRate() public {
         vm.prank(governor);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITBurner.BurnRateBelowFloor.selector,
-            0,
-            BURN_FLOOR
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITBurner.BurnRateBelowFloor.selector, 0, BURN_FLOOR));
         burner.setBurnRate(0);
     }
 
@@ -341,10 +298,7 @@ contract TAGITBurnerTest is Test {
         uint256 tooHigh = BASIS_POINTS + 1;
 
         vm.prank(governor);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITBurner.BurnRateExceedsMax.selector,
-            tooHigh
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITBurner.BurnRateExceedsMax.selector, tooHigh));
         burner.setBurnRate(tooHigh);
     }
 
@@ -528,11 +482,7 @@ contract TAGITBurnerTest is Test {
         rate = bound(rate, 0, BURN_FLOOR - 1);
 
         vm.prank(governor);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITBurner.BurnRateBelowFloor.selector,
-            rate,
-            BURN_FLOOR
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITBurner.BurnRateBelowFloor.selector, rate, BURN_FLOOR));
         burner.setBurnRate(rate);
     }
 

@@ -52,7 +52,9 @@ contract RegisterSageAgent is Script {
         agentIdentity.setMetadata(agentId, "type", "analysis");
         agentIdentity.setMetadata(agentId, "model", "claude-opus-4-6");
         agentIdentity.setMetadata(agentId, "version", "1.0.0");
-        agentIdentity.setMetadata(agentId, "description", "TAG IT primary analysis agent - blockchain intelligence and asset verification");
+        agentIdentity.setMetadata(
+            agentId, "description", "TAG IT primary analysis agent - blockchain intelligence and asset verification"
+        );
         console2.log("   Metadata set");
 
         vm.stopBroadcast();

@@ -43,11 +43,25 @@ contract MockBurner is ITAGITBurner {
     }
 
     // View stubs
-    function burnRate() external pure override returns (uint256) { return 3330; }
-    function totalBurned() external pure override returns (uint256) { return 0; }
-    function totalToTreasury() external pure override returns (uint256) { return 0; }
-    function treasury() external pure override returns (address) { return address(0); }
-    function governor() external pure override returns (address) { return address(0); }
+    function burnRate() external pure override returns (uint256) {
+        return 3330;
+    }
+
+    function totalBurned() external pure override returns (uint256) {
+        return 0;
+    }
+
+    function totalToTreasury() external pure override returns (uint256) {
+        return 0;
+    }
+
+    function treasury() external pure override returns (address) {
+        return address(0);
+    }
+
+    function governor() external pure override returns (address) {
+        return address(0);
+    }
     function setBurnRate(uint256) external pure override {}
     function setTreasury(address) external pure override {}
 }
@@ -80,20 +94,10 @@ contract IntegrationFactoryTest is Test {
         uint256 feeRate
     );
     event PaymentProcessed(
-        uint256 indexed integrationId,
-        address indexed payer_,
-        uint256 amount,
-        uint256 protocolFee,
-        uint256 toPartner
+        uint256 indexed integrationId, address indexed payer_, uint256 amount, uint256 protocolFee, uint256 toPartner
     );
-    event IntegrationDeactivationRequested(
-        uint256 indexed integrationId,
-        uint256 gracePeriodEnds
-    );
-    event IntegrationDeactivated(
-        uint256 indexed integrationId,
-        uint256 indexed agentId
-    );
+    event IntegrationDeactivationRequested(uint256 indexed integrationId, uint256 gracePeriodEnds);
+    event IntegrationDeactivated(uint256 indexed integrationId, uint256 indexed agentId);
     event IntegrationReactivated(uint256 indexed integrationId);
     event MaxPaymentUpdated(uint256 oldMax, uint256 newMax);
     event SignerAdded(address indexed signer);
@@ -151,20 +155,13 @@ contract IntegrationFactoryTest is Test {
         );
     }
 
-    function _signMessage(
-        bytes32 messageHash,
-        uint256 privateKey
-    ) internal pure returns (bytes memory) {
-        bytes32 ethSignedHash = keccak256(
-            abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash)
-        );
+    function _signMessage(bytes32 messageHash, uint256 privateKey) internal pure returns (bytes memory) {
+        bytes32 ethSignedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, ethSignedHash);
         return abi.encodePacked(r, s, v);
     }
 
-    function _getMultiSigSignatures(
-        bytes32 messageHash
-    ) internal view returns (bytes[] memory) {
+    function _getMultiSigSignatures(bytes32 messageHash) internal view returns (bytes[] memory) {
         bytes[] memory sigs = new bytes[](2);
         sigs[0] = _signMessage(messageHash, signer1Key);
         sigs[1] = _signMessage(messageHash, signer2Key);
@@ -221,9 +218,7 @@ contract IntegrationFactoryTest is Test {
         signers[2] = signer3;
 
         // OZ Ownable reverts with OwnableInvalidOwner before our ZeroAddress check
-        vm.expectRevert(
-            abi.encodeWithSignature("OwnableInvalidOwner(address)", address(0))
-        );
+        vm.expectRevert(abi.encodeWithSignature("OwnableInvalidOwner(address)", address(0)));
         new IntegrationFactory(address(burner), address(0), signers, 2);
     }
 
@@ -242,9 +237,7 @@ contract IntegrationFactoryTest is Test {
         signers[1] = signer2;
         signers[2] = signer3;
 
-        vm.expectRevert(
-            abi.encodeWithSelector(IIntegrationFactory.InsufficientSignatures.selector, 0, 3)
-        );
+        vm.expectRevert(abi.encodeWithSelector(IIntegrationFactory.InsufficientSignatures.selector, 0, 3));
         new IntegrationFactory(address(burner), owner, signers, 0);
     }
 
@@ -254,9 +247,7 @@ contract IntegrationFactoryTest is Test {
         signers[1] = signer2;
         signers[2] = signer3;
 
-        vm.expectRevert(
-            abi.encodeWithSelector(IIntegrationFactory.InsufficientSignatures.selector, 4, 3)
-        );
+        vm.expectRevert(abi.encodeWithSelector(IIntegrationFactory.InsufficientSignatures.selector, 4, 3));
         new IntegrationFactory(address(burner), owner, signers, 4);
     }
 
@@ -266,9 +257,7 @@ contract IntegrationFactoryTest is Test {
         signers[1] = signer1; // duplicate
         signers[2] = signer3;
 
-        vm.expectRevert(
-            abi.encodeWithSelector(IIntegrationFactory.DuplicateSigner.selector, signer1)
-        );
+        vm.expectRevert(abi.encodeWithSelector(IIntegrationFactory.DuplicateSigner.selector, signer1));
         new IntegrationFactory(address(burner), owner, signers, 2);
     }
 
@@ -338,9 +327,7 @@ contract IntegrationFactoryTest is Test {
 
     function test_deployIntegration_revert_zeroAgentId() public {
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(IIntegrationFactory.InvalidAgentId.selector, 0)
-        );
+        vm.expectRevert(abi.encodeWithSelector(IIntegrationFactory.InvalidAgentId.selector, 0));
         factory.deployIntegration(0, partner, 500, address(token));
     }
 
@@ -358,9 +345,7 @@ contract IntegrationFactoryTest is Test {
 
     function test_deployIntegration_revert_feeRateExceedsBasisPoints() public {
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(IIntegrationFactory.InvalidFeeRate.selector, uint96(BASIS_POINTS) + 1)
-        );
+        vm.expectRevert(abi.encodeWithSelector(IIntegrationFactory.InvalidFeeRate.selector, uint96(BASIS_POINTS) + 1));
         factory.deployIntegration(1, partner, uint96(BASIS_POINTS) + 1, address(token));
     }
 
@@ -375,9 +360,7 @@ contract IntegrationFactoryTest is Test {
         _deployDefaultIntegration();
 
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(IIntegrationFactory.AgentAlreadyIntegrated.selector, 1)
-        );
+        vm.expectRevert(abi.encodeWithSelector(IIntegrationFactory.AgentAlreadyIntegrated.selector, 1));
         factory.deployIntegration(1, partner, 500, address(token));
     }
 
@@ -444,9 +427,7 @@ contract IntegrationFactoryTest is Test {
     function test_processPayment_fullFeeRate() public {
         // Deploy integration with 100% fee
         vm.prank(owner);
-        uint256 integrationId = factory.deployIntegration(
-            1, partner, uint96(BASIS_POINTS), address(token)
-        );
+        uint256 integrationId = factory.deployIntegration(1, partner, uint96(BASIS_POINTS), address(token));
 
         uint256 amount = 100 ether;
 
@@ -480,13 +461,7 @@ contract IntegrationFactoryTest is Test {
         token.approve(address(factory), overCap);
 
         vm.prank(payer);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IIntegrationFactory.PaymentExceedsCap.selector,
-                overCap,
-                maxPayment
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(IIntegrationFactory.PaymentExceedsCap.selector, overCap, maxPayment));
         factory.processPayment(integrationId, overCap);
     }
 
@@ -519,9 +494,7 @@ contract IntegrationFactoryTest is Test {
         token.approve(address(factory), 100 ether);
 
         vm.prank(payer);
-        vm.expectRevert(
-            abi.encodeWithSelector(IIntegrationFactory.IntegrationNotActive.selector, integrationId)
-        );
+        vm.expectRevert(abi.encodeWithSelector(IIntegrationFactory.IntegrationNotActive.selector, integrationId));
         factory.processPayment(integrationId, 100 ether);
     }
 
@@ -595,9 +568,7 @@ contract IntegrationFactoryTest is Test {
         factory.deactivateIntegration(integrationId);
 
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(IIntegrationFactory.IntegrationInGracePeriod.selector, integrationId)
-        );
+        vm.expectRevert(abi.encodeWithSelector(IIntegrationFactory.IntegrationInGracePeriod.selector, integrationId));
         factory.deactivateIntegration(integrationId);
     }
 
@@ -656,8 +627,7 @@ contract IntegrationFactoryTest is Test {
         factory.executeDeactivation(integrationId);
 
         assertEq(
-            uint8(factory.getIntegrationStatus(integrationId)),
-            uint8(IIntegrationFactory.IntegrationStatus.DEACTIVATED)
+            uint8(factory.getIntegrationStatus(integrationId)), uint8(IIntegrationFactory.IntegrationStatus.DEACTIVATED)
         );
     }
 
@@ -672,11 +642,7 @@ contract IntegrationFactoryTest is Test {
         vm.warp(expiresAt - 1);
 
         vm.expectRevert(
-            abi.encodeWithSelector(
-                IIntegrationFactory.GracePeriodNotExpired.selector,
-                integrationId,
-                expiresAt
-            )
+            abi.encodeWithSelector(IIntegrationFactory.GracePeriodNotExpired.selector, integrationId, expiresAt)
         );
         factory.executeDeactivation(integrationId);
     }
@@ -684,9 +650,7 @@ contract IntegrationFactoryTest is Test {
     function test_executeDeactivation_revert_noDeactivationRequested() public {
         uint256 integrationId = _deployDefaultIntegration();
 
-        vm.expectRevert(
-            abi.encodeWithSelector(IIntegrationFactory.IntegrationNotFound.selector, integrationId)
-        );
+        vm.expectRevert(abi.encodeWithSelector(IIntegrationFactory.IntegrationNotFound.selector, integrationId));
         factory.executeDeactivation(integrationId);
     }
 
@@ -716,9 +680,7 @@ contract IntegrationFactoryTest is Test {
         factory.deactivateIntegration(integrationId);
 
         uint256 currentNonce = factory.nonce();
-        bytes32 messageHash = keccak256(
-            abi.encodePacked("REACTIVATE", integrationId, currentNonce)
-        );
+        bytes32 messageHash = keccak256(abi.encodePacked("REACTIVATE", integrationId, currentNonce));
         bytes[] memory sigs = _getMultiSigSignatures(messageHash);
 
         factory.reactivateIntegration(integrationId, sigs);
@@ -735,9 +697,7 @@ contract IntegrationFactoryTest is Test {
         factory.deactivateIntegration(integrationId);
 
         uint256 currentNonce = factory.nonce();
-        bytes32 messageHash = keccak256(
-            abi.encodePacked("REACTIVATE", integrationId, currentNonce)
-        );
+        bytes32 messageHash = keccak256(abi.encodePacked("REACTIVATE", integrationId, currentNonce));
         bytes[] memory sigs = _getMultiSigSignatures(messageHash);
 
         vm.expectEmit(true, false, false, false);
@@ -752,9 +712,7 @@ contract IntegrationFactoryTest is Test {
         factory.deactivateIntegration(integrationId);
 
         uint256 nonceBefore = factory.nonce();
-        bytes32 messageHash = keccak256(
-            abi.encodePacked("REACTIVATE", integrationId, nonceBefore)
-        );
+        bytes32 messageHash = keccak256(abi.encodePacked("REACTIVATE", integrationId, nonceBefore));
         bytes[] memory sigs = _getMultiSigSignatures(messageHash);
 
         factory.reactivateIntegration(integrationId, sigs);
@@ -769,17 +727,13 @@ contract IntegrationFactoryTest is Test {
         factory.deactivateIntegration(integrationId);
 
         uint256 currentNonce = factory.nonce();
-        bytes32 messageHash = keccak256(
-            abi.encodePacked("REACTIVATE", integrationId, currentNonce)
-        );
+        bytes32 messageHash = keccak256(abi.encodePacked("REACTIVATE", integrationId, currentNonce));
 
         // Only 1 signature (need 2)
         bytes[] memory sigs = new bytes[](1);
         sigs[0] = _signMessage(messageHash, signer1Key);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(IIntegrationFactory.InsufficientSignatures.selector, 1, 2)
-        );
+        vm.expectRevert(abi.encodeWithSelector(IIntegrationFactory.InsufficientSignatures.selector, 1, 2));
         factory.reactivateIntegration(integrationId, sigs);
     }
 
@@ -790,9 +744,7 @@ contract IntegrationFactoryTest is Test {
         factory.deactivateIntegration(integrationId);
 
         uint256 currentNonce = factory.nonce();
-        bytes32 messageHash = keccak256(
-            abi.encodePacked("REACTIVATE", integrationId, currentNonce)
-        );
+        bytes32 messageHash = keccak256(abi.encodePacked("REACTIVATE", integrationId, currentNonce));
 
         (, uint256 randomKey) = makeAddrAndKey("random");
 
@@ -811,18 +763,14 @@ contract IntegrationFactoryTest is Test {
         factory.deactivateIntegration(integrationId);
 
         uint256 currentNonce = factory.nonce();
-        bytes32 messageHash = keccak256(
-            abi.encodePacked("REACTIVATE", integrationId, currentNonce)
-        );
+        bytes32 messageHash = keccak256(abi.encodePacked("REACTIVATE", integrationId, currentNonce));
 
         // Same signer twice
         bytes[] memory sigs = new bytes[](2);
         sigs[0] = _signMessage(messageHash, signer1Key);
         sigs[1] = _signMessage(messageHash, signer1Key);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(IIntegrationFactory.DuplicateSigner.selector, signer1)
-        );
+        vm.expectRevert(abi.encodeWithSelector(IIntegrationFactory.DuplicateSigner.selector, signer1));
         factory.reactivateIntegration(integrationId, sigs);
     }
 
@@ -834,9 +782,7 @@ contract IntegrationFactoryTest is Test {
         factory.deactivateIntegration(integrationId);
 
         uint256 nonce0 = factory.nonce();
-        bytes32 messageHash = keccak256(
-            abi.encodePacked("REACTIVATE", integrationId, nonce0)
-        );
+        bytes32 messageHash = keccak256(abi.encodePacked("REACTIVATE", integrationId, nonce0));
         bytes[] memory sigs = _getMultiSigSignatures(messageHash);
         factory.reactivateIntegration(integrationId, sigs);
 
@@ -856,9 +802,7 @@ contract IntegrationFactoryTest is Test {
     function test_setMaxPayment_success() public {
         uint256 newMax = 500 * 1e18;
         uint256 currentNonce = factory.nonce();
-        bytes32 messageHash = keccak256(
-            abi.encodePacked("SET_MAX_PAYMENT", newMax, currentNonce)
-        );
+        bytes32 messageHash = keccak256(abi.encodePacked("SET_MAX_PAYMENT", newMax, currentNonce));
         bytes[] memory sigs = _getMultiSigSignatures(messageHash);
 
         factory.setMaxPayment(newMax, sigs);
@@ -870,9 +814,7 @@ contract IntegrationFactoryTest is Test {
         uint256 oldMax = factory.maxPaymentPerTx();
         uint256 newMax = 500 * 1e18;
         uint256 currentNonce = factory.nonce();
-        bytes32 messageHash = keccak256(
-            abi.encodePacked("SET_MAX_PAYMENT", newMax, currentNonce)
-        );
+        bytes32 messageHash = keccak256(abi.encodePacked("SET_MAX_PAYMENT", newMax, currentNonce));
         bytes[] memory sigs = _getMultiSigSignatures(messageHash);
 
         vm.expectEmit(false, false, false, true);
@@ -882,9 +824,7 @@ contract IntegrationFactoryTest is Test {
 
     function test_setMaxPayment_revert_zeroMax() public {
         uint256 currentNonce = factory.nonce();
-        bytes32 messageHash = keccak256(
-            abi.encodePacked("SET_MAX_PAYMENT", uint256(0), currentNonce)
-        );
+        bytes32 messageHash = keccak256(abi.encodePacked("SET_MAX_PAYMENT", uint256(0), currentNonce));
         bytes[] memory sigs = _getMultiSigSignatures(messageHash);
 
         vm.expectRevert(IIntegrationFactory.ZeroAmount.selector);
@@ -898,9 +838,7 @@ contract IntegrationFactoryTest is Test {
     function test_addSigner_success() public {
         address newSigner = makeAddr("newSigner");
         uint256 currentNonce = factory.nonce();
-        bytes32 messageHash = keccak256(
-            abi.encodePacked("ADD_SIGNER", newSigner, currentNonce)
-        );
+        bytes32 messageHash = keccak256(abi.encodePacked("ADD_SIGNER", newSigner, currentNonce));
         bytes[] memory sigs = _getMultiSigSignatures(messageHash);
 
         vm.expectEmit(true, false, false, false);
@@ -914,9 +852,7 @@ contract IntegrationFactoryTest is Test {
 
     function test_addSigner_revert_zeroAddress() public {
         uint256 currentNonce = factory.nonce();
-        bytes32 messageHash = keccak256(
-            abi.encodePacked("ADD_SIGNER", address(0), currentNonce)
-        );
+        bytes32 messageHash = keccak256(abi.encodePacked("ADD_SIGNER", address(0), currentNonce));
         bytes[] memory sigs = _getMultiSigSignatures(messageHash);
 
         vm.expectRevert(IIntegrationFactory.ZeroAddress.selector);
@@ -925,14 +861,10 @@ contract IntegrationFactoryTest is Test {
 
     function test_addSigner_revert_alreadyExists() public {
         uint256 currentNonce = factory.nonce();
-        bytes32 messageHash = keccak256(
-            abi.encodePacked("ADD_SIGNER", signer1, currentNonce)
-        );
+        bytes32 messageHash = keccak256(abi.encodePacked("ADD_SIGNER", signer1, currentNonce));
         bytes[] memory sigs = _getMultiSigSignatures(messageHash);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(IIntegrationFactory.SignerAlreadyExists.selector, signer1)
-        );
+        vm.expectRevert(abi.encodeWithSelector(IIntegrationFactory.SignerAlreadyExists.selector, signer1));
         factory.addSigner(signer1, sigs);
     }
 
@@ -940,16 +872,12 @@ contract IntegrationFactoryTest is Test {
         // First add a 4th signer so we can remove one and stay above MIN_SIGNERS
         address newSigner = makeAddr("newSigner");
         uint256 nonce0 = factory.nonce();
-        bytes32 addHash = keccak256(
-            abi.encodePacked("ADD_SIGNER", newSigner, nonce0)
-        );
+        bytes32 addHash = keccak256(abi.encodePacked("ADD_SIGNER", newSigner, nonce0));
         factory.addSigner(newSigner, _getMultiSigSignatures(addHash));
 
         // Now remove signer3
         uint256 nonce1 = factory.nonce();
-        bytes32 removeHash = keccak256(
-            abi.encodePacked("REMOVE_SIGNER", signer3, nonce1)
-        );
+        bytes32 removeHash = keccak256(abi.encodePacked("REMOVE_SIGNER", signer3, nonce1));
 
         vm.expectEmit(true, false, false, false);
         emit SignerRemoved(signer3);
@@ -962,9 +890,7 @@ contract IntegrationFactoryTest is Test {
     function test_removeSigner_revert_belowMinimum() public {
         // Cannot remove signer when we have exactly MIN_SIGNERS (3)
         uint256 currentNonce = factory.nonce();
-        bytes32 messageHash = keccak256(
-            abi.encodePacked("REMOVE_SIGNER", signer3, currentNonce)
-        );
+        bytes32 messageHash = keccak256(abi.encodePacked("REMOVE_SIGNER", signer3, currentNonce));
         bytes[] memory sigs = _getMultiSigSignatures(messageHash);
 
         vm.expectRevert(IIntegrationFactory.MinimumSignersRequired.selector);
@@ -974,14 +900,10 @@ contract IntegrationFactoryTest is Test {
     function test_removeSigner_revert_notFound() public {
         address unknownSigner = makeAddr("unknown");
         uint256 currentNonce = factory.nonce();
-        bytes32 messageHash = keccak256(
-            abi.encodePacked("REMOVE_SIGNER", unknownSigner, currentNonce)
-        );
+        bytes32 messageHash = keccak256(abi.encodePacked("REMOVE_SIGNER", unknownSigner, currentNonce));
         bytes[] memory sigs = _getMultiSigSignatures(messageHash);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(IIntegrationFactory.SignerNotFound.selector, unknownSigner)
-        );
+        vm.expectRevert(abi.encodeWithSelector(IIntegrationFactory.SignerNotFound.selector, unknownSigner));
         factory.removeSigner(unknownSigner, sigs);
     }
 
@@ -991,9 +913,7 @@ contract IntegrationFactoryTest is Test {
 
     function test_emergencyPause_pausesContract() public {
         uint256 currentNonce = factory.nonce();
-        bytes32 messageHash = keccak256(
-            abi.encodePacked("EMERGENCY_PAUSE", currentNonce)
-        );
+        bytes32 messageHash = keccak256(abi.encodePacked("EMERGENCY_PAUSE", currentNonce));
         bytes[] memory sigs = _getMultiSigSignatures(messageHash);
 
         factory.emergencyPause(sigs);
@@ -1006,9 +926,7 @@ contract IntegrationFactoryTest is Test {
 
         // Pause
         uint256 currentNonce = factory.nonce();
-        bytes32 messageHash = keccak256(
-            abi.encodePacked("EMERGENCY_PAUSE", currentNonce)
-        );
+        bytes32 messageHash = keccak256(abi.encodePacked("EMERGENCY_PAUSE", currentNonce));
         factory.emergencyPause(_getMultiSigSignatures(messageHash));
 
         // Try payment
@@ -1023,9 +941,7 @@ contract IntegrationFactoryTest is Test {
     function test_emergencyPause_blocksDeployment() public {
         // Pause
         uint256 currentNonce = factory.nonce();
-        bytes32 messageHash = keccak256(
-            abi.encodePacked("EMERGENCY_PAUSE", currentNonce)
-        );
+        bytes32 messageHash = keccak256(abi.encodePacked("EMERGENCY_PAUSE", currentNonce));
         factory.emergencyPause(_getMultiSigSignatures(messageHash));
 
         vm.prank(owner);
@@ -1036,17 +952,13 @@ contract IntegrationFactoryTest is Test {
     function test_emergencyUnpause_resumesOperations() public {
         // Pause
         uint256 nonce0 = factory.nonce();
-        bytes32 pauseHash = keccak256(
-            abi.encodePacked("EMERGENCY_PAUSE", nonce0)
-        );
+        bytes32 pauseHash = keccak256(abi.encodePacked("EMERGENCY_PAUSE", nonce0));
         factory.emergencyPause(_getMultiSigSignatures(pauseHash));
         assertTrue(factory.paused());
 
         // Unpause
         uint256 nonce1 = factory.nonce();
-        bytes32 unpauseHash = keccak256(
-            abi.encodePacked("EMERGENCY_UNPAUSE", nonce1)
-        );
+        bytes32 unpauseHash = keccak256(abi.encodePacked("EMERGENCY_UNPAUSE", nonce1));
         factory.emergencyUnpause(_getMultiSigSignatures(unpauseHash));
         assertFalse(factory.paused());
 
@@ -1062,8 +974,7 @@ contract IntegrationFactoryTest is Test {
     function test_getIntegrationStatus_active() public {
         uint256 integrationId = _deployDefaultIntegration();
         assertEq(
-            uint8(factory.getIntegrationStatus(integrationId)),
-            uint8(IIntegrationFactory.IntegrationStatus.ACTIVE)
+            uint8(factory.getIntegrationStatus(integrationId)), uint8(IIntegrationFactory.IntegrationStatus.ACTIVE)
         );
     }
 
@@ -1095,10 +1006,7 @@ contract IntegrationFactoryTest is Test {
     // FUZZ TESTS
     // ============================================
 
-    function testFuzz_processPayment_feeCalculation(
-        uint256 amount,
-        uint96 feeRate
-    ) public {
+    function testFuzz_processPayment_feeCalculation(uint256 amount, uint96 feeRate) public {
         // Bound inputs
         amount = bound(amount, 1, factory.maxPaymentPerTx());
         feeRate = uint96(bound(uint256(feeRate), 0, BASIS_POINTS));
@@ -1128,12 +1036,7 @@ contract IntegrationFactoryTest is Test {
 
         for (uint256 i = 1; i <= count; i++) {
             vm.prank(owner);
-            uint256 id = factory.deployIntegration(
-                i,
-                partner,
-                500,
-                address(token)
-            );
+            uint256 id = factory.deployIntegration(i, partner, 500, address(token));
             assertEq(id, i);
         }
 
@@ -1149,8 +1052,7 @@ contract IntegrationFactoryTest is Test {
         // Step 1: Deploy
         uint256 integrationId = _deployDefaultIntegration();
         assertEq(
-            uint8(factory.getIntegrationStatus(integrationId)),
-            uint8(IIntegrationFactory.IntegrationStatus.ACTIVE)
+            uint8(factory.getIntegrationStatus(integrationId)), uint8(IIntegrationFactory.IntegrationStatus.ACTIVE)
         );
 
         // Step 2: Process a payment
@@ -1170,13 +1072,10 @@ contract IntegrationFactoryTest is Test {
 
         // Step 4: Reactivate during grace period
         uint256 currentNonce = factory.nonce();
-        bytes32 messageHash = keccak256(
-            abi.encodePacked("REACTIVATE", integrationId, currentNonce)
-        );
+        bytes32 messageHash = keccak256(abi.encodePacked("REACTIVATE", integrationId, currentNonce));
         factory.reactivateIntegration(integrationId, _getMultiSigSignatures(messageHash));
         assertEq(
-            uint8(factory.getIntegrationStatus(integrationId)),
-            uint8(IIntegrationFactory.IntegrationStatus.ACTIVE)
+            uint8(factory.getIntegrationStatus(integrationId)), uint8(IIntegrationFactory.IntegrationStatus.ACTIVE)
         );
 
         // Step 5: Deactivate again and let it expire
@@ -1187,8 +1086,7 @@ contract IntegrationFactoryTest is Test {
         factory.executeDeactivation(integrationId);
 
         assertEq(
-            uint8(factory.getIntegrationStatus(integrationId)),
-            uint8(IIntegrationFactory.IntegrationStatus.DEACTIVATED)
+            uint8(factory.getIntegrationStatus(integrationId)), uint8(IIntegrationFactory.IntegrationStatus.DEACTIVATED)
         );
         assertEq(factory.activeIntegrations(), 0);
     }

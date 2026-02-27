@@ -124,18 +124,14 @@ contract TAGITRecoveryTest is Test {
 
         // Deploy TAGITToken (upgradeable)
         TAGITToken tokenImpl = new TAGITToken();
-        bytes memory tokenData = abi.encodeCall(
-            TAGITToken.initialize,
-            (owner, treasury)
-        );
+        bytes memory tokenData = abi.encodeCall(TAGITToken.initialize, (owner, treasury));
         ERC1967Proxy tokenProxy = new ERC1967Proxy(address(tokenImpl), tokenData);
         token = TAGITToken(address(tokenProxy));
 
         // Deploy TAGITRecovery (upgradeable)
         TAGITRecovery recoveryImpl = new TAGITRecovery();
         bytes memory recoveryData = abi.encodeCall(
-            TAGITRecovery.initialize,
-            (address(core), address(access), address(token), governor, treasury, owner)
+            TAGITRecovery.initialize, (address(core), address(access), address(token), governor, treasury, owner)
         );
         ERC1967Proxy recoveryProxy = new ERC1967Proxy(address(recoveryImpl), recoveryData);
         recovery = TAGITRecovery(address(recoveryProxy));
@@ -167,7 +163,10 @@ contract TAGITRecoveryTest is Test {
     // ORACLE HELPER
     // ============================================
 
-    function _oracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory challengeResponse, bytes memory oracleSignature) {
+    function _oracleSign(uint256 tokenId, bytes32 tagHash)
+        internal
+        returns (bytes memory challengeResponse, bytes memory oracleSignature)
+    {
         challengeResponse = abi.encodePacked("challenge", tokenId);
         bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
         bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
@@ -239,8 +238,7 @@ contract TAGITRecoveryTest is Test {
     function test_initialize_revert_zeroCore() public {
         TAGITRecovery impl = new TAGITRecovery();
         bytes memory data = abi.encodeCall(
-            TAGITRecovery.initialize,
-            (address(0), address(access), address(token), governor, treasury, owner)
+            TAGITRecovery.initialize, (address(0), address(access), address(token), governor, treasury, owner)
         );
         vm.expectRevert(IRecovery.ZeroAddress.selector);
         new ERC1967Proxy(address(impl), data);
@@ -249,8 +247,7 @@ contract TAGITRecoveryTest is Test {
     function test_initialize_revert_zeroAccess() public {
         TAGITRecovery impl = new TAGITRecovery();
         bytes memory data = abi.encodeCall(
-            TAGITRecovery.initialize,
-            (address(core), address(0), address(token), governor, treasury, owner)
+            TAGITRecovery.initialize, (address(core), address(0), address(token), governor, treasury, owner)
         );
         vm.expectRevert(IRecovery.ZeroAddress.selector);
         new ERC1967Proxy(address(impl), data);
@@ -481,9 +478,9 @@ contract TAGITRecoveryTest is Test {
         uint256 caseId = _initiateRecovery(tokenId);
 
         // Vote to approve (need 66%+ approval)
-        _voteOnCase(caseId, governanceVoter, true);  // 4 weight
-        _voteOnCase(caseId, manufacturer, true);     // 3 weight
-        _voteOnCase(caseId, verifier, true);         // 1 weight
+        _voteOnCase(caseId, governanceVoter, true); // 4 weight
+        _voteOnCase(caseId, manufacturer, true); // 3 weight
+        _voteOnCase(caseId, verifier, true); // 1 weight
 
         // Fast forward past voting period
         vm.warp(block.timestamp + VOTING_DURATION + 1);
@@ -506,8 +503,8 @@ contract TAGITRecoveryTest is Test {
 
         // Vote to reject (need <66% approval)
         _voteOnCase(caseId, governanceVoter, false); // 4 weight against
-        _voteOnCase(caseId, manufacturer, false);    // 3 weight against
-        _voteOnCase(caseId, verifier, true);         // 1 weight for
+        _voteOnCase(caseId, manufacturer, false); // 3 weight against
+        _voteOnCase(caseId, verifier, true); // 1 weight for
 
         // Fast forward past voting period
         vm.warp(block.timestamp + VOTING_DURATION + 1);
@@ -765,10 +762,10 @@ contract TAGITRecoveryTest is Test {
         uint256 caseId = _initiateRecovery(tokenId);
 
         address[] memory voters = new address[](4);
-        voters[0] = verifier;           // weight 1
-        voters[1] = certifiedVerifier;  // weight 2
-        voters[2] = manufacturer;       // weight 3
-        voters[3] = governanceVoter;    // weight 4
+        voters[0] = verifier; // weight 1
+        voters[1] = certifiedVerifier; // weight 2
+        voters[2] = manufacturer; // weight 3
+        voters[3] = governanceVoter; // weight 4
 
         uint256[] memory weights = new uint256[](4);
         weights[0] = 1;

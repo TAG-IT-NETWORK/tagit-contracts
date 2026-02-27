@@ -32,30 +32,16 @@ interface ITAGITAccountFactory {
     // ============================================
 
     /// @notice Emitted when account is created
-    event AccountCreated(
-        address indexed account,
-        bytes32 indexed emailHash,
-        uint256 salt,
-        address indexed owner
-    );
+    event AccountCreated(address indexed account, bytes32 indexed emailHash, uint256 salt, address indexed owner);
 
     /// @notice Emitted when implementation is updated
-    event ImplementationUpdated(
-        address indexed oldImplementation,
-        address indexed newImplementation
-    );
+    event ImplementationUpdated(address indexed oldImplementation, address indexed newImplementation);
 
     /// @notice Emitted when protocol guardian is updated
-    event ProtocolGuardianUpdated(
-        address indexed oldGuardian,
-        address indexed newGuardian
-    );
+    event ProtocolGuardianUpdated(address indexed oldGuardian, address indexed newGuardian);
 
     /// @notice Emitted when governor is updated
-    event GovernorUpdated(
-        address indexed oldGovernor,
-        address indexed newGovernor
-    );
+    event GovernorUpdated(address indexed oldGovernor, address indexed newGovernor);
 
     /// @notice PATCH-15: Emitted when email hash is pre-verified
     event EmailVerified(bytes32 indexed emailHash, address indexed verifier);
@@ -74,10 +60,7 @@ interface ITAGITAccountFactory {
      * @param salt Additional salt for uniqueness
      * @return account Address of the created account
      */
-    function createAccount(
-        bytes32 emailHash,
-        uint256 salt
-    ) external returns (address account);
+    function createAccount(bytes32 emailHash, uint256 salt) external returns (address account);
 
     /**
      * @notice Create account with initial owner
@@ -87,11 +70,9 @@ interface ITAGITAccountFactory {
      * @param initialOwner Initial owner address (signer)
      * @return account Address of the created account
      */
-    function createAccountWithOwner(
-        bytes32 emailHash,
-        uint256 salt,
-        address initialOwner
-    ) external returns (address account);
+    function createAccountWithOwner(bytes32 emailHash, uint256 salt, address initialOwner)
+        external
+        returns (address account);
 
     /**
      * @notice Get counterfactual address for an account
@@ -100,10 +81,7 @@ interface ITAGITAccountFactory {
      * @param salt Additional salt for uniqueness
      * @return account Deterministic account address
      */
-    function getAddress(
-        bytes32 emailHash,
-        uint256 salt
-    ) external view returns (address account);
+    function getAddress(bytes32 emailHash, uint256 salt) external view returns (address account);
 
     /**
      * @notice Check if account exists at address

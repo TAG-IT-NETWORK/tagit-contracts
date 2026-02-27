@@ -23,12 +23,7 @@ import {TAGITToken} from "../../src/token/TAGITToken.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 // Constants
-import {
-    INFLATION_RATE,
-    EPOCHS_PER_YEAR,
-    EPOCH_DURATION,
-    BASIS_POINTS
-} from "../../src/libraries/Constants.sol";
+import {INFLATION_RATE, EPOCHS_PER_YEAR, EPOCH_DURATION, BASIS_POINTS} from "../../src/libraries/Constants.sol";
 
 /**
  * @title EVMbenchFixes Tests
@@ -118,10 +113,14 @@ contract EVMbenchFixesTest is Test {
         }
 
         TAGITTreasury treasuryImpl = new TAGITTreasury();
-        treasury = TAGITTreasury(payable(address(new ERC1967Proxy(
-            address(treasuryImpl),
-            abi.encodeCall(TAGITTreasury.initialize, (governor, address(token), signerArray))
-        ))));
+        treasury = TAGITTreasury(
+            payable(address(
+                    new ERC1967Proxy(
+                        address(treasuryImpl),
+                        abi.encodeCall(TAGITTreasury.initialize, (governor, address(token), signerArray))
+                    )
+                ))
+        );
 
         token.transfer(address(treasury), INITIAL_BALANCE);
 
@@ -195,11 +194,13 @@ contract EVMbenchFixesTest is Test {
         vm.warp(block.timestamp + 4 days);
 
         // Should revert because allocation expired
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITTreasury.AllocationExpired.selector,
-            allocationId,
-            uint48(block.timestamp - 4 days) + duration // expiresAt
-        ));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ITAGITTreasury.AllocationExpired.selector,
+                allocationId,
+                uint48(block.timestamp - 4 days) + duration // expiresAt
+            )
+        );
         treasury.executeWithdrawal(withdrawalId);
     }
 
@@ -361,7 +362,7 @@ contract EVMbenchFixesTest is Test {
         vm.prank(manufacturer);
         tagitCore.claim(tokenId, alice);
 
-        (, , TAGITCore.State state1, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State state1,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state1), uint8(TAGITCore.State.CLAIMED));
 
         vm.prank(manufacturer);
@@ -375,13 +376,13 @@ contract EVMbenchFixesTest is Test {
         vm.prank(manufacturer);
         tagitCore.resolve(tokenId, alice);
 
-        (, , TAGITCore.State state2, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State state2,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state2), uint8(TAGITCore.State.CLAIMED));
 
         vm.prank(manufacturer);
         tagitCore.recycle(tokenId);
 
-        (, , TAGITCore.State state3, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State state3,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state3), uint8(TAGITCore.State.RECYCLED));
     }
 
@@ -462,10 +463,7 @@ contract EVMbenchFixesTest is Test {
         vm.warp(block.timestamp + 1 weeks);
         emissions.distributeEpoch();
 
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITEmissions.EpochAlreadyDistributed.selector,
-            1
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITEmissions.EpochAlreadyDistributed.selector, 1));
         emissions.distributeEpoch();
     }
 
@@ -531,23 +529,11 @@ contract EVMbenchFixesTest is Test {
     // HELPERS
     // ============================================
 
-    function _signSweep(address sweepToken, address to, uint256 nonce)
-        internal
-        view
-        returns (bytes[] memory sigs)
-    {
-        bytes32 messageHash = keccak256(abi.encodePacked(
-            "TAGIT_EMERGENCY_SWEEP",
-            block.chainid,
-            address(treasury),
-            sweepToken,
-            to,
-            nonce
-        ));
-        bytes32 ethSignedHash = keccak256(abi.encodePacked(
-            "\x19Ethereum Signed Message:\n32",
-            messageHash
-        ));
+    function _signSweep(address sweepToken, address to, uint256 nonce) internal view returns (bytes[] memory sigs) {
+        bytes32 messageHash = keccak256(
+            abi.encodePacked("TAGIT_EMERGENCY_SWEEP", block.chainid, address(treasury), sweepToken, to, nonce)
+        );
+        bytes32 ethSignedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
 
         sigs = new bytes[](6);
         for (uint256 i = 0; i < 6; i++) {

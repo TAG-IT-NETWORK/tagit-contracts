@@ -65,7 +65,10 @@ contract TAGITCoreHandler is Test {
     // ORACLE HELPER
     // ============================================
 
-    function _oracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory challengeResponse, bytes memory oracleSignature) {
+    function _oracleSign(uint256 tokenId, bytes32 tagHash)
+        internal
+        returns (bytes memory challengeResponse, bytes memory oracleSignature)
+    {
         challengeResponse = abi.encodePacked("challenge", tokenId);
         bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
         bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
@@ -243,13 +246,33 @@ contract TAGITCoreHandler is Test {
     }
 
     // Getters for invariant checks
-    function getMintedCount() external view returns (uint256) { return mintedTokens.length; }
-    function getBoundCount() external view returns (uint256) { return boundTokens.length; }
-    function getActivatedCount() external view returns (uint256) { return activatedTokens.length; }
-    function getClaimedCount() external view returns (uint256) { return claimedTokens.length; }
-    function getFlaggedCount() external view returns (uint256) { return flaggedTokens.length; }
-    function getRecycledCount() external view returns (uint256) { return recycledTokens.length; }
-    function getBoundTagsCount() external view returns (uint256) { return boundTags.length; }
+    function getMintedCount() external view returns (uint256) {
+        return mintedTokens.length;
+    }
+
+    function getBoundCount() external view returns (uint256) {
+        return boundTokens.length;
+    }
+
+    function getActivatedCount() external view returns (uint256) {
+        return activatedTokens.length;
+    }
+
+    function getClaimedCount() external view returns (uint256) {
+        return claimedTokens.length;
+    }
+
+    function getFlaggedCount() external view returns (uint256) {
+        return flaggedTokens.length;
+    }
+
+    function getRecycledCount() external view returns (uint256) {
+        return recycledTokens.length;
+    }
+
+    function getBoundTagsCount() external view returns (uint256) {
+        return boundTags.length;
+    }
 }
 
 /**
@@ -317,30 +340,17 @@ contract TAGITCoreInvariantTest is StdInvariant, Test {
      * @dev totalSupply() should always match the number of minted tokens
      */
     function invariant_totalSupplyConsistency() public view {
-        uint256 expectedTotal =
-            handler.getMintedCount() +
-            handler.getBoundCount() +
-            handler.getActivatedCount() +
-            handler.getClaimedCount() +
-            handler.getFlaggedCount() +
-            handler.getRecycledCount();
+        uint256 expectedTotal = handler.getMintedCount() + handler.getBoundCount() + handler.getActivatedCount()
+            + handler.getClaimedCount() + handler.getFlaggedCount() + handler.getRecycledCount();
 
-        assertEq(
-            tagitCore.totalSupply(),
-            expectedTotal,
-            "Total supply mismatch"
-        );
+        assertEq(tagitCore.totalSupply(), expectedTotal, "Total supply mismatch");
     }
 
     /**
      * @notice Invariant: Total supply equals mint count
      */
     function invariant_totalSupplyEqualsMintCount() public view {
-        assertEq(
-            tagitCore.totalSupply(),
-            handler.mintCount(),
-            "Total supply should equal mint count"
-        );
+        assertEq(tagitCore.totalSupply(), handler.mintCount(), "Total supply should equal mint count");
     }
 
     /**
@@ -348,11 +358,7 @@ contract TAGITCoreInvariantTest is StdInvariant, Test {
      */
     function invariant_tagBindingUnique() public view {
         // Number of bound tags should equal bind operations
-        assertEq(
-            handler.getBoundTagsCount(),
-            handler.bindCount(),
-            "Tag binding count mismatch"
-        );
+        assertEq(handler.getBoundTagsCount(), handler.bindCount(), "Tag binding count mismatch");
     }
 
     /**
@@ -368,11 +374,7 @@ contract TAGITCoreInvariantTest is StdInvariant, Test {
         }
 
         // At minimum, verify recycled count matches recycle operations
-        assertEq(
-            handler.getRecycledCount(),
-            handler.recycleCount(),
-            "Recycled token count mismatch"
-        );
+        assertEq(handler.getRecycledCount(), handler.recycleCount(), "Recycled token count mismatch");
     }
 
     /**
@@ -395,7 +397,7 @@ contract TAGITCoreInvariantTest is StdInvariant, Test {
         uint256 totalSupply = tagitCore.totalSupply();
 
         for (uint256 tokenId = 1; tokenId <= totalSupply; tokenId++) {
-            (address assetOwner, , , , ) = tagitCore.getAsset(tokenId);
+            (address assetOwner,,,,) = tagitCore.getAsset(tokenId);
             assertTrue(assetOwner != address(0), "Token has zero owner");
         }
     }
@@ -407,14 +409,10 @@ contract TAGITCoreInvariantTest is StdInvariant, Test {
         uint256 totalSupply = tagitCore.totalSupply();
 
         for (uint256 tokenId = 1; tokenId <= totalSupply; tokenId++) {
-            (address assetOwner, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+            (address assetOwner,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
             address erc721Owner = tagitCore.ownerOf(tokenId);
 
-            assertEq(
-                assetOwner,
-                erc721Owner,
-                "Asset owner must match ERC721 owner"
-            );
+            assertEq(assetOwner, erc721Owner, "Asset owner must match ERC721 owner");
         }
     }
 
@@ -429,11 +427,7 @@ contract TAGITCoreInvariantTest is StdInvariant, Test {
 
             if (tagHash != bytes32(0)) {
                 uint256 mappedTokenId = tagitCore.getTokenByTag(tagHash);
-                assertEq(
-                    mappedTokenId,
-                    tokenId,
-                    "Tag mapping must be bidirectional"
-                );
+                assertEq(mappedTokenId, tokenId, "Tag mapping must be bidirectional");
             }
         }
     }
@@ -445,19 +439,13 @@ contract TAGITCoreInvariantTest is StdInvariant, Test {
         uint256 totalSupply = tagitCore.totalSupply();
 
         for (uint256 tokenId = 1; tokenId <= totalSupply; tokenId++) {
-            (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+            (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
 
             // State enum values: 0-6
-            assertTrue(
-                uint8(state) <= 6,
-                "Invalid state value"
-            );
+            assertTrue(uint8(state) <= 6, "Invalid state value");
 
             // State should never be NONE for minted tokens
-            assertTrue(
-                state != TAGITCore.State.NONE,
-                "Minted token cannot have NONE state"
-            );
+            assertTrue(state != TAGITCore.State.NONE, "Minted token cannot have NONE state");
         }
     }
 
@@ -468,7 +456,7 @@ contract TAGITCoreInvariantTest is StdInvariant, Test {
         uint256 totalSupply = tagitCore.totalSupply();
 
         for (uint256 tokenId = 1; tokenId <= totalSupply; tokenId++) {
-            (, uint64 timestamp, , , ) = tagitCore.getAsset(tokenId);
+            (, uint64 timestamp,,,) = tagitCore.getAsset(tokenId);
 
             assertTrue(timestamp > 0, "Timestamp must be set");
             assertTrue(timestamp <= block.timestamp, "Timestamp cannot be in future");

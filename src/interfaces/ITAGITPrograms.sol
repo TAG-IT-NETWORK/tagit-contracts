@@ -16,10 +16,10 @@ interface ITAGITPrograms {
      * @notice Reputation tier levels
      */
     enum ReputationTier {
-        BRONZE,     // 0-2500: 1x rewards
-        SILVER,     // 2501-5000: 1.25x rewards
-        GOLD,       // 5001-7500: 1.5x rewards
-        PLATINUM    // 7501-10000: 2x rewards
+        BRONZE, // 0-2500: 1x rewards
+        SILVER, // 2501-5000: 1.25x rewards
+        GOLD, // 5001-7500: 1.5x rewards
+        PLATINUM // 7501-10000: 2x rewards
     }
 
     // ============================================
@@ -30,25 +30,25 @@ interface ITAGITPrograms {
      * @notice Reward program configuration
      */
     struct Program {
-        bytes32 id;             // e.g., keccak256("SCAN_REWARDS")
-        uint256 rewardAmount;   // TAGIT per action
-        uint256 budget;         // Total allocated
-        uint256 spent;          // Total distributed
-        uint256 dailyCap;       // Max claims per user per day (0 = unlimited)
-        uint48 startsAt;        // Program start time
-        uint48 endsAt;          // Program end time
-        bool active;            // Is program active
+        bytes32 id; // e.g., keccak256("SCAN_REWARDS")
+        uint256 rewardAmount; // TAGIT per action
+        uint256 budget; // Total allocated
+        uint256 spent; // Total distributed
+        uint256 dailyCap; // Max claims per user per day (0 = unlimited)
+        uint48 startsAt; // Program start time
+        uint48 endsAt; // Program end time
+        bool active; // Is program active
     }
 
     /**
      * @notice User reputation data
      */
     struct UserReputation {
-        uint16 score;           // 0-10000 (2 decimal precision)
-        uint32 lastUpdated;     // Epoch timestamp
-        uint32 slashedAt;       // When slashing occurred (0 = not slashed)
-        uint16 slashPenalty;    // Penalty amount from slashing
-        bytes32 historyRoot;    // Merkle root of off-chain history
+        uint16 score; // 0-10000 (2 decimal precision)
+        uint32 lastUpdated; // Epoch timestamp
+        uint32 slashedAt; // When slashing occurred (0 = not slashed)
+        uint16 slashPenalty; // Penalty amount from slashing
+        bytes32 historyRoot; // Merkle root of off-chain history
     }
 
     /**
@@ -58,7 +58,7 @@ interface ITAGITPrograms {
         address user;
         bytes32 programId;
         uint256 amount;
-        bytes32 actionProof;    // Proof of eligible action
+        bytes32 actionProof; // Proof of eligible action
     }
 
     // ============================================
@@ -149,113 +149,52 @@ interface ITAGITPrograms {
     );
 
     /// @notice Emitted when program is updated
-    event ProgramUpdated(
-        bytes32 indexed programId,
-        uint256 newRewardAmount,
-        bool active
-    );
+    event ProgramUpdated(bytes32 indexed programId, uint256 newRewardAmount, bool active);
 
     /// @notice Emitted when program is funded
-    event ProgramFunded(
-        bytes32 indexed programId,
-        uint256 amount,
-        uint256 newBudget
-    );
+    event ProgramFunded(bytes32 indexed programId, uint256 amount, uint256 newBudget);
 
     /// @notice Emitted when reward is claimed
-    event RewardClaimed(
-        bytes32 indexed programId,
-        address indexed user,
-        uint256 amount,
-        bytes32 actionProof
-    );
+    event RewardClaimed(bytes32 indexed programId, address indexed user, uint256 amount, bytes32 actionProof);
 
     /// @notice Emitted when verification triggers reward
-    event VerificationRewarded(
-        address indexed user,
-        uint256 indexed tokenId,
-        uint256 reward
-    );
+    event VerificationRewarded(address indexed user, uint256 indexed tokenId, uint256 reward);
 
     /// @notice Emitted when reputation is updated
-    event ReputationUpdated(
-        address indexed user,
-        uint16 oldScore,
-        uint16 newScore,
-        bytes32 historyRoot
-    );
+    event ReputationUpdated(address indexed user, uint16 oldScore, uint16 newScore, bytes32 historyRoot);
 
     /// @notice Emitted when reputation is slashed
-    event ReputationSlashed(
-        address indexed user,
-        uint16 penalty,
-        uint16 newScore,
-        bytes32 evidenceHash
-    );
+    event ReputationSlashed(address indexed user, uint16 penalty, uint16 newScore, bytes32 evidenceHash);
 
     /// @notice Emitted when user stakes for reputation
-    event StakedForReputation(
-        address indexed user,
-        uint256 amount,
-        uint256 newWeight
-    );
+    event StakedForReputation(address indexed user, uint256 amount, uint256 newWeight);
 
     /// @notice Emitted when recall is registered
-    event RecallRegistered(
-        uint256[] tokenIds,
-        string reason,
-        address indexed manufacturer
-    );
+    event RecallRegistered(uint256[] tokenIds, string reason, address indexed manufacturer);
 
     /// @notice Emitted when customs event occurs
-    event CustomsEvent(
-        uint256 indexed tokenId,
-        bytes32 indexed eventType,
-        address indexed reporter
-    );
+    event CustomsEvent(uint256 indexed tokenId, bytes32 indexed eventType, address indexed reporter);
 
     /// @notice Emitted when governor is updated
-    event GovernorUpdated(
-        address indexed oldGovernor,
-        address indexed newGovernor
-    );
+    event GovernorUpdated(address indexed oldGovernor, address indexed newGovernor);
 
     /// @notice Emitted when core contract is updated
-    event CoreUpdated(
-        address indexed oldCore,
-        address indexed newCore
-    );
+    event CoreUpdated(address indexed oldCore, address indexed newCore);
 
     /// @notice Emitted when token contract is updated
-    event TokenUpdated(
-        address indexed oldToken,
-        address indexed newToken
-    );
+    event TokenUpdated(address indexed oldToken, address indexed newToken);
 
     /// @notice Emitted when recovery contract is updated
-    event RecoveryContractUpdated(
-        address indexed oldRecovery,
-        address indexed newRecovery
-    );
+    event RecoveryContractUpdated(address indexed oldRecovery, address indexed newRecovery);
 
     /// @notice Emitted when updater is set
-    event UpdaterSet(
-        address indexed updater,
-        bool authorized
-    );
+    event UpdaterSet(address indexed updater, bool authorized);
 
     /// @notice PATCH-14: Emitted when action proof is approved
-    event ActionProofApproved(
-        bytes32 indexed proofKey,
-        bytes32 indexed programId,
-        address indexed user
-    );
+    event ActionProofApproved(bytes32 indexed proofKey, bytes32 indexed programId, address indexed user);
 
     /// @notice PATCH-14: Emitted when action verifier is updated
-    event ActionVerifierUpdated(
-        address indexed oldVerifier,
-        address indexed newVerifier
-    );
+    event ActionVerifierUpdated(address indexed oldVerifier, address indexed newVerifier);
 
     // ============================================
     // PROGRAM MANAGEMENT
@@ -270,13 +209,9 @@ interface ITAGITPrograms {
      * @param duration Program duration in seconds
      * @return success True if created
      */
-    function createProgram(
-        bytes32 id,
-        uint256 rewardAmount,
-        uint256 budget,
-        uint256 dailyCap,
-        uint48 duration
-    ) external returns (bool success);
+    function createProgram(bytes32 id, uint256 rewardAmount, uint256 budget, uint256 dailyCap, uint48 duration)
+        external
+        returns (bool success);
 
     /**
      * @notice Update an existing program (Governor only)
@@ -284,11 +219,7 @@ interface ITAGITPrograms {
      * @param newRewardAmount New reward amount
      * @param active Whether program is active
      */
-    function updateProgram(
-        bytes32 id,
-        uint256 newRewardAmount,
-        bool active
-    ) external;
+    function updateProgram(bytes32 id, uint256 newRewardAmount, bool active) external;
 
     /**
      * @notice Add funds to a program (Governor only)
@@ -331,11 +262,7 @@ interface ITAGITPrograms {
      * @param newScore New reputation score (0-10000)
      * @param newHistoryRoot New merkle root of history
      */
-    function updateReputation(
-        address user,
-        uint16 newScore,
-        bytes32 newHistoryRoot
-    ) external;
+    function updateReputation(address user, uint16 newScore, bytes32 newHistoryRoot) external;
 
     /**
      * @notice Stake tokens to boost reputation weight
@@ -349,11 +276,7 @@ interface ITAGITPrograms {
      * @param penalty Penalty amount (subtracted from score)
      * @param evidenceHash IPFS hash of evidence
      */
-    function slashReputation(
-        address user,
-        uint16 penalty,
-        bytes32 evidenceHash
-    ) external;
+    function slashReputation(address user, uint16 penalty, bytes32 evidenceHash) external;
 
     // ============================================
     // RECALLS & CUSTOMS
@@ -364,20 +287,14 @@ interface ITAGITPrograms {
      * @param tokenIds Array of token IDs to recall
      * @param reason Reason for recall
      */
-    function registerRecall(
-        uint256[] calldata tokenIds,
-        string calldata reason
-    ) external;
+    function registerRecall(uint256[] calldata tokenIds, string calldata reason) external;
 
     /**
      * @notice Notify customs event (authorized only)
      * @param tokenId Token involved
      * @param eventType Type of customs event
      */
-    function notifyCustomsEvent(
-        uint256 tokenId,
-        bytes32 eventType
-    ) external;
+    function notifyCustomsEvent(uint256 tokenId, bytes32 eventType) external;
 
     // ============================================
     // VIEW FUNCTIONS

@@ -44,14 +44,14 @@ library RateLimiter {
      */
     struct Config {
         // Slot 1 - Per-user config
-        uint64 maxPerWindow;      // Max actions per user per window
-        uint64 windowDuration;    // Duration of rate limit window
-        uint64 cooldownDuration;  // Lockout duration after hitting limit
-        bool enabled;             // Whether rate limiting is enabled
+        uint64 maxPerWindow; // Max actions per user per window
+        uint64 windowDuration; // Duration of rate limit window
+        uint64 cooldownDuration; // Lockout duration after hitting limit
+        bool enabled; // Whether rate limiting is enabled
         // Slot 2 - Global config
-        uint64 globalCount;       // Actions in current global window
+        uint64 globalCount; // Actions in current global window
         uint64 globalWindowStart; // Start of current global window
-        uint64 globalMaxPerWindow;// Global limit (0 = disabled)
+        uint64 globalMaxPerWindow; // Global limit (0 = disabled)
     }
 
     /**
@@ -65,9 +65,9 @@ library RateLimiter {
      * - padding: 64 bits
      */
     struct UserState {
-        uint64 count;        // Actions in current window
-        uint64 windowStart;  // Start of current window
-        uint64 lockedUntil;  // Lockout end (0 = not locked)
+        uint64 count; // Actions in current window
+        uint64 windowStart; // Start of current window
+        uint64 lockedUntil; // Lockout end (0 = not locked)
     }
 
     // ============================================
@@ -103,21 +103,14 @@ library RateLimiter {
      * @param count Number of actions in window
      * @param lockedUntil When lockout ends
      */
-    event RateLimitHit(
-        address indexed user,
-        uint256 count,
-        uint256 lockedUntil
-    );
+    event RateLimitHit(address indexed user, uint256 count, uint256 lockedUntil);
 
     /**
      * @notice Emitted when user lockout ends
      * @param user Address that was unlocked
      * @param timestamp When unlock occurred
      */
-    event UserUnlocked(
-        address indexed user,
-        uint256 timestamp
-    );
+    event UserUnlocked(address indexed user, uint256 timestamp);
 
     /**
      * @notice Emitted when approaching limit (early warning)
@@ -125,21 +118,14 @@ library RateLimiter {
      * @param count Current action count
      * @param maxPerWindow Configured limit
      */
-    event RateLimitWarning(
-        address indexed user,
-        uint256 count,
-        uint256 maxPerWindow
-    );
+    event RateLimitWarning(address indexed user, uint256 count, uint256 maxPerWindow);
 
     /**
      * @notice Emitted when global limit is hit
      * @param timestamp When the global limit was hit
      * @param count Global count at limit
      */
-    event GlobalLimitHit(
-        uint256 indexed timestamp,
-        uint256 count
-    );
+    event GlobalLimitHit(uint256 indexed timestamp, uint256 count);
 
     // ============================================
     // INITIALIZATION
@@ -194,11 +180,10 @@ library RateLimiter {
      * @param user Address to check
      * @return allowed Whether the action is allowed
      */
-    function check(
-        Config storage self,
-        mapping(address => UserState) storage userStates,
-        address user
-    ) internal returns (bool allowed) {
+    function check(Config storage self, mapping(address => UserState) storage userStates, address user)
+        internal
+        returns (bool allowed)
+    {
         // Skip if disabled
         if (!self.enabled) {
             return true;
@@ -274,15 +259,11 @@ library RateLimiter {
      * @return remaining Remaining actions in current window
      * @return lockedUntil Lockout end timestamp (0 if not locked)
      */
-    function canAct(
-        Config storage self,
-        mapping(address => UserState) storage userStates,
-        address user
-    ) internal view returns (
-        bool canAct_,
-        uint256 remaining,
-        uint256 lockedUntil
-    ) {
+    function canAct(Config storage self, mapping(address => UserState) storage userStates, address user)
+        internal
+        view
+        returns (bool canAct_, uint256 remaining, uint256 lockedUntil)
+    {
         if (!self.enabled) {
             return (true, type(uint256).max, 0);
         }
@@ -300,7 +281,7 @@ library RateLimiter {
         // If lockout just expired, count will be reset on next check()
         // Simulate this for accurate view
         if (state.lockedUntil > 0 && block.timestamp >= state.lockedUntil) {
-            count = 0;  // Will be reset when check() is called
+            count = 0; // Will be reset when check() is called
         }
         // Or if window expired, count resets
         else if (block.timestamp >= state.windowStart + self.windowDuration) {
@@ -320,10 +301,7 @@ library RateLimiter {
      * @param userStates Mapping of user states
      * @param user Address to unlock
      */
-    function forceUnlock(
-        mapping(address => UserState) storage userStates,
-        address user
-    ) internal {
+    function forceUnlock(mapping(address => UserState) storage userStates, address user) internal {
         UserState storage state = userStates[user];
         state.lockedUntil = 0;
         state.count = 0;
@@ -381,14 +359,11 @@ library RateLimiter {
      * @return windowStart Start of current window
      * @return lockedUntil Lockout end (0 = not locked)
      */
-    function getUserState(
-        mapping(address => UserState) storage userStates,
-        address user
-    ) internal view returns (
-        uint64 count,
-        uint64 windowStart,
-        uint64 lockedUntil
-    ) {
+    function getUserState(mapping(address => UserState) storage userStates, address user)
+        internal
+        view
+        returns (uint64 count, uint64 windowStart, uint64 lockedUntil)
+    {
         UserState storage state = userStates[user];
         return (state.count, state.windowStart, state.lockedUntil);
     }
@@ -400,11 +375,11 @@ library RateLimiter {
      * @return windowStart Start of global window
      * @return remaining Remaining global capacity
      */
-    function getGlobalState(Config storage self) internal view returns (
-        uint64 count,
-        uint64 windowStart,
-        uint256 remaining
-    ) {
+    function getGlobalState(Config storage self)
+        internal
+        view
+        returns (uint64 count, uint64 windowStart, uint256 remaining)
+    {
         if (self.globalMaxPerWindow == 0) {
             return (0, 0, type(uint256).max);
         }
@@ -414,9 +389,7 @@ library RateLimiter {
             currentCount = 0;
         }
 
-        uint256 rem = currentCount >= self.globalMaxPerWindow
-            ? 0
-            : self.globalMaxPerWindow - currentCount;
+        uint256 rem = currentCount >= self.globalMaxPerWindow ? 0 : self.globalMaxPerWindow - currentCount;
 
         return (currentCount, self.globalWindowStart, rem);
     }

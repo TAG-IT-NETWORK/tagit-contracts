@@ -107,10 +107,7 @@ contract TAGITProgramsNistTest is Test {
 
         // Deploy TAGITToken (upgradeable)
         TAGITToken tokenImpl = new TAGITToken();
-        bytes memory tokenData = abi.encodeCall(
-            TAGITToken.initialize,
-            (owner, treasury)
-        );
+        bytes memory tokenData = abi.encodeCall(TAGITToken.initialize, (owner, treasury));
         ERC1967Proxy tokenProxy = new ERC1967Proxy(address(tokenImpl), tokenData);
         token = TAGITToken(address(tokenProxy));
 
@@ -189,12 +186,12 @@ contract TAGITProgramsNistTest is Test {
     }
 
     function test_drainDetector_tracksDepositsFromFunding() public {
-        (uint128 balanceBefore,,,,, ) = programs.getDrainDetectorState();
+        (uint128 balanceBefore,,,,,) = programs.getDrainDetectorState();
 
         vm.prank(governor);
         programs.fundProgram(TEST_PROGRAM_ID, 50_000 ether);
 
-        (uint128 balanceAfter,,,,, ) = programs.getDrainDetectorState();
+        (uint128 balanceAfter,,,,,) = programs.getDrainDetectorState();
         assertEq(balanceAfter, balanceBefore + 50_000 ether);
     }
 
@@ -202,7 +199,7 @@ contract TAGITProgramsNistTest is Test {
         vm.prank(governor);
         programs.updateDrainBalance(500_000 ether);
 
-        (uint128 trackedBalance,,,,, ) = programs.getDrainDetectorState();
+        (uint128 trackedBalance,,,,,) = programs.getDrainDetectorState();
         assertEq(trackedBalance, 500_000 ether);
     }
 
@@ -210,7 +207,7 @@ contract TAGITProgramsNistTest is Test {
         vm.prank(governor);
         programs.syncDrainBalance();
 
-        (uint128 trackedBalance,,,,, ) = programs.getDrainDetectorState();
+        (uint128 trackedBalance,,,,,) = programs.getDrainDetectorState();
         uint256 actualBalance = token.balanceOf(address(programs));
         assertEq(trackedBalance, actualBalance);
     }

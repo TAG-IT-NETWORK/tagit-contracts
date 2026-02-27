@@ -46,9 +46,7 @@ contract TAGITCoreProxyComprehensiveTest is Test {
     bytes32 public constant TAG_HASH = keccak256("NFC_TAG_001");
 
     event UpgradeScheduled(
-        address indexed oldImplementation,
-        address indexed newImplementation,
-        address indexed scheduledBy
+        address indexed oldImplementation, address indexed newImplementation, address indexed scheduledBy
     );
 
     function setUp() public {
@@ -85,15 +83,11 @@ contract TAGITCoreProxyComprehensiveTest is Test {
 
         // Set access controller via timelock
         _timelockExecute(
-            abi.encodeCall(TAGITCore.setAccessController, (address(tagitAccess))),
-            keccak256("setup_access")
+            abi.encodeCall(TAGITCore.setAccessController, (address(tagitAccess))), keccak256("setup_access")
         );
 
         // Set trusted oracle via timelock
-        _timelockExecute(
-            abi.encodeCall(TAGITCore.setTrustedOracle, (vm.addr(ORACLE_PK))),
-            keccak256("setup_oracle")
-        );
+        _timelockExecute(abi.encodeCall(TAGITCore.setTrustedOracle, (vm.addr(ORACLE_PK))), keccak256("setup_oracle"));
 
         // Grant manufacturer capabilities
         capabilityBadge.grantCapability(manufacturer, uint256(proxy.MINTER_CAPABILITY()));
@@ -120,7 +114,10 @@ contract TAGITCoreProxyComprehensiveTest is Test {
         timelock.execute(address(proxy), 0, data, bytes32(0), salt);
     }
 
-    function _oracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory challengeResponse, bytes memory oracleSignature) {
+    function _oracleSign(uint256 tokenId, bytes32 tagHash)
+        internal
+        returns (bytes memory challengeResponse, bytes memory oracleSignature)
+    {
         challengeResponse = abi.encodePacked("challenge", tokenId);
         bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
         bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
@@ -130,10 +127,7 @@ contract TAGITCoreProxyComprehensiveTest is Test {
 
     function _upgradeToV2() internal returns (TAGITCoreV2Mock v2Impl) {
         v2Impl = new TAGITCoreV2Mock();
-        _timelockExecute(
-            abi.encodeCall(proxy.upgradeToAndCall, (address(v2Impl), "")),
-            keccak256("upgrade_to_v2")
-        );
+        _timelockExecute(abi.encodeCall(proxy.upgradeToAndCall, (address(v2Impl), "")), keccak256("upgrade_to_v2"));
     }
 
     // ============================================
@@ -164,10 +158,7 @@ contract TAGITCoreProxyComprehensiveTest is Test {
         bytes32 slotBefore = vm.load(address(proxy), IMPLEMENTATION_SLOT);
 
         TAGITCore newImpl = new TAGITCore();
-        _timelockExecute(
-            abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")),
-            keccak256("slot_update_test")
-        );
+        _timelockExecute(abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")), keccak256("slot_update_test"));
 
         bytes32 slotAfter = vm.load(address(proxy), IMPLEMENTATION_SLOT);
         address implAfter = address(uint160(uint256(slotAfter)));
@@ -313,7 +304,10 @@ contract TAGITCoreProxyComprehensiveTest is Test {
     // D. GNOSIS SAFE MULTISIG INTEGRATION (5 tests)
     // ============================================
 
-    function _deploySafeWithTimelock() internal returns (GnosisSafeMock safe, TimelockController safeTl, TAGITCore safeProxy) {
+    function _deploySafeWithTimelock()
+        internal
+        returns (GnosisSafeMock safe, TimelockController safeTl, TAGITCore safeProxy)
+    {
         // Create 5 signers
         address[5] memory safeSigners;
         for (uint256 i = 0; i < 5; i++) {
@@ -326,12 +320,7 @@ contract TAGITCoreProxyComprehensiveTest is Test {
         address[] memory executors_ = new address[](1);
         proposers_[0] = address(safe);
         executors_[0] = address(safe);
-        safeTl = new TimelockController(
-            TIMELOCK_DELAY,
-            proposers_,
-            executors_,
-            address(0)
-        );
+        safeTl = new TimelockController(TIMELOCK_DELAY, proposers_, executors_, address(0));
 
         // Deploy TAGITCore behind proxy, owned by this new timelock
         TAGITCore impl = new TAGITCore();
@@ -376,8 +365,7 @@ contract TAGITCoreProxyComprehensiveTest is Test {
         vm.warp(block.timestamp + TIMELOCK_DELAY);
 
         bytes memory executeData = abi.encodeCall(
-            TimelockController.execute,
-            (address(safeProxy), 0, targetData, bytes32(0), keccak256("safe_schedule"))
+            TimelockController.execute, (address(safeProxy), 0, targetData, bytes32(0), keccak256("safe_schedule"))
         );
         _safeApproveAndExec(safe, address(safeTl), 0, executeData, 3);
 
@@ -423,8 +411,7 @@ contract TAGITCoreProxyComprehensiveTest is Test {
 
         // Execute upgrade via Safe
         bytes memory executeData = abi.encodeCall(
-            TimelockController.execute,
-            (address(safeProxy), 0, upgradeData, bytes32(0), keccak256("safe_upgrade"))
+            TimelockController.execute, (address(safeProxy), 0, upgradeData, bytes32(0), keccak256("safe_upgrade"))
         );
         _safeApproveAndExec(safe, address(safeTl), 0, executeData, 3);
 
@@ -484,10 +471,7 @@ contract TAGITCoreProxyComprehensiveTest is Test {
 
         // Schedule
         vm.prank(proposer);
-        timelock.schedule(
-            address(proxy), 0, upgradeData, bytes32(0),
-            keccak256("event_param_test"), TIMELOCK_DELAY
-        );
+        timelock.schedule(address(proxy), 0, upgradeData, bytes32(0), keccak256("event_param_test"), TIMELOCK_DELAY);
         vm.warp(block.timestamp + TIMELOCK_DELAY);
 
         // Verify UpgradeScheduled event params: old impl, new impl, scheduler (timelock)
@@ -495,10 +479,7 @@ contract TAGITCoreProxyComprehensiveTest is Test {
         emit UpgradeScheduled(oldImpl, address(newImpl), address(timelock));
 
         vm.prank(executor);
-        timelock.execute(
-            address(proxy), 0, upgradeData, bytes32(0),
-            keccak256("event_param_test")
-        );
+        timelock.execute(address(proxy), 0, upgradeData, bytes32(0), keccak256("event_param_test"));
     }
 
     function test_events_timelockCallScheduled() public {
@@ -555,19 +536,13 @@ contract TAGITCoreProxyComprehensiveTest is Test {
         bytes memory upgradeData = abi.encodeCall(proxy.upgradeToAndCall, (address(0), ""));
 
         vm.prank(proposer);
-        timelock.schedule(
-            address(proxy), 0, upgradeData, bytes32(0),
-            keccak256("zero_addr_upgrade"), TIMELOCK_DELAY
-        );
+        timelock.schedule(address(proxy), 0, upgradeData, bytes32(0), keccak256("zero_addr_upgrade"), TIMELOCK_DELAY);
         vm.warp(block.timestamp + TIMELOCK_DELAY);
 
         // Should revert — ERC1967 rejects address(0) as implementation
         vm.prank(executor);
         vm.expectRevert();
-        timelock.execute(
-            address(proxy), 0, upgradeData, bytes32(0),
-            keccak256("zero_addr_upgrade")
-        );
+        timelock.execute(address(proxy), 0, upgradeData, bytes32(0), keccak256("zero_addr_upgrade"));
     }
 
     function test_security_cannotUpgradeToEOA() public {
@@ -577,18 +552,12 @@ contract TAGITCoreProxyComprehensiveTest is Test {
         bytes memory upgradeData = abi.encodeCall(proxy.upgradeToAndCall, (eoa, ""));
 
         vm.prank(proposer);
-        timelock.schedule(
-            address(proxy), 0, upgradeData, bytes32(0),
-            keccak256("eoa_upgrade"), TIMELOCK_DELAY
-        );
+        timelock.schedule(address(proxy), 0, upgradeData, bytes32(0), keccak256("eoa_upgrade"), TIMELOCK_DELAY);
         vm.warp(block.timestamp + TIMELOCK_DELAY);
 
         vm.prank(executor);
         vm.expectRevert();
-        timelock.execute(
-            address(proxy), 0, upgradeData, bytes32(0),
-            keccak256("eoa_upgrade")
-        );
+        timelock.execute(address(proxy), 0, upgradeData, bytes32(0), keccak256("eoa_upgrade"));
     }
 
     function test_security_selfDestructImplBlocked() public {
@@ -596,26 +565,18 @@ contract TAGITCoreProxyComprehensiveTest is Test {
         // but the upgrade itself should still be validated by ERC1967)
         SelfDestructMock sdMock = new SelfDestructMock();
 
-        bytes memory upgradeData = abi.encodeCall(
-            proxy.upgradeToAndCall,
-            (address(sdMock), abi.encodeCall(SelfDestructMock.destroy, ()))
-        );
+        bytes memory upgradeData =
+            abi.encodeCall(proxy.upgradeToAndCall, (address(sdMock), abi.encodeCall(SelfDestructMock.destroy, ())));
 
         vm.prank(proposer);
-        timelock.schedule(
-            address(proxy), 0, upgradeData, bytes32(0),
-            keccak256("sd_upgrade"), TIMELOCK_DELAY
-        );
+        timelock.schedule(address(proxy), 0, upgradeData, bytes32(0), keccak256("sd_upgrade"), TIMELOCK_DELAY);
         vm.warp(block.timestamp + TIMELOCK_DELAY);
 
         // This should revert because the callback is not a valid UUPS upgrade target
         // (SelfDestructMock doesn't implement proxiableUUID)
         vm.prank(executor);
         vm.expectRevert();
-        timelock.execute(
-            address(proxy), 0, upgradeData, bytes32(0),
-            keccak256("sd_upgrade")
-        );
+        timelock.execute(address(proxy), 0, upgradeData, bytes32(0), keccak256("sd_upgrade"));
     }
 
     function test_security_reentrancyInUpgrade() public {
@@ -624,29 +585,17 @@ contract TAGITCoreProxyComprehensiveTest is Test {
         ReentrantUpgradeMock reentrant = new ReentrantUpgradeMock();
 
         // Prepare the callback data that will try to re-enter upgradeToAndCall
-        bytes memory reentrantCallback = abi.encodeCall(
-            ReentrantUpgradeMock.attack,
-            (address(proxy))
-        );
-        bytes memory upgradeData = abi.encodeCall(
-            proxy.upgradeToAndCall,
-            (address(reentrant), reentrantCallback)
-        );
+        bytes memory reentrantCallback = abi.encodeCall(ReentrantUpgradeMock.attack, (address(proxy)));
+        bytes memory upgradeData = abi.encodeCall(proxy.upgradeToAndCall, (address(reentrant), reentrantCallback));
 
         vm.prank(proposer);
-        timelock.schedule(
-            address(proxy), 0, upgradeData, bytes32(0),
-            keccak256("reentrant_upgrade"), TIMELOCK_DELAY
-        );
+        timelock.schedule(address(proxy), 0, upgradeData, bytes32(0), keccak256("reentrant_upgrade"), TIMELOCK_DELAY);
         vm.warp(block.timestamp + TIMELOCK_DELAY);
 
         // Should revert — re-entrant upgradeToAndCall is not authorized
         vm.prank(executor);
         vm.expectRevert();
-        timelock.execute(
-            address(proxy), 0, upgradeData, bytes32(0),
-            keccak256("reentrant_upgrade")
-        );
+        timelock.execute(address(proxy), 0, upgradeData, bytes32(0), keccak256("reentrant_upgrade"));
     }
 
     function test_security_concurrentUpgradeSchedules() public {

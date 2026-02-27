@@ -30,15 +30,19 @@ contract MockCCIPRouter {
  * @notice Mock TAGITCore for testing
  */
 contract MockTAGITCore {
-    function getAsset(uint256 tokenId) external view returns (
-        address owner,
-        uint8 state,
-        bytes32 tagHash,
-        bytes32 metadataHash,
-        uint64 createdAt,
-        uint64 activatedAt,
-        uint64 claimedAt
-    ) {
+    function getAsset(uint256 tokenId)
+        external
+        view
+        returns (
+            address owner,
+            uint8 state,
+            bytes32 tagHash,
+            bytes32 metadataHash,
+            uint64 createdAt,
+            uint64 activatedAt,
+            uint64 claimedAt
+        )
+    {
         return (
             address(0x1234),
             3, // ACTIVATED
@@ -102,10 +106,8 @@ contract CCIPAdapterNistTest is Test {
 
         // Deploy CCIPAdapter (upgradeable)
         CCIPAdapter adapterImpl = new CCIPAdapter();
-        bytes memory adapterData = abi.encodeCall(
-            CCIPAdapter.initialize,
-            (address(router), governor, address(mockCore), owner)
-        );
+        bytes memory adapterData =
+            abi.encodeCall(CCIPAdapter.initialize, (address(router), governor, address(mockCore), owner));
         ERC1967Proxy adapterProxy = new ERC1967Proxy(address(adapterImpl), adapterData);
         adapter = CCIPAdapter(payable(address(adapterProxy)));
 
@@ -120,12 +122,11 @@ contract CCIPAdapterNistTest is Test {
 
     function _setupRemoteChain() internal {
         vm.prank(governor);
-        adapter.scheduleChainAddition(ICCIPAdapter.ChainConfig({
-            chainSelector: REMOTE_CHAIN,
-            adapter: remoteAdapter,
-            gasLimit: 200_000,
-            active: true
-        }));
+        adapter.scheduleChainAddition(
+            ICCIPAdapter.ChainConfig({
+                chainSelector: REMOTE_CHAIN, adapter: remoteAdapter, gasLimit: 200_000, active: true
+            })
+        );
 
         // Wait for timelock
         vm.warp(block.timestamp + 72 hours + 1);
@@ -194,7 +195,7 @@ contract CCIPAdapterNistTest is Test {
         vm.prank(governor);
         adapter.setChainNonce(REMOTE_CHAIN, 100);
 
-        (uint64 lastNonce, ) = adapter.getReplayProtectionState(REMOTE_CHAIN);
+        (uint64 lastNonce,) = adapter.getReplayProtectionState(REMOTE_CHAIN);
         assertEq(lastNonce, 100);
     }
 
@@ -379,11 +380,7 @@ contract CCIPAdapterNistTest is Test {
         vm.deal(user, 1 ether);
 
         vm.prank(user);
-        bytes32 requestId = adapter.requestData{value: 0.1 ether}(
-            REMOTE_CHAIN,
-            1,
-            ICCIPAdapter.RequestType.OWNERSHIP
-        );
+        bytes32 requestId = adapter.requestData{value: 0.1 ether}(REMOTE_CHAIN, 1, ICCIPAdapter.RequestType.OWNERSHIP);
 
         ICCIPAdapter.CrossChainRequest memory req = adapter.getRequest(requestId);
         assertEq(uint8(req.reqType), uint8(ICCIPAdapter.RequestType.OWNERSHIP));

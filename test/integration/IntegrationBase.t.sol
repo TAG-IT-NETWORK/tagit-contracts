@@ -172,7 +172,7 @@ abstract contract IntegrationBase is Test {
         bytes memory initData = abi.encodeWithSelector(
             TAGITToken.initialize.selector,
             owner, // treasury (temporary, will be updated)
-            owner  // initialOwner
+            owner // initialOwner
         );
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
         return TAGITToken(address(proxy));
@@ -190,24 +190,16 @@ abstract contract IntegrationBase is Test {
 
     function _deployStaking() internal returns (TAGITStaking) {
         TAGITStaking impl = new TAGITStaking();
-        bytes memory initData = abi.encodeWithSelector(
-            TAGITStaking.initialize.selector,
-            address(token),
-            governor,
-            owner
-        );
+        bytes memory initData =
+            abi.encodeWithSelector(TAGITStaking.initialize.selector, address(token), governor, owner);
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
         return TAGITStaking(address(proxy));
     }
 
     function _deployEmissions() internal returns (TAGITEmissions) {
         TAGITEmissions impl = new TAGITEmissions();
-        bytes memory initData = abi.encodeWithSelector(
-            TAGITEmissions.initialize.selector,
-            address(token),
-            governor,
-            owner
-        );
+        bytes memory initData =
+            abi.encodeWithSelector(TAGITEmissions.initialize.selector, address(token), governor, owner);
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
         return TAGITEmissions(address(proxy));
     }
@@ -229,12 +221,8 @@ abstract contract IntegrationBase is Test {
         TAGITTreasury impl = new TAGITTreasury();
         address[] memory initialSigners = new address[](1);
         initialSigners[0] = owner;
-        bytes memory initData = abi.encodeWithSelector(
-            TAGITTreasury.initialize.selector,
-            governor,
-            address(token),
-            initialSigners
-        );
+        bytes memory initData =
+            abi.encodeWithSelector(TAGITTreasury.initialize.selector, governor, address(token), initialSigners);
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
         return TAGITTreasury(payable(address(proxy)));
     }
@@ -334,7 +322,10 @@ abstract contract IntegrationBase is Test {
 
     uint256 private _assetCounter;
 
-    function _oracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory challengeResponse, bytes memory oracleSignature) {
+    function _oracleSign(uint256 tokenId, bytes32 tagHash)
+        internal
+        returns (bytes memory challengeResponse, bytes memory oracleSignature)
+    {
         challengeResponse = abi.encodePacked("challenge", tokenId);
         bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
         bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);

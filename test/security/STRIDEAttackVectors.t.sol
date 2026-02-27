@@ -87,11 +87,7 @@ contract STRIDEAttackVectors is Test {
         uint256 timestamp,
         bytes32 prevStateHash
     );
-    event ResolveApproved(
-        uint256 indexed tokenId,
-        address indexed approver,
-        uint256 approvalCount
-    );
+    event ResolveApproved(uint256 indexed tokenId, address indexed approver, uint256 approvalCount);
 
     // ============================================
     // SETUP
@@ -163,25 +159,23 @@ contract STRIDEAttackVectors is Test {
         token = TAGITToken(
             address(
                 new ERC1967Proxy(
-                    address(tokenImpl),
-                    abi.encodeCall(TAGITToken.initialize, (treasuryOwner, tokenTreasury))
+                    address(tokenImpl), abi.encodeCall(TAGITToken.initialize, (treasuryOwner, tokenTreasury))
                 )
             )
         );
 
         // Deploy TAGITTreasury behind proxy
         address[] memory sa = new address[](8);
-        for (uint256 i = 0; i < 8; i++) sa[i] = signerAddresses[i];
+        for (uint256 i = 0; i < 8; i++) {
+            sa[i] = signerAddresses[i];
+        }
         TAGITTreasury treasuryImpl = new TAGITTreasury();
         treasury = TAGITTreasury(
-            payable(
-                address(
+            payable(address(
                     new ERC1967Proxy(
-                        address(treasuryImpl),
-                        abi.encodeCall(TAGITTreasury.initialize, (governor, address(token), sa))
+                        address(treasuryImpl), abi.encodeCall(TAGITTreasury.initialize, (governor, address(token), sa))
                     )
-                )
-            )
+                ))
         );
 
         // Fund the treasury
@@ -194,10 +188,7 @@ contract STRIDEAttackVectors is Test {
     // HELPERS
     // ============================================
 
-    function _oracleSign(uint256 tokenId, bytes32 tagHash)
-        internal
-        returns (bytes memory cr, bytes memory sig)
-    {
+    function _oracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory cr, bytes memory sig) {
         cr = abi.encodePacked("challenge", tokenId);
         bytes32 mh = keccak256(abi.encodePacked(tokenId, tagHash, cr));
         bytes32 eh = MessageHashUtils.toEthSignedMessageHash(mh);
@@ -205,10 +196,7 @@ contract STRIDEAttackVectors is Test {
         sig = abi.encodePacked(r, s, v);
     }
 
-    function _fakeOracleSign(uint256 tokenId, bytes32 tagHash)
-        internal
-        returns (bytes memory cr, bytes memory sig)
-    {
+    function _fakeOracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory cr, bytes memory sig) {
         cr = abi.encodePacked("challenge", tokenId);
         bytes32 mh = keccak256(abi.encodePacked(tokenId, tagHash, cr));
         bytes32 eh = MessageHashUtils.toEthSignedMessageHash(mh);
@@ -217,10 +205,7 @@ contract STRIDEAttackVectors is Test {
     }
 
     /// @dev Mint, bind, activate, claim a token in a single flow
-    function _mintToClaimed(address recipient, uint256 tagSeed)
-        internal
-        returns (uint256 tokenId)
-    {
+    function _mintToClaimed(address recipient, uint256 tagSeed) internal returns (uint256 tokenId) {
         bytes32 tagHash = keccak256(abi.encodePacked("tag", tagSeed));
 
         vm.startPrank(manufacturer);
@@ -235,10 +220,7 @@ contract STRIDEAttackVectors is Test {
     }
 
     /// @dev Mint, bind, activate, claim, flag a token in a single flow
-    function _mintToFlagged(address recipient, uint256 tagSeed)
-        internal
-        returns (uint256 tokenId)
-    {
+    function _mintToFlagged(address recipient, uint256 tagSeed) internal returns (uint256 tokenId) {
         tokenId = _mintToClaimed(recipient, tagSeed);
         vm.prank(manufacturer);
         tagitCore.flag(tokenId);
@@ -434,10 +416,7 @@ contract STRIDEAttackVectors is Test {
         vm.prank(manufacturer);
         vm.expectRevert(
             abi.encodeWithSelector(
-                TAGITCore.InvalidState.selector,
-                tokenId,
-                TAGITCore.State.MINTED,
-                TAGITCore.State.ACTIVATED
+                TAGITCore.InvalidState.selector, tokenId, TAGITCore.State.MINTED, TAGITCore.State.ACTIVATED
             )
         );
         tagitCore.claim(tokenId, user1);
@@ -499,19 +478,25 @@ contract STRIDEAttackVectors is Test {
         // ---- MINTED: can only bindTag; everything else should fail ----
         // activate on MINTED -> revert (requires BOUND)
         vm.expectRevert(
-            abi.encodeWithSelector(TAGITCore.InvalidState.selector, mintedId, TAGITCore.State.MINTED, TAGITCore.State.BOUND)
+            abi.encodeWithSelector(
+                TAGITCore.InvalidState.selector, mintedId, TAGITCore.State.MINTED, TAGITCore.State.BOUND
+            )
         );
         tagitCore.activate(mintedId);
 
         // claim on MINTED -> revert (requires ACTIVATED)
         vm.expectRevert(
-            abi.encodeWithSelector(TAGITCore.InvalidState.selector, mintedId, TAGITCore.State.MINTED, TAGITCore.State.ACTIVATED)
+            abi.encodeWithSelector(
+                TAGITCore.InvalidState.selector, mintedId, TAGITCore.State.MINTED, TAGITCore.State.ACTIVATED
+            )
         );
         tagitCore.claim(mintedId, user1);
 
         // flag on MINTED -> revert (requires CLAIMED)
         vm.expectRevert(
-            abi.encodeWithSelector(TAGITCore.InvalidState.selector, mintedId, TAGITCore.State.MINTED, TAGITCore.State.CLAIMED)
+            abi.encodeWithSelector(
+                TAGITCore.InvalidState.selector, mintedId, TAGITCore.State.MINTED, TAGITCore.State.CLAIMED
+            )
         );
         tagitCore.flag(mintedId);
 
@@ -522,13 +507,17 @@ contract STRIDEAttackVectors is Test {
         // ---- BOUND: can only activate; everything else should fail ----
         // claim on BOUND -> revert (requires ACTIVATED)
         vm.expectRevert(
-            abi.encodeWithSelector(TAGITCore.InvalidState.selector, boundId, TAGITCore.State.BOUND, TAGITCore.State.ACTIVATED)
+            abi.encodeWithSelector(
+                TAGITCore.InvalidState.selector, boundId, TAGITCore.State.BOUND, TAGITCore.State.ACTIVATED
+            )
         );
         tagitCore.claim(boundId, user1);
 
         // flag on BOUND -> revert (requires CLAIMED)
         vm.expectRevert(
-            abi.encodeWithSelector(TAGITCore.InvalidState.selector, boundId, TAGITCore.State.BOUND, TAGITCore.State.CLAIMED)
+            abi.encodeWithSelector(
+                TAGITCore.InvalidState.selector, boundId, TAGITCore.State.BOUND, TAGITCore.State.CLAIMED
+            )
         );
         tagitCore.flag(boundId);
 
@@ -539,7 +528,9 @@ contract STRIDEAttackVectors is Test {
         // ---- ACTIVATED: can only claim; everything else should fail ----
         // flag on ACTIVATED -> revert (requires CLAIMED)
         vm.expectRevert(
-            abi.encodeWithSelector(TAGITCore.InvalidState.selector, activatedId, TAGITCore.State.ACTIVATED, TAGITCore.State.CLAIMED)
+            abi.encodeWithSelector(
+                TAGITCore.InvalidState.selector, activatedId, TAGITCore.State.ACTIVATED, TAGITCore.State.CLAIMED
+            )
         );
         tagitCore.flag(activatedId);
 
@@ -549,39 +540,51 @@ contract STRIDEAttackVectors is Test {
 
         // activate on ACTIVATED -> revert (requires BOUND)
         vm.expectRevert(
-            abi.encodeWithSelector(TAGITCore.InvalidState.selector, activatedId, TAGITCore.State.ACTIVATED, TAGITCore.State.BOUND)
+            abi.encodeWithSelector(
+                TAGITCore.InvalidState.selector, activatedId, TAGITCore.State.ACTIVATED, TAGITCore.State.BOUND
+            )
         );
         tagitCore.activate(activatedId);
 
         // ---- CLAIMED: can only flag or recycle; everything else should fail ----
         // activate on CLAIMED -> revert (requires BOUND)
         vm.expectRevert(
-            abi.encodeWithSelector(TAGITCore.InvalidState.selector, claimedId, TAGITCore.State.CLAIMED, TAGITCore.State.BOUND)
+            abi.encodeWithSelector(
+                TAGITCore.InvalidState.selector, claimedId, TAGITCore.State.CLAIMED, TAGITCore.State.BOUND
+            )
         );
         tagitCore.activate(claimedId);
 
         // claim on CLAIMED -> revert (requires ACTIVATED)
         vm.expectRevert(
-            abi.encodeWithSelector(TAGITCore.InvalidState.selector, claimedId, TAGITCore.State.CLAIMED, TAGITCore.State.ACTIVATED)
+            abi.encodeWithSelector(
+                TAGITCore.InvalidState.selector, claimedId, TAGITCore.State.CLAIMED, TAGITCore.State.ACTIVATED
+            )
         );
         tagitCore.claim(claimedId, user2);
 
         // ---- FLAGGED: can only resolve (with quorum) or recycle ----
         // activate on FLAGGED -> revert (requires BOUND)
         vm.expectRevert(
-            abi.encodeWithSelector(TAGITCore.InvalidState.selector, flaggedId, TAGITCore.State.FLAGGED, TAGITCore.State.BOUND)
+            abi.encodeWithSelector(
+                TAGITCore.InvalidState.selector, flaggedId, TAGITCore.State.FLAGGED, TAGITCore.State.BOUND
+            )
         );
         tagitCore.activate(flaggedId);
 
         // claim on FLAGGED -> revert (requires ACTIVATED)
         vm.expectRevert(
-            abi.encodeWithSelector(TAGITCore.InvalidState.selector, flaggedId, TAGITCore.State.FLAGGED, TAGITCore.State.ACTIVATED)
+            abi.encodeWithSelector(
+                TAGITCore.InvalidState.selector, flaggedId, TAGITCore.State.FLAGGED, TAGITCore.State.ACTIVATED
+            )
         );
         tagitCore.claim(flaggedId, user2);
 
         // flag on FLAGGED -> revert (requires CLAIMED)
         vm.expectRevert(
-            abi.encodeWithSelector(TAGITCore.InvalidState.selector, flaggedId, TAGITCore.State.FLAGGED, TAGITCore.State.CLAIMED)
+            abi.encodeWithSelector(
+                TAGITCore.InvalidState.selector, flaggedId, TAGITCore.State.FLAGGED, TAGITCore.State.CLAIMED
+            )
         );
         tagitCore.flag(flaggedId);
 
@@ -665,14 +668,7 @@ contract STRIDEAttackVectors is Test {
 
         // Resolver 2 proposes user2 (different recipient) — must revert with RecipientMismatch
         vm.prank(resolver2);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                TAGITCore.RecipientMismatch.selector,
-                flaggedId,
-                user1,
-                user2
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(TAGITCore.RecipientMismatch.selector, flaggedId, user1, user2));
         tagitCore.approveResolve(flaggedId, user2);
     }
 
@@ -689,13 +685,13 @@ contract STRIDEAttackVectors is Test {
         vm.prank(manufacturer);
         vm.expectEmit(true, true, true, false); // check indexed fields
         emit CustodyTransfer(
-            1,                                    // tokenId (first mint)
+            1, // tokenId (first mint)
             uint8(TAGITCore.State.NONE),
             uint8(TAGITCore.State.MINTED),
-            address(0),                           // fromOwner
-            manufacturer,                         // toOwner
+            address(0), // fromOwner
+            manufacturer, // toOwner
             block.timestamp,
-            bytes32(0)                            // prevStateHash — we don't check non-indexed data strictly
+            bytes32(0) // prevStateHash — we don't check non-indexed data strictly
         );
         uint256 tokenId = tagitCore.mint(manufacturer, METADATA_1);
 
@@ -910,24 +906,21 @@ contract STRIDEAttackVectors is Test {
         // Full URI is the super.tokenURI() which is empty string for default ERC721
         // The key point: it is NOT the redacted URI
         assertTrue(
-            keccak256(bytes(ownerUri)) != keccak256(bytes("ipfs://REDACTED")),
-            "Owner should NOT get redacted URI"
+            keccak256(bytes(ownerUri)) != keccak256(bytes("ipfs://REDACTED")), "Owner should NOT get redacted URI"
         );
 
         // VIEWER (user2) — should get full URI
         vm.prank(user2);
         string memory viewerUri = tagitCore.tokenURI(tokenId);
         assertTrue(
-            keccak256(bytes(viewerUri)) != keccak256(bytes("ipfs://REDACTED")),
-            "VIEWER should NOT get redacted URI"
+            keccak256(bytes(viewerUri)) != keccak256(bytes("ipfs://REDACTED")), "VIEWER should NOT get redacted URI"
         );
 
         // AUDITOR (resolver3) — should get full URI
         vm.prank(resolver3);
         string memory auditorUri = tagitCore.tokenURI(tokenId);
         assertTrue(
-            keccak256(bytes(auditorUri)) != keccak256(bytes("ipfs://REDACTED")),
-            "AUDITOR should NOT get redacted URI"
+            keccak256(bytes(auditorUri)) != keccak256(bytes("ipfs://REDACTED")), "AUDITOR should NOT get redacted URI"
         );
 
         // Manufacturer with all capabilities but who is NOT the owner — should get full URI via VIEWER/AUDITOR cap
@@ -962,9 +955,7 @@ contract STRIDEAttackVectors is Test {
         }
 
         vm.prank(manufacturer);
-        vm.expectRevert(
-            abi.encodeWithSelector(TAGITCore.BatchTooLarge.selector, batchSize, 100)
-        );
+        vm.expectRevert(abi.encodeWithSelector(TAGITCore.BatchTooLarge.selector, batchSize, 100));
         tagitCore.batchMint(recipients, metadata);
     }
 
@@ -1002,7 +993,7 @@ contract STRIDEAttackVectors is Test {
         vm.stopPrank();
 
         // Verify circuit breaker is tripped
-        (bool isTripped, ) = tagitCore.getFlagCircuitBreakerStatus();
+        (bool isTripped,) = tagitCore.getFlagCircuitBreakerStatus();
         assertTrue(isTripped, "Circuit breaker should be tripped");
     }
 
@@ -1033,12 +1024,7 @@ contract STRIDEAttackVectors is Test {
     function test_D04_treasuryPause() public {
         // Create an allocation first
         vm.prank(governor);
-        uint256 allocId = treasury.createAllocation(
-            keccak256("TEST_PROGRAM"),
-            100_000e18,
-            user1,
-            365 days
-        );
+        uint256 allocId = treasury.createAllocation(keccak256("TEST_PROGRAM"), 100_000e18, user1, 365 days);
 
         // Queue a withdrawal before pausing
         vm.prank(user1);
@@ -1088,25 +1074,12 @@ contract STRIDEAttackVectors is Test {
 
         // Same resolver tries to resolve with only 1 approval — should fail
         vm.prank(manufacturer);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                TAGITCore.QuorumNotReached.selector,
-                flaggedId,
-                1,
-                2
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(TAGITCore.QuorumNotReached.selector, flaggedId, 1, 2));
         tagitCore.resolve(flaggedId, user2);
 
         // Also verify the same resolver cannot approve twice
         vm.prank(manufacturer);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                TAGITCore.AlreadyApproved.selector,
-                flaggedId,
-                manufacturer
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(TAGITCore.AlreadyApproved.selector, flaggedId, manufacturer));
         tagitCore.approveResolve(flaggedId, user2);
     }
 
@@ -1205,9 +1178,7 @@ contract STRIDEAttackVectors is Test {
 
         // Verify access controller remains unchanged
         assertEq(
-            address(tagitCore.accessController()),
-            address(tagitAccess),
-            "Access controller should not have changed"
+            address(tagitCore.accessController()), address(tagitAccess), "Access controller should not have changed"
         );
     }
 }

@@ -13,9 +13,9 @@ interface ITAGITStaking {
 
     /// @notice Staking information for a user
     struct StakeInfo {
-        uint256 amount;           // Tokens staked
+        uint256 amount; // Tokens staked
         uint256 rewardPerTokenPaid; // Rewards already accounted
-        uint256 rewards;          // Accumulated unclaimed rewards
+        uint256 rewards; // Accumulated unclaimed rewards
     }
 
     // ============================================

@@ -32,10 +32,7 @@ contract MockRouter {
      * @param adapter Target CCIPAdapter (must have this contract as its router)
      * @param message The Any2EVMMessage to deliver
      */
-    function deliverMessage(
-        address adapter,
-        Client.Any2EVMMessage calldata message
-    ) external {
+    function deliverMessage(address adapter, Client.Any2EVMMessage calldata message) external {
         CCIPAdapter(payable(adapter)).ccipReceive(message);
     }
 }
@@ -45,15 +42,19 @@ contract MockRouter {
  * @notice Minimal mock that responds to getAsset(uint256) staticcall
  */
 contract MockTAGITCore {
-    function getAsset(uint256 tokenId) external view returns (
-        address owner,
-        uint8 state,
-        bytes32 tagHash,
-        bytes32 metadataHash,
-        uint64 createdAt,
-        uint64 activatedAt,
-        uint64 claimedAt
-    ) {
+    function getAsset(uint256 tokenId)
+        external
+        view
+        returns (
+            address owner,
+            uint8 state,
+            bytes32 tagHash,
+            bytes32 metadataHash,
+            uint64 createdAt,
+            uint64 activatedAt,
+            uint64 claimedAt
+        )
+    {
         return (
             address(0xBEEF),
             3, // ACTIVATED
@@ -99,7 +100,7 @@ contract CCIPAdapterReplayTest is Test {
 
     // Two distinct source chains for cross-chain isolation tests
     uint64 public constant CHAIN_A = 16015286601757825753; // Sepolia selector
-    uint64 public constant CHAIN_B = 3734403246176062136;  // OP Mainnet selector
+    uint64 public constant CHAIN_B = 3734403246176062136; // OP Mainnet selector
 
     uint256 public constant GAS_LIMIT = 200_000;
 
@@ -121,10 +122,8 @@ contract CCIPAdapterReplayTest is Test {
 
         // Deploy CCIPAdapter behind ERC1967Proxy
         CCIPAdapter adapterImpl = new CCIPAdapter();
-        bytes memory initData = abi.encodeCall(
-            CCIPAdapter.initialize,
-            (address(router), governor, address(mockCore), owner)
-        );
+        bytes memory initData =
+            abi.encodeCall(CCIPAdapter.initialize, (address(router), governor, address(mockCore), owner));
         ERC1967Proxy proxy = new ERC1967Proxy(address(adapterImpl), initData);
         adapter = CCIPAdapter(payable(address(proxy)));
 
@@ -193,21 +192,15 @@ contract CCIPAdapterReplayTest is Test {
         // The requestId-based ReplayProtection would not catch this because requestId2
         // is fresh. But the chain-bound messageId check MUST catch it.
         Client.Any2EVMMessage memory msg2 = _buildMessage(
-            messageId,     // SAME messageId
-            CHAIN_A,       // SAME source chain
+            messageId, // SAME messageId
+            CHAIN_A, // SAME source chain
             remoteAdapterA,
-            requestId2,    // different requestId (passes requestId dedup)
+            requestId2, // different requestId (passes requestId dedup)
             uint8(0),
             abi.encode(uint256(2), ICCIPAdapter.RequestType.VERIFY)
         );
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                ReplayProtection.MessageAlreadyProcessed.selector,
-                messageId,
-                CHAIN_A
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(ReplayProtection.MessageAlreadyProcessed.selector, messageId, CHAIN_A));
         router.deliverMessage(address(adapter), msg2);
     }
 
@@ -222,8 +215,8 @@ contract CCIPAdapterReplayTest is Test {
 
         // Message from CHAIN_A
         Client.Any2EVMMessage memory msgA = _buildMessage(
-            messageId,       // same messageId
-            CHAIN_A,         // source = CHAIN_A
+            messageId, // same messageId
+            CHAIN_A, // source = CHAIN_A
             remoteAdapterA,
             requestIdA,
             uint8(0),
@@ -232,8 +225,8 @@ contract CCIPAdapterReplayTest is Test {
 
         // Message from CHAIN_B with the SAME messageId
         Client.Any2EVMMessage memory msgB = _buildMessage(
-            messageId,       // same messageId
-            CHAIN_B,         // source = CHAIN_B (different!)
+            messageId, // same messageId
+            CHAIN_B, // source = CHAIN_B (different!)
             remoteAdapterB,
             requestIdB,
             uint8(0),
@@ -265,10 +258,7 @@ contract CCIPAdapterReplayTest is Test {
         bytes32 requestId = keccak256("req-view");
 
         // Before processing: should return false
-        assertFalse(
-            adapter.isCcipMessageProcessed(messageId, CHAIN_A),
-            "should be false before processing"
-        );
+        assertFalse(adapter.isCcipMessageProcessed(messageId, CHAIN_A), "should be false before processing");
 
         // Process the message
         Client.Any2EVMMessage memory message = _buildMessage(
@@ -282,16 +272,10 @@ contract CCIPAdapterReplayTest is Test {
         router.deliverMessage(address(adapter), message);
 
         // After processing: should return true for the same chain
-        assertTrue(
-            adapter.isCcipMessageProcessed(messageId, CHAIN_A),
-            "should be true after processing on same chain"
-        );
+        assertTrue(adapter.isCcipMessageProcessed(messageId, CHAIN_A), "should be true after processing on same chain");
 
         // Same messageId but queried with a different source chain: should return false
-        assertFalse(
-            adapter.isCcipMessageProcessed(messageId, CHAIN_B),
-            "should be false for different source chain"
-        );
+        assertFalse(adapter.isCcipMessageProcessed(messageId, CHAIN_B), "should be false for different source chain");
     }
 
     // ============================================
@@ -303,10 +287,7 @@ contract CCIPAdapterReplayTest is Test {
         bytes32 requestId = keccak256("req-reqid-view");
 
         // Before processing: requestId not yet marked
-        assertFalse(
-            adapter.isMessageProcessed(requestId),
-            "requestId should be unprocessed initially"
-        );
+        assertFalse(adapter.isMessageProcessed(requestId), "requestId should be unprocessed initially");
 
         // Process the message
         Client.Any2EVMMessage memory message = _buildMessage(
@@ -320,10 +301,7 @@ contract CCIPAdapterReplayTest is Test {
         router.deliverMessage(address(adapter), message);
 
         // After processing: requestId should be marked
-        assertTrue(
-            adapter.isMessageProcessed(requestId),
-            "requestId should be processed after delivery"
-        );
+        assertTrue(adapter.isMessageProcessed(requestId), "requestId should be processed after delivery");
     }
 
     // ============================================
@@ -338,10 +316,7 @@ contract CCIPAdapterReplayTest is Test {
         vm.prank(governor);
         adapter.scheduleChainAddition(
             ICCIPAdapter.ChainConfig({
-                chainSelector: chainSelector,
-                adapter: remoteAdapter,
-                gasLimit: GAS_LIMIT,
-                active: true
+                chainSelector: chainSelector, adapter: remoteAdapter, gasLimit: GAS_LIMIT, active: true
             })
         );
 

@@ -4,7 +4,9 @@ pragma solidity ^0.8.20;
 import {Script, console2} from "@forge-std/Script.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IVotes} from "@openzeppelin/contracts/governance/utils/IVotes.sol";
-import {TimelockControllerUpgradeable} from "@openzeppelin/contracts-upgradeable/governance/TimelockControllerUpgradeable.sol";
+import {
+    TimelockControllerUpgradeable
+} from "@openzeppelin/contracts-upgradeable/governance/TimelockControllerUpgradeable.sol";
 import {ITAGITAccess} from "../../src/interfaces/ITAGITAccess.sol";
 import {ITAGITStaking} from "../../src/interfaces/ITAGITStaking.sol";
 
@@ -27,12 +29,12 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/U
  */
 contract DeployTokenAndGovernor is Script {
     // Existing deployed addresses
-    address constant TAGIT_CORE        = 0x8BdE22da889306d422802728cb98B6Da42ed8e1a;
-    address constant TIMELOCK          = 0x1B2bdd6f0a3C9127397dE51C36Dc237b097410a8;
-    address constant TAGIT_ACCESS      = 0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9;
-    address constant TAGIT_STAKING     = 0xe500CDfbA693CE1f39A6F05CfB4614971370Ee93;
-    address constant RECOVERY_PROXY    = 0x17c0af6B37aBD06587303f1695a06A668F8A5A8c;
-    address constant PROGRAMS_PROXY    = 0x4d1007eB4823a5a13905A0361478C339421ce4C9;
+    address constant TAGIT_CORE = 0x8BdE22da889306d422802728cb98B6Da42ed8e1a;
+    address constant TIMELOCK = 0x1B2bdd6f0a3C9127397dE51C36Dc237b097410a8;
+    address constant TAGIT_ACCESS = 0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9;
+    address constant TAGIT_STAKING = 0xe500CDfbA693CE1f39A6F05CfB4614971370Ee93;
+    address constant RECOVERY_PROXY = 0x17c0af6B37aBD06587303f1695a06A668F8A5A8c;
+    address constant PROGRAMS_PROXY = 0x4d1007eB4823a5a13905A0361478C339421ce4C9;
     address constant TREASURY_IMPL_OLD = 0xf6f5e2e03f6e28aE9Dc17bCc814a0cf758c887c9;
 
     // Newly deployed addresses (populated during run)
@@ -101,10 +103,7 @@ contract DeployTokenAndGovernor is Script {
         console2.log("--- Step 3: Redeploy TAGITTreasury ---");
         address[] memory signers = new address[](1);
         signers[0] = deployer;
-        bytes memory init = abi.encodeCall(
-            TAGITTreasury.initialize,
-            (deployer, tokenProxy, signers)
-        );
+        bytes memory init = abi.encodeCall(TAGITTreasury.initialize, (deployer, tokenProxy, signers));
         treasuryProxy = address(new ERC1967Proxy(TREASURY_IMPL_OLD, init));
         console2.log("  proxy (NEW):", treasuryProxy);
         console2.log("  impl (reused):", TREASURY_IMPL_OLD);

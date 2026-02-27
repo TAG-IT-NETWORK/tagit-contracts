@@ -32,9 +32,7 @@ contract TAGITCoreProxyTest is Test {
     bytes32 public constant TAG_HASH = keccak256("NFC_TAG_001");
 
     event UpgradeScheduled(
-        address indexed oldImplementation,
-        address indexed newImplementation,
-        address indexed scheduledBy
+        address indexed oldImplementation, address indexed newImplementation, address indexed scheduledBy
     );
 
     function setUp() public {
@@ -84,7 +82,10 @@ contract TAGITCoreProxyTest is Test {
     // ORACLE HELPER
     // ============================================
 
-    function _oracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory challengeResponse, bytes memory oracleSignature) {
+    function _oracleSign(uint256 tokenId, bytes32 tagHash)
+        internal
+        returns (bytes memory challengeResponse, bytes memory oracleSignature)
+    {
         challengeResponse = abi.encodePacked("challenge", tokenId);
         bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
         bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);

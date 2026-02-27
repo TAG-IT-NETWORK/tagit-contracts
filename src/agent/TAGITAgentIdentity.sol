@@ -66,10 +66,10 @@ contract TAGITAgentIdentity is ERC721, ERC721URIStorage, Ownable, Pausable, Reen
      * @dev Stores core agent identity data on-chain
      */
     struct Agent {
-        address registrant;      // Address that registered the agent (human operator)
-        address wallet;          // Agent's operational wallet address
-        uint64 registeredAt;     // Registration timestamp
-        bool active;             // Whether agent is currently active
+        address registrant; // Address that registered the agent (human operator)
+        address wallet; // Agent's operational wallet address
+        uint64 registeredAt; // Registration timestamp
+        bool active; // Whether agent is currently active
     }
 
     /**
@@ -130,12 +130,7 @@ contract TAGITAgentIdentity is ERC721, ERC721URIStorage, Ownable, Pausable, Reen
     // ============================================
 
     /// @notice Emitted when a new agent is registered
-    event AgentRegistered(
-        uint256 indexed agentId,
-        address indexed registrant,
-        address indexed wallet,
-        string uri
-    );
+    event AgentRegistered(uint256 indexed agentId, address indexed registrant, address indexed wallet, string uri);
 
     /// @notice Emitted when agent URI is updated
     event AgentURIUpdated(uint256 indexed agentId, string newURI);
@@ -197,11 +192,7 @@ contract TAGITAgentIdentity is ERC721, ERC721URIStorage, Ownable, Pausable, Reen
      * @notice Initialize TAGITAgentIdentity contract
      * @dev Sets ERC721 name/symbol, EIP-712 domain, initializes counters
      */
-    constructor()
-        ERC721("TAGIT Agent Identity", "TAGIT-AGENT")
-        Ownable(msg.sender)
-        EIP712("TAGITAgentIdentity", "1")
-    {
+    constructor() ERC721("TAGIT Agent Identity", "TAGIT-AGENT") Ownable(msg.sender) EIP712("TAGITAgentIdentity", "1") {
         _nextAgentId = 1; // Start at 1 (0 reserved for "none")
     }
 
@@ -304,12 +295,8 @@ contract TAGITAgentIdentity is ERC721, ERC721URIStorage, Ownable, Pausable, Reen
         agentId = _nextAgentId++;
         _totalAgents++;
 
-        _agents[agentId] = Agent({
-            registrant: msg.sender,
-            wallet: wallet,
-            registeredAt: uint64(block.timestamp),
-            active: true
-        });
+        _agents[agentId] =
+            Agent({registrant: msg.sender, wallet: wallet, registeredAt: uint64(block.timestamp), active: true});
 
         _agentStatus[agentId] = AgentStatus.ACTIVE;
         _walletToAgent[wallet] = agentId;
@@ -510,11 +497,7 @@ contract TAGITAgentIdentity is ERC721, ERC721URIStorage, Ownable, Pausable, Reen
      * @custom:security Only registrant, ReentrancyGuard
      * @custom:emits AgentStatusChanged
      */
-    function decommissionAgent(uint256 agentId)
-        external
-        nonReentrant
-        onlyRegistrant(agentId)
-    {
+    function decommissionAgent(uint256 agentId) external nonReentrant onlyRegistrant(agentId) {
         // ============================================
         // CHECKS
         // ============================================

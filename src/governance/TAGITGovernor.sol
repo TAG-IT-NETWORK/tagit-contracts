@@ -2,10 +2,18 @@
 pragma solidity ^0.8.20;
 
 import {GovernorUpgradeable} from "@openzeppelin/contracts-upgradeable/governance/GovernorUpgradeable.sol";
-import {GovernorSettingsUpgradeable} from "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorSettingsUpgradeable.sol";
-import {GovernorVotesUpgradeable} from "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorVotesUpgradeable.sol";
-import {GovernorTimelockControlUpgradeable} from "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorTimelockControlUpgradeable.sol";
-import {TimelockControllerUpgradeable} from "@openzeppelin/contracts-upgradeable/governance/TimelockControllerUpgradeable.sol";
+import {
+    GovernorSettingsUpgradeable
+} from "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorSettingsUpgradeable.sol";
+import {
+    GovernorVotesUpgradeable
+} from "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorVotesUpgradeable.sol";
+import {
+    GovernorTimelockControlUpgradeable
+} from "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorTimelockControlUpgradeable.sol";
+import {
+    TimelockControllerUpgradeable
+} from "@openzeppelin/contracts-upgradeable/governance/TimelockControllerUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -156,9 +164,9 @@ contract TAGITGovernor is
 
         __Governor_init("TAGITGovernor");
         __GovernorSettings_init(
-            1 days,     // voting delay
-            7 days,     // voting period
-            100_000e18  // proposal threshold (100k staked TAGIT)
+            1 days, // voting delay
+            7 days, // voting period
+            100_000e18 // proposal threshold (100k staked TAGIT)
         );
         __GovernorVotes_init(_token);
         __GovernorTimelockControl_init(_timelock);
@@ -200,21 +208,24 @@ contract TAGITGovernor is
     /**
      * @inheritdoc ITAGITGovernor
      */
-    function castVote(
-        uint256 proposalId,
-        uint8 support
-    ) public override(GovernorUpgradeable, ITAGITGovernor) whenNotPaused returns (uint256) {
+    function castVote(uint256 proposalId, uint8 support)
+        public
+        override(GovernorUpgradeable, ITAGITGovernor)
+        whenNotPaused
+        returns (uint256)
+    {
         return _castVote(proposalId, msg.sender, support, "", "");
     }
 
     /**
      * @inheritdoc ITAGITGovernor
      */
-    function castVoteWithReason(
-        uint256 proposalId,
-        uint8 support,
-        string calldata reason
-    ) public override(GovernorUpgradeable, ITAGITGovernor) whenNotPaused returns (uint256) {
+    function castVoteWithReason(uint256 proposalId, uint8 support, string calldata reason)
+        public
+        override(GovernorUpgradeable, ITAGITGovernor)
+        whenNotPaused
+        returns (uint256)
+    {
         return _castVote(proposalId, msg.sender, support, reason, "");
     }
 
@@ -222,7 +233,13 @@ contract TAGITGovernor is
      * @notice Queue by proposal ID (must use full proposal data version)
      * @dev OZ Governor doesn't store proposal data - use queue(targets, values, calldatas, descriptionHash) instead
      */
-    function queue(uint256 /*proposalId*/) external pure override(ITAGITGovernor) {
+    function queue(
+        uint256 /*proposalId*/
+    )
+        external
+        pure
+        override(ITAGITGovernor)
+    {
         revert("Use queue(targets,values,calldatas,descriptionHash)");
     }
 
@@ -230,7 +247,13 @@ contract TAGITGovernor is
      * @notice Execute by proposal ID (must use full proposal data version)
      * @dev OZ Governor doesn't store proposal data - use execute(targets, values, calldatas, descriptionHash) instead
      */
-    function execute(uint256 /*proposalId*/) external payable override(ITAGITGovernor) {
+    function execute(
+        uint256 /*proposalId*/
+    )
+        external
+        payable
+        override(ITAGITGovernor)
+    {
         revert("Use execute(targets,values,calldatas,descriptionHash)");
     }
 
@@ -238,7 +261,13 @@ contract TAGITGovernor is
      * @notice Cancel by proposal ID (must use full proposal data version)
      * @dev OZ Governor doesn't store proposal data - use cancel(targets, values, calldatas, descriptionHash) instead
      */
-    function cancel(uint256 /*proposalId*/) external pure override(ITAGITGovernor) {
+    function cancel(
+        uint256 /*proposalId*/
+    )
+        external
+        pure
+        override(ITAGITGovernor)
+    {
         revert("Use cancel(targets,values,calldatas,descriptionHash)");
     }
 
@@ -255,7 +284,12 @@ contract TAGITGovernor is
         uint8 support,
         string memory reason,
         bytes memory /*params*/
-    ) internal virtual override returns (uint256) {
+    )
+        internal
+        virtual
+        override
+        returns (uint256)
+    {
         // Validate proposal is in Active state
         ProposalState currentState = state(proposalId);
         if (currentState != ProposalState.Active) {
@@ -295,12 +329,7 @@ contract TAGITGovernor is
     /**
      * @dev Record vote in house and proposal storage
      */
-    function _recordHouseVote(
-        uint256 proposalId,
-        House house,
-        uint8 support,
-        uint256 weight
-    ) internal {
+    function _recordHouseVote(uint256 proposalId, House house, uint8 support, uint256 weight) internal {
         TAGITGovernorStorage storage $ = _getTAGITGovernorStorage();
         HouseVotes storage houseVote = $.houseVotes[proposalId][uint256(house)];
         ProposalVotes storage propVotes = $.proposalVotes[proposalId];
@@ -399,7 +428,11 @@ contract TAGITGovernor is
         uint8 support,
         uint256 weight,
         bytes memory /*params*/
-    ) internal virtual override {
+    )
+        internal
+        virtual
+        override
+    {
         // Not used - we override _castVote directly for house tracking
         // This is required by the interface but we handle voting in _castVote
     }
@@ -477,7 +510,12 @@ contract TAGITGovernor is
     /**
      * @inheritdoc ITAGITGovernor
      */
-    function hasVoted(uint256 proposalId, address account) public view override(IGovernor, ITAGITGovernor) returns (bool) {
+    function hasVoted(uint256 proposalId, address account)
+        public
+        view
+        override(IGovernor, ITAGITGovernor)
+        returns (bool)
+    {
         TAGITGovernorStorage storage $ = _getTAGITGovernorStorage();
         return $.hasVotedMap[proposalId][account];
     }
@@ -485,7 +523,12 @@ contract TAGITGovernor is
     /**
      * @inheritdoc ITAGITGovernor
      */
-    function proposalThreshold() public view override(GovernorUpgradeable, GovernorSettingsUpgradeable, ITAGITGovernor) returns (uint256) {
+    function proposalThreshold()
+        public
+        view
+        override(GovernorUpgradeable, GovernorSettingsUpgradeable, ITAGITGovernor)
+        returns (uint256)
+    {
         return super.proposalThreshold();
     }
 
@@ -519,11 +562,11 @@ contract TAGITGovernor is
      * @return againstVotes Total weighted against votes
      * @return abstainVotes Total weighted abstain votes
      */
-    function proposalVotes(uint256 proposalId) external view returns (
-        uint256 forVotes,
-        uint256 againstVotes,
-        uint256 abstainVotes
-    ) {
+    function proposalVotes(uint256 proposalId)
+        external
+        view
+        returns (uint256 forVotes, uint256 againstVotes, uint256 abstainVotes)
+    {
         TAGITGovernorStorage storage $ = _getTAGITGovernorStorage();
         ProposalVotes storage pv = $.proposalVotes[proposalId];
         return (pv.forVotes, pv.againstVotes, pv.abstainVotes);

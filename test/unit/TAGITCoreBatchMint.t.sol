@@ -91,7 +91,7 @@ contract TAGITCoreBatchMintTest is Test {
 
         for (uint256 i = 0; i < batchSize; i++) {
             assertEq(tagitCore.ownerOf(tokenIds[i]), consumer, "Each token should be owned by consumer");
-            (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenIds[i]);
+            (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenIds[i]);
             assertEq(uint8(state), uint8(TAGITCore.State.MINTED), "Each token should be in MINTED state");
         }
     }

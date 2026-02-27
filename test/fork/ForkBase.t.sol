@@ -131,10 +131,7 @@ abstract contract ForkBase is Test {
     }
 
     /// @notice Deploy a contract behind a UUPS proxy
-    function _deployProxy(
-        address implementation,
-        bytes memory initData
-    ) internal returns (address) {
+    function _deployProxy(address implementation, bytes memory initData) internal returns (address) {
         ERC1967Proxy proxy = new ERC1967Proxy(implementation, initData);
         return address(proxy);
     }

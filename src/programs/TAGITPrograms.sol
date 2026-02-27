@@ -234,13 +234,12 @@ contract TAGITPrograms is
     /**
      * @inheritdoc ITAGITPrograms
      */
-    function createProgram(
-        bytes32 id,
-        uint256 rewardAmount,
-        uint256 budget,
-        uint256 dailyCap,
-        uint48 duration
-    ) external override onlyGovernor returns (bool) {
+    function createProgram(bytes32 id, uint256 rewardAmount, uint256 budget, uint256 dailyCap, uint48 duration)
+        external
+        override
+        onlyGovernor
+        returns (bool)
+    {
         if (_programs[id].id != bytes32(0)) revert ProgramAlreadyExists(id);
         if (rewardAmount == 0) revert ZeroAmount();
         if (budget == 0) revert ZeroAmount();
@@ -257,18 +256,16 @@ contract TAGITPrograms is
             active: true
         });
 
-        emit ProgramCreated(id, rewardAmount, budget, dailyCap, uint48(block.timestamp), uint48(block.timestamp) + duration);
+        emit ProgramCreated(
+            id, rewardAmount, budget, dailyCap, uint48(block.timestamp), uint48(block.timestamp) + duration
+        );
         return true;
     }
 
     /**
      * @inheritdoc ITAGITPrograms
      */
-    function updateProgram(
-        bytes32 id,
-        uint256 newRewardAmount,
-        bool active
-    ) external override onlyGovernor {
+    function updateProgram(bytes32 id, uint256 newRewardAmount, bool active) external override onlyGovernor {
         Program storage program = _programs[id];
         if (program.id == bytes32(0)) revert ProgramNotFound(id);
 
@@ -461,11 +458,11 @@ contract TAGITPrograms is
     /**
      * @inheritdoc ITAGITPrograms
      */
-    function updateReputation(
-        address user,
-        uint16 newScore,
-        bytes32 newHistoryRoot
-    ) external override onlyAuthorizedUpdater {
+    function updateReputation(address user, uint16 newScore, bytes32 newHistoryRoot)
+        external
+        override
+        onlyAuthorizedUpdater
+    {
         if (user == address(0)) revert ZeroAddress();
         if (newScore > MAX_SCORE) revert ScoreExceedsMax(newScore, MAX_SCORE);
 
@@ -496,11 +493,11 @@ contract TAGITPrograms is
     /**
      * @inheritdoc ITAGITPrograms
      */
-    function slashReputation(
-        address user,
-        uint16 penalty,
-        bytes32 evidenceHash
-    ) external override onlyAuthorizedSlasher {
+    function slashReputation(address user, uint16 penalty, bytes32 evidenceHash)
+        external
+        override
+        onlyAuthorizedSlasher
+    {
         if (user == address(0)) revert ZeroAddress();
 
         UserReputation storage rep = _reputation[user];
@@ -593,10 +590,7 @@ contract TAGITPrograms is
     /**
      * @inheritdoc ITAGITPrograms
      */
-    function registerRecall(
-        uint256[] calldata tokenIds,
-        string calldata reason
-    ) external override {
+    function registerRecall(uint256[] calldata tokenIds, string calldata reason) external override {
         if (!_accessContract.hasIdentity(msg.sender, BADGE_MANUFACTURER)) {
             revert NotManufacturer(msg.sender);
         }
@@ -607,10 +601,7 @@ contract TAGITPrograms is
     /**
      * @inheritdoc ITAGITPrograms
      */
-    function notifyCustomsEvent(
-        uint256 tokenId,
-        bytes32 eventType
-    ) external override {
+    function notifyCustomsEvent(uint256 tokenId, bytes32 eventType) external override {
         if (!_authorizedReporters[msg.sender] && msg.sender != _governor) {
             revert NotAuthorizedUpdater(msg.sender);
         }
@@ -699,11 +690,7 @@ contract TAGITPrograms is
      * @param user User who will claim
      * @param actionProof The action proof hash
      */
-    function approveAction(
-        bytes32 programId,
-        address user,
-        bytes32 actionProof
-    ) external {
+    function approveAction(bytes32 programId, address user, bytes32 actionProof) external {
         if (msg.sender != _governor && msg.sender != _actionVerifier) {
             revert NotAuthorizedUpdater(msg.sender);
         }
@@ -743,11 +730,7 @@ contract TAGITPrograms is
      * @param actionProof Action proof hash
      * @return approved True if approved
      */
-    function isActionApproved(
-        bytes32 programId,
-        address user,
-        bytes32 actionProof
-    ) external view returns (bool) {
+    function isActionApproved(bytes32 programId, address user, bytes32 actionProof) external view returns (bool) {
         bytes32 proofKey = keccak256(abi.encodePacked(programId, user, actionProof));
         return _approvedActions[proofKey];
     }
@@ -814,14 +797,18 @@ contract TAGITPrograms is
     /**
      * @notice Get drain detector state
      */
-    function getDrainDetectorState() external view returns (
-        uint128 trackedBalance,
-        uint16 spikeThresholdBps,
-        uint16 velocityThresholdBps,
-        uint32 maxTxPerWindow,
-        bool tripped,
-        uint64 cooldownEnds
-    ) {
+    function getDrainDetectorState()
+        external
+        view
+        returns (
+            uint128 trackedBalance,
+            uint16 spikeThresholdBps,
+            uint16 velocityThresholdBps,
+            uint32 maxTxPerWindow,
+            bool tripped,
+            uint64 cooldownEnds
+        )
+    {
         return (
             _rewardDrainDetector.trackedBalance,
             _rewardDrainDetector.spikeThresholdBps,

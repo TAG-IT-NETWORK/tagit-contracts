@@ -11,10 +11,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ITAGITStaking} from "../interfaces/ITAGITStaking.sol";
 import {TAGITToken} from "./TAGITToken.sol";
 import {RateLimiter} from "../libraries/RateLimiter.sol";
-import {
-    MIN_STAKE_FOR_REP,
-    VERSION
-} from "../libraries/Constants.sol";
+import {MIN_STAKE_FOR_REP, VERSION} from "../libraries/Constants.sol";
 
 /**
  * @title TAGITStaking
@@ -42,13 +39,7 @@ import {
  *
  * @custom:security-contact security@tagit.network
  */
-contract TAGITStaking is
-    ITAGITStaking,
-    OwnableUpgradeable,
-    UUPSUpgradeable,
-    ReentrancyGuard,
-    PausableUpgradeable
-{
+contract TAGITStaking is ITAGITStaking, OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, PausableUpgradeable {
     using SafeERC20 for IERC20;
     using RateLimiter for RateLimiter.Config;
 
@@ -138,11 +129,7 @@ contract TAGITStaking is
      * @param _governor Governor address for admin functions
      * @param initialOwner Owner of the contract (for upgrades)
      */
-    function initialize(
-        address _token,
-        address _governor,
-        address initialOwner
-    ) public initializer {
+    function initialize(address _token, address _governor, address initialOwner) public initializer {
         if (_token == address(0)) revert ZeroAddress();
         if (_governor == address(0)) revert ZeroAddress();
         if (initialOwner == address(0)) revert ZeroAddress();
@@ -159,10 +146,7 @@ contract TAGITStaking is
         // - 15 minute cooldown after hitting limit
         // - 1000 operations per hour globally
         _rateLimitConfig.initialize(
-            DEFAULT_MAX_PER_WINDOW,
-            DEFAULT_WINDOW_DURATION,
-            DEFAULT_COOLDOWN,
-            DEFAULT_GLOBAL_LIMIT
+            DEFAULT_MAX_PER_WINDOW, DEFAULT_WINDOW_DURATION, DEFAULT_COOLDOWN, DEFAULT_GLOBAL_LIMIT
         );
     }
 
@@ -371,12 +355,10 @@ contract TAGITStaking is
      * @param cooldownDuration Cooldown duration after hitting limit
      * @param globalMax Global limit (0 = disabled)
      */
-    function setRateLimitConfig(
-        uint64 maxPerWindow,
-        uint64 windowDuration,
-        uint64 cooldownDuration,
-        uint64 globalMax
-    ) external onlyGovernor {
+    function setRateLimitConfig(uint64 maxPerWindow, uint64 windowDuration, uint64 cooldownDuration, uint64 globalMax)
+        external
+        onlyGovernor
+    {
         _rateLimitConfig.initialize(maxPerWindow, windowDuration, cooldownDuration, globalMax);
     }
 
@@ -487,11 +469,11 @@ contract TAGITStaking is
      * @return windowStart Start of current window
      * @return lockedUntil Lockout end timestamp (0 = not locked)
      */
-    function getRateLimitState(address user) external view returns (
-        uint64 count,
-        uint64 windowStart,
-        uint64 lockedUntil
-    ) {
+    function getRateLimitState(address user)
+        external
+        view
+        returns (uint64 count, uint64 windowStart, uint64 lockedUntil)
+    {
         return RateLimiter.getUserState(_rateLimitStates, user);
     }
 
@@ -502,11 +484,11 @@ contract TAGITStaking is
      * @return remaining Actions remaining in current window
      * @return lockedUntil Lockout end timestamp (0 = not locked)
      */
-    function getRemainingActions(address user) external view returns (
-        bool canAct_,
-        uint256 remaining,
-        uint256 lockedUntil
-    ) {
+    function getRemainingActions(address user)
+        external
+        view
+        returns (bool canAct_, uint256 remaining, uint256 lockedUntil)
+    {
         return _rateLimitConfig.canAct(_rateLimitStates, user);
     }
 
@@ -516,11 +498,11 @@ contract TAGITStaking is
      * @return globalWindowStart Global window start timestamp
      * @return globalRemaining Remaining global capacity
      */
-    function getGlobalRateLimitState() external view returns (
-        uint64 globalCount,
-        uint64 globalWindowStart,
-        uint256 globalRemaining
-    ) {
+    function getGlobalRateLimitState()
+        external
+        view
+        returns (uint64 globalCount, uint64 globalWindowStart, uint256 globalRemaining)
+    {
         return _rateLimitConfig.getGlobalState();
     }
 
@@ -545,9 +527,8 @@ contract TAGITStaking is
             return _rewardPerTokenStored;
         }
 
-        return _rewardPerTokenStored + (
-            (lastTimeRewardApplicable() - _lastUpdateTime) * _rewardRate * 1e18 / _totalStaked
-        );
+        return
+            _rewardPerTokenStored + ((lastTimeRewardApplicable() - _lastUpdateTime) * _rewardRate * 1e18 / _totalStaked);
     }
 
     /**
@@ -556,9 +537,8 @@ contract TAGITStaking is
      * @return The total earned rewards
      */
     function earned(address account) public view returns (uint256) {
-        return (
-            _stakes[account].amount * (rewardPerToken() - _stakes[account].rewardPerTokenPaid) / 1e18
-        ) + _stakes[account].rewards;
+        return (_stakes[account].amount * (rewardPerToken() - _stakes[account].rewardPerTokenPaid) / 1e18)
+            + _stakes[account].rewards;
     }
 
     // ============================================

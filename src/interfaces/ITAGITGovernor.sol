@@ -16,11 +16,11 @@ interface ITAGITGovernor {
      * @notice The 5 governance houses
      */
     enum House {
-        GOV_MIL,      // 0 - Government & Military (30%)
-        ENTERPRISE,   // 1 - Brand partners & manufacturers (30%)
-        PUBLIC,       // 2 - Token holders & community (20%)
-        DEV,          // 3 - Core development team (10%)
-        REGULATORY    // 4 - Compliance & legal oversight (10%)
+        GOV_MIL, // 0 - Government & Military (30%)
+        ENTERPRISE, // 1 - Brand partners & manufacturers (30%)
+        PUBLIC, // 2 - Token holders & community (20%)
+        DEV, // 3 - Core development team (10%)
+        REGULATORY // 4 - Compliance & legal oversight (10%)
     }
 
     // ============================================
@@ -99,29 +99,16 @@ interface ITAGITGovernor {
     );
 
     /// @notice Emitted when vote is cast with house info
-    event HouseVoteCast(
-        uint256 indexed proposalId,
-        address indexed voter,
-        House house,
-        uint8 support,
-        uint256 weight
-    );
+    event HouseVoteCast(uint256 indexed proposalId, address indexed voter, House house, uint8 support, uint256 weight);
 
     /// @notice Emitted when guardian triggers emergency pause
-    event EmergencyPaused(
-        address indexed guardian
-    );
+    event EmergencyPaused(address indexed guardian);
 
     /// @notice Emitted when guardian unpauses (uses different signature than Pausable)
-    event GovernorUnpaused(
-        address indexed guardian
-    );
+    event GovernorUnpaused(address indexed guardian);
 
     /// @notice Emitted when guardian is updated
-    event GuardianUpdated(
-        address indexed oldGuardian,
-        address indexed newGuardian
-    );
+    event GuardianUpdated(address indexed oldGuardian, address indexed newGuardian);
 
     // ============================================
     // CORE FUNCTIONS
@@ -148,10 +135,7 @@ interface ITAGITGovernor {
      * @param support Vote type: 0=Against, 1=For, 2=Abstain
      * @return weight The voting weight applied
      */
-    function castVote(
-        uint256 proposalId,
-        uint8 support
-    ) external returns (uint256 weight);
+    function castVote(uint256 proposalId, uint8 support) external returns (uint256 weight);
 
     /**
      * @notice Cast a vote with reason
@@ -160,11 +144,9 @@ interface ITAGITGovernor {
      * @param reason Vote rationale
      * @return weight The voting weight applied
      */
-    function castVoteWithReason(
-        uint256 proposalId,
-        uint8 support,
-        string calldata reason
-    ) external returns (uint256 weight);
+    function castVoteWithReason(uint256 proposalId, uint8 support, string calldata reason)
+        external
+        returns (uint256 weight);
 
     /**
      * @notice Queue a succeeded proposal for timelock execution

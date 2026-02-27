@@ -70,11 +70,7 @@ contract IdentityBadge is ERC721, Ownable, IIdentityBadge {
      * @custom:security Badge ID must be non-zero
      * @custom:emits IdentityGranted, Locked (ERC-5192)
      */
-    function grantIdentity(address account, uint256 badgeId)
-        external
-        onlyOwner
-        returns (uint256 tokenId)
-    {
+    function grantIdentity(address account, uint256 badgeId) external onlyOwner returns (uint256 tokenId) {
         // ============================================
         // CHECKS
         // ============================================
@@ -115,10 +111,7 @@ contract IdentityBadge is ERC721, Ownable, IIdentityBadge {
      * @custom:security Reverts if account doesn't have this badge
      * @custom:emits IdentityRevoked
      */
-    function revokeIdentity(address account, uint256 badgeId)
-        external
-        onlyOwner
-    {
+    function revokeIdentity(address account, uint256 badgeId) external onlyOwner {
         // ============================================
         // CHECKS
         // ============================================
@@ -153,11 +146,7 @@ contract IdentityBadge is ERC721, Ownable, IIdentityBadge {
      * @return bool True if account has this identity badge
      * @custom:security View function, safe to call from any context
      */
-    function hasIdentity(address account, uint256 badgeId)
-        external
-        view
-        returns (bool)
-    {
+    function hasIdentity(address account, uint256 badgeId) external view returns (bool) {
         return _accountBadgeToToken[account][badgeId] != 0;
     }
 
@@ -167,11 +156,7 @@ contract IdentityBadge is ERC721, Ownable, IIdentityBadge {
      * @param badgeId Badge ID to query
      * @return tokenId Token ID representing the badge (0 if not found)
      */
-    function getTokenId(address account, uint256 badgeId)
-        external
-        view
-        returns (uint256 tokenId)
-    {
+    function getTokenId(address account, uint256 badgeId) external view returns (uint256 tokenId) {
         return _accountBadgeToToken[account][badgeId];
     }
 
@@ -208,11 +193,7 @@ contract IdentityBadge is ERC721, Ownable, IIdentityBadge {
      * @custom:security Allows minting (from == address(0))
      * @custom:security Allows burning (to == address(0))
      */
-    function _update(address to, uint256 tokenId, address auth)
-        internal
-        override
-        returns (address)
-    {
+    function _update(address to, uint256 tokenId, address auth) internal override returns (address) {
         address from = _ownerOf(tokenId);
 
         // Allow minting (from == address(0))

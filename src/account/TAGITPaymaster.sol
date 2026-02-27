@@ -100,11 +100,7 @@ contract TAGITPaymaster is
      * @param governorAddr Governor address
      * @param initialOwner Initial owner for upgrades
      */
-    function initialize(
-        address entryPointAddr,
-        address governorAddr,
-        address initialOwner
-    ) external initializer {
+    function initialize(address entryPointAddr, address governorAddr, address initialOwner) external initializer {
         if (entryPointAddr == address(0)) revert ZeroAddress();
         if (governorAddr == address(0)) revert ZeroAddress();
         if (initialOwner == address(0)) revert ZeroAddress();
@@ -150,19 +146,24 @@ contract TAGITPaymaster is
     // ============================================
 
     /// @inheritdoc IPaymaster
-    function validatePaymasterUserOp(
-        PackedUserOperation calldata userOp,
-        bytes32 userOpHash,
-        uint256 maxCost
-    ) external override onlyEntryPoint returns (bytes memory context, uint256 validationData) {
+    function validatePaymasterUserOp(PackedUserOperation calldata userOp, bytes32 userOpHash, uint256 maxCost)
+        external
+        override
+        onlyEntryPoint
+        returns (bytes memory context, uint256 validationData)
+    {
         return _validatePaymasterUserOp(userOp, userOpHash, maxCost);
     }
 
     function _validatePaymasterUserOp(
         PackedUserOperation calldata userOp,
-        bytes32 /* userOpHash */,
+        bytes32,
+        /* userOpHash */
         uint256 maxCost
-    ) internal returns (bytes memory context, uint256 validationData) {
+    )
+        internal
+        returns (bytes memory context, uint256 validationData)
+    {
         // ============================================
         // NIST SECURITY CHECKS (SI-4, IR-4)
         // ============================================
@@ -196,7 +197,8 @@ contract TAGITPaymaster is
             // The first 32 bytes after offset is length, then data
             // For sponsorship, we check the target function's selector
             // At position 100 is the length, at 132 starts the actual func data
-            if (userOp.callData.length >= 136) { // 100 + 32 (length) + 4 (selector)
+            if (userOp.callData.length >= 136) {
+                // 100 + 32 (length) + 4 (selector)
                 selector = bytes4(userOp.callData[132:136]);
             }
         }
@@ -247,11 +249,12 @@ contract TAGITPaymaster is
         bytes calldata context,
         uint256 actualGasCost,
         uint256 /* actualUserOpFeePerGas */
-    ) external override onlyEntryPoint {
-        (address user, bytes4 selector, bytes32 brandId, ) = abi.decode(
-            context,
-            (address, bytes4, bytes32, uint256)
-        );
+    )
+        external
+        override
+        onlyEntryPoint
+    {
+        (address user, bytes4 selector, bytes32 brandId,) = abi.decode(context, (address, bytes4, bytes32, uint256));
 
         // Track gas sponsored
         _totalGasSponsored += actualGasCost;
@@ -286,29 +289,22 @@ contract TAGITPaymaster is
     // ============================================
 
     /// @inheritdoc ITAGITPaymaster
-    function setSponsorshipConfig(
-        bytes4 selector,
-        SponsorshipConfig calldata config
-    ) external override onlyGovernor {
+    function setSponsorshipConfig(bytes4 selector, SponsorshipConfig calldata config) external override onlyGovernor {
         _sponsorshipConfigs[selector] = config;
         emit SponsorshipConfigSet(selector, config.maxGas, config.dailyLimit, config.active);
     }
 
     /// @inheritdoc ITAGITPaymaster
-    function batchSetSponsorshipConfig(
-        bytes4[] calldata selectors,
-        SponsorshipConfig[] calldata configs
-    ) external override onlyGovernor {
+    function batchSetSponsorshipConfig(bytes4[] calldata selectors, SponsorshipConfig[] calldata configs)
+        external
+        override
+        onlyGovernor
+    {
         if (selectors.length != configs.length) revert InvalidPaymasterData();
 
         for (uint256 i = 0; i < selectors.length; i++) {
             _sponsorshipConfigs[selectors[i]] = configs[i];
-            emit SponsorshipConfigSet(
-                selectors[i],
-                configs[i].maxGas,
-                configs[i].dailyLimit,
-                configs[i].active
-            );
+            emit SponsorshipConfigSet(selectors[i], configs[i].maxGas, configs[i].dailyLimit, configs[i].active);
         }
     }
 
@@ -387,19 +383,13 @@ contract TAGITPaymaster is
     // ============================================
 
     /// @inheritdoc ITAGITPaymaster
-    function getUserDailyUsage(
-        address user,
-        bytes4 selector
-    ) external view override returns (uint256) {
+    function getUserDailyUsage(address user, bytes4 selector) external view override returns (uint256) {
         uint256 today = block.timestamp / 1 days;
         return _dailyUsage[user][selector][today];
     }
 
     /// @inheritdoc ITAGITPaymaster
-    function canSponsor(
-        address user,
-        bytes4 selector
-    ) external view override returns (bool) {
+    function canSponsor(address user, bytes4 selector) external view override returns (bool) {
         SponsorshipConfig storage config = _sponsorshipConfigs[selector];
         if (!config.active) return false;
         if (config.dailyLimit == 0) return true;
@@ -632,31 +622,30 @@ contract TAGITPaymaster is
     /**
      * @notice Get circuit breaker state
      */
-    function getCircuitBreakerState() external view returns (
-        uint64 count,
-        uint64 windowStart,
-        bool tripped,
-        uint64 cooldownEnds
-    ) {
-        return (
-            _sponsorCircuit.count,
-            _sponsorCircuit.windowStart,
-            _sponsorCircuit.tripped,
-            _sponsorCircuit.cooldownEnds
-        );
+    function getCircuitBreakerState()
+        external
+        view
+        returns (uint64 count, uint64 windowStart, bool tripped, uint64 cooldownEnds)
+    {
+        return
+            (_sponsorCircuit.count, _sponsorCircuit.windowStart, _sponsorCircuit.tripped, _sponsorCircuit.cooldownEnds);
     }
 
     /**
      * @notice Get drain detector state
      */
-    function getDrainDetectorState() external view returns (
-        uint128 trackedBalance,
-        uint16 spikeThresholdBps,
-        uint16 velocityThresholdBps,
-        uint32 maxTxPerWindow,
-        bool tripped,
-        uint64 cooldownEnds
-    ) {
+    function getDrainDetectorState()
+        external
+        view
+        returns (
+            uint128 trackedBalance,
+            uint16 spikeThresholdBps,
+            uint16 velocityThresholdBps,
+            uint32 maxTxPerWindow,
+            bool tripped,
+            uint64 cooldownEnds
+        )
+    {
         return (
             _drainDetector.trackedBalance,
             _drainDetector.spikeThresholdBps,

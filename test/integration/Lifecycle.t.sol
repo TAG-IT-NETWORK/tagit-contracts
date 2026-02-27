@@ -355,7 +355,7 @@ contract LifecycleIntegrationTest is Test {
         uint256 tokenId = tagitCore.mint(manufacturer, METADATA);
 
         // All systems should agree on state
-        (address assetOwner, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (address assetOwner,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(assetOwner, manufacturer, "Asset owner correct");
         assertEq(uint8(state), uint8(TAGITCore.State.MINTED), "State correct");
         assertEq(tagitCore.ownerOf(tokenId), manufacturer, "ERC721 owner correct");
@@ -424,7 +424,7 @@ contract LifecycleIntegrationTest is Test {
     function test_scenario_timestampProgression() public {
         vm.prank(manufacturer);
         uint256 tokenId = tagitCore.mint(manufacturer, METADATA);
-        (, uint64 ts1, , , ) = tagitCore.getAsset(tokenId);
+        (, uint64 ts1,,,) = tagitCore.getAsset(tokenId);
 
         vm.warp(block.timestamp + 1 hours);
         {
@@ -432,19 +432,19 @@ contract LifecycleIntegrationTest is Test {
             vm.prank(manufacturer);
             tagitCore.bindTag(tokenId, TAG_HASH, cr, sig);
         }
-        (, uint64 ts2, , , ) = tagitCore.getAsset(tokenId);
+        (, uint64 ts2,,,) = tagitCore.getAsset(tokenId);
         assertGt(ts2, ts1, "Bind timestamp should be later");
 
         vm.warp(block.timestamp + 1 hours);
         vm.prank(qaInspector);
         tagitCore.activate(tokenId);
-        (, uint64 ts3, , , ) = tagitCore.getAsset(tokenId);
+        (, uint64 ts3,,,) = tagitCore.getAsset(tokenId);
         assertGt(ts3, ts2, "Activate timestamp should be later");
 
         vm.warp(block.timestamp + 1 days);
         vm.prank(distributor);
         tagitCore.claim(tokenId, consumer);
-        (, uint64 ts4, , , ) = tagitCore.getAsset(tokenId);
+        (, uint64 ts4,,,) = tagitCore.getAsset(tokenId);
         assertGt(ts4, ts3, "Claim timestamp should be later");
     }
 
@@ -497,7 +497,10 @@ contract LifecycleIntegrationTest is Test {
     // HELPER FUNCTIONS
     // ============================================
 
-    function _oracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory challengeResponse, bytes memory oracleSignature) {
+    function _oracleSign(uint256 tokenId, bytes32 tagHash)
+        internal
+        returns (bytes memory challengeResponse, bytes memory oracleSignature)
+    {
         challengeResponse = abi.encodePacked("challenge", tokenId);
         bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
         bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
@@ -522,11 +525,7 @@ contract LifecycleIntegrationTest is Test {
     }
 
     function _verifyState(uint256 tokenId, TAGITCore.State expectedState) internal view {
-        (, , TAGITCore.State actualState, , ) = tagitCore.getAsset(tokenId);
-        assertEq(
-            uint8(actualState),
-            uint8(expectedState),
-            "State mismatch"
-        );
+        (,, TAGITCore.State actualState,,) = tagitCore.getAsset(tokenId);
+        assertEq(uint8(actualState), uint8(expectedState), "State mismatch");
     }
 }

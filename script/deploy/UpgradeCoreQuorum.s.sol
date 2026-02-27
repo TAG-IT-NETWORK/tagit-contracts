@@ -46,10 +46,7 @@ contract UpgradeCoreQuorum is Script {
         console2.log("New impl:", address(newImpl));
 
         // 2. Schedule upgradeToAndCall on timelock
-        bytes memory upgradeCall = abi.encodeCall(
-            proxy.upgradeToAndCall,
-            (address(newImpl), "")
-        );
+        bytes memory upgradeCall = abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), ""));
 
         uint256 delay = timelock.getMinDelay();
         console2.log("Delay:  ", delay, "seconds");
@@ -83,10 +80,7 @@ contract UpgradeCoreQuorum is Script {
         console2.log("Old impl:", oldImpl);
         console2.log("New impl:", newImplAddr);
 
-        bytes memory upgradeCall = abi.encodeCall(
-            proxy.upgradeToAndCall,
-            (newImplAddr, "")
-        );
+        bytes memory upgradeCall = abi.encodeCall(proxy.upgradeToAndCall, (newImplAddr, ""));
 
         bytes32 opId = timelock.hashOperation(PROXY, 0, upgradeCall, bytes32(0), SALT);
         bool ready = timelock.isOperationReady(opId);

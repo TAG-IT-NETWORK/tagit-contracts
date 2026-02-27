@@ -70,7 +70,9 @@ contract DrainDetectorTest is Test {
     function test_initialize_revertsOnZeroWindow() public {
         DrainDetectorHarness h = new DrainDetectorHarness();
         vm.expectRevert(abi.encodeWithSelector(DrainDetector.InvalidConfig.selector, "window cannot be 0"));
-        h.initialize(0, SPIKE_THRESHOLD_BPS, VELOCITY_THRESHOLD_BPS, MAX_TX_PER_WINDOW, COOLDOWN_DURATION, INITIAL_BALANCE);
+        h.initialize(
+            0, SPIKE_THRESHOLD_BPS, VELOCITY_THRESHOLD_BPS, MAX_TX_PER_WINDOW, COOLDOWN_DURATION, INITIAL_BALANCE
+        );
     }
 
     function test_initialize_revertsOnZeroSpikeThreshold() public {
@@ -82,7 +84,9 @@ contract DrainDetectorTest is Test {
     function test_initialize_revertsOnExcessiveSpikeThreshold() public {
         DrainDetectorHarness h = new DrainDetectorHarness();
         vm.expectRevert(abi.encodeWithSelector(DrainDetector.InvalidConfig.selector, "spike threshold invalid"));
-        h.initialize(WINDOW_DURATION, 10001, VELOCITY_THRESHOLD_BPS, MAX_TX_PER_WINDOW, COOLDOWN_DURATION, INITIAL_BALANCE);
+        h.initialize(
+            WINDOW_DURATION, 10001, VELOCITY_THRESHOLD_BPS, MAX_TX_PER_WINDOW, COOLDOWN_DURATION, INITIAL_BALANCE
+        );
     }
 
     function test_initialize_revertsOnZeroVelocityThreshold() public {
@@ -94,13 +98,17 @@ contract DrainDetectorTest is Test {
     function test_initialize_revertsOnZeroMaxTx() public {
         DrainDetectorHarness h = new DrainDetectorHarness();
         vm.expectRevert(abi.encodeWithSelector(DrainDetector.InvalidConfig.selector, "maxTx cannot be 0"));
-        h.initialize(WINDOW_DURATION, SPIKE_THRESHOLD_BPS, VELOCITY_THRESHOLD_BPS, 0, COOLDOWN_DURATION, INITIAL_BALANCE);
+        h.initialize(
+            WINDOW_DURATION, SPIKE_THRESHOLD_BPS, VELOCITY_THRESHOLD_BPS, 0, COOLDOWN_DURATION, INITIAL_BALANCE
+        );
     }
 
     function test_initialize_revertsOnZeroCooldown() public {
         DrainDetectorHarness h = new DrainDetectorHarness();
         vm.expectRevert(abi.encodeWithSelector(DrainDetector.InvalidConfig.selector, "cooldown cannot be 0"));
-        h.initialize(WINDOW_DURATION, SPIKE_THRESHOLD_BPS, VELOCITY_THRESHOLD_BPS, MAX_TX_PER_WINDOW, 0, INITIAL_BALANCE);
+        h.initialize(
+            WINDOW_DURATION, SPIKE_THRESHOLD_BPS, VELOCITY_THRESHOLD_BPS, MAX_TX_PER_WINDOW, 0, INITIAL_BALANCE
+        );
     }
 
     function test_isInitialized_returnsTrueAfterInit() public view {
@@ -287,12 +295,7 @@ contract DrainDetectorTest is Test {
         // Try again in cooldown
         vm.warp(block.timestamp + COOLDOWN_DURATION / 2);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DrainDetector.DetectorCooldown.selector,
-                COOLDOWN_DURATION / 2
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(DrainDetector.DetectorCooldown.selector, COOLDOWN_DURATION / 2));
         harness.checkWithdrawal(1 ether);
     }
 
@@ -701,12 +704,7 @@ contract DrainDetectorHarness {
         uint128 initialBalance
     ) external {
         _config.initialize(
-            windowDuration,
-            spikeThresholdBps,
-            velocityThresholdBps,
-            maxTxPerWindow,
-            cooldownDuration,
-            initialBalance
+            windowDuration, spikeThresholdBps, velocityThresholdBps, maxTxPerWindow, cooldownDuration, initialBalance
         );
     }
 
@@ -734,11 +732,7 @@ contract DrainDetectorHarness {
         _config.setBalance(newBalance);
     }
 
-    function updateThresholds(
-        uint16 spikeThresholdBps,
-        uint16 velocityThresholdBps,
-        uint32 maxTxPerWindow
-    ) external {
+    function updateThresholds(uint16 spikeThresholdBps, uint16 velocityThresholdBps, uint32 maxTxPerWindow) external {
         _config.updateThresholds(spikeThresholdBps, velocityThresholdBps, maxTxPerWindow);
     }
 
@@ -770,16 +764,20 @@ contract DrainDetectorHarness {
         return _config.getBalance();
     }
 
-    function getConfig() external view returns (
-        uint64 windowDuration,
-        uint64 windowStart,
-        uint16 spikeThreshold,
-        uint16 velocityThreshold,
-        uint32 maxTx,
-        bool enabled,
-        bool tripped,
-        uint128 balance
-    ) {
+    function getConfig()
+        external
+        view
+        returns (
+            uint64 windowDuration,
+            uint64 windowStart,
+            uint16 spikeThreshold,
+            uint16 velocityThreshold,
+            uint32 maxTx,
+            bool enabled,
+            bool tripped,
+            uint128 balance
+        )
+    {
         return (
             _config.windowDuration,
             _config.windowStart,

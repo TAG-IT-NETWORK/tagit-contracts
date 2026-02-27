@@ -10,7 +10,6 @@ import {TAGITCore} from "../../src/core/TAGITCore.sol";
  * @dev Tests full workflows from user onboarding to rewards claiming
  */
 contract E2EHappyPathTest is IntegrationBase {
-
     // ============================================
     // CONSUMER JOURNEY
     // ============================================
@@ -74,7 +73,7 @@ contract E2EHappyPathTest is IntegrationBase {
         core.claim(tokenId, consumer1);
 
         // Verify asset is in CLAIMED state (verified)
-        (, , TAGITCore.State state, , ) = core.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = core.getAsset(tokenId);
         assertEq(uint8(state), 4, "Asset should be CLAIMED/verified");
 
         // Consumer can check verification status
@@ -90,14 +89,8 @@ contract E2EHappyPathTest is IntegrationBase {
      */
     function test_fullManufacturerJourney() public {
         // STEP 1: Verify manufacturer has badge (done in setUp)
-        assertTrue(
-            capabilityBadge.hasCapability(manufacturer, CAP_MINT),
-            "Manufacturer should have mint capability"
-        );
-        assertTrue(
-            capabilityBadge.hasCapability(manufacturer, CAP_BIND),
-            "Manufacturer should have bind capability"
-        );
+        assertTrue(capabilityBadge.hasCapability(manufacturer, CAP_MINT), "Manufacturer should have mint capability");
+        assertTrue(capabilityBadge.hasCapability(manufacturer, CAP_BIND), "Manufacturer should have bind capability");
 
         // STEP 2: Manufacturer mints batch of products
         uint256 batchSize = 5;
@@ -133,7 +126,7 @@ contract E2EHappyPathTest is IntegrationBase {
         assertEq(core.totalSupply(), batchSize, "All products should be minted");
 
         for (uint256 i = 0; i < batchSize; i++) {
-            (, , TAGITCore.State state, , ) = core.getAsset(tokenIds[i]);
+            (,, TAGITCore.State state,,) = core.getAsset(tokenIds[i]);
             assertEq(uint8(state), 4, "All products should be CLAIMED");
         }
     }
@@ -156,7 +149,7 @@ contract E2EHappyPathTest is IntegrationBase {
 
         // Verify all flagged
         for (uint256 i = 0; i < 3; i++) {
-            (, , TAGITCore.State state, , ) = core.getAsset(tokenIds[i]);
+            (,, TAGITCore.State state,,) = core.getAsset(tokenIds[i]);
             assertEq(uint8(state), 5, "Product should be FLAGGED");
         }
 
@@ -172,7 +165,7 @@ contract E2EHappyPathTest is IntegrationBase {
 
         // Verify all resolved
         for (uint256 i = 0; i < 3; i++) {
-            (, , TAGITCore.State state, , ) = core.getAsset(tokenIds[i]);
+            (,, TAGITCore.State state,,) = core.getAsset(tokenIds[i]);
             assertEq(uint8(state), 4, "Product should be CLAIMED again");
         }
     }
@@ -273,23 +266,13 @@ contract E2EHappyPathTest is IntegrationBase {
         uint256 burnRate = burner.burnRate();
         uint256 expectedBurn = (feeAmount * burnRate) / 10000;
 
-        assertEq(
-            token.totalSupply(),
-            initialSupply - expectedBurn,
-            "Supply should decrease by burn amount"
-        );
-        assertEq(
-            burner.totalBurned(),
-            initialBurned + expectedBurn,
-            "Burned counter should increase"
-        );
+        assertEq(token.totalSupply(), initialSupply - expectedBurn, "Supply should decrease by burn amount");
+        assertEq(burner.totalBurned(), initialBurned + expectedBurn, "Burned counter should increase");
 
         // STEP 4: Verify treasury received remainder
         uint256 expectedTreasury = feeAmount - expectedBurn;
         assertEq(
-            token.balanceOf(address(treasury)),
-            initialTreasury + expectedTreasury,
-            "Treasury should receive remainder"
+            token.balanceOf(address(treasury)), initialTreasury + expectedTreasury, "Treasury should receive remainder"
         );
     }
 
@@ -312,7 +295,7 @@ contract E2EHappyPathTest is IntegrationBase {
         core.recycle(tokenId);
 
         // STEP 4: Verify recycled state
-        (, , TAGITCore.State state, , ) = core.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = core.getAsset(tokenId);
         assertEq(uint8(state), 6, "Asset should be RECYCLED");
 
         // Asset still exists but is in terminal state

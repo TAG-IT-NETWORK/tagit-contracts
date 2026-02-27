@@ -81,7 +81,10 @@ contract TAGITCoreTokenURITest is Test {
     // ORACLE HELPER
     // ============================================
 
-    function _oracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory challengeResponse, bytes memory oracleSignature) {
+    function _oracleSign(uint256 tokenId, bytes32 tagHash)
+        internal
+        returns (bytes memory challengeResponse, bytes memory oracleSignature)
+    {
         challengeResponse = abi.encodePacked("challenge", tokenId);
         bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
         bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
@@ -98,28 +101,19 @@ contract TAGITCoreTokenURITest is Test {
         string memory uri = tagitCore.tokenURI(1);
         // ERC721 default tokenURI returns empty when no base URI is set
         // The key test is that it does NOT return _redactedURI
-        assertTrue(
-            keccak256(bytes(uri)) != keccak256(bytes(REDACTED_URI)),
-            "Owner should get full URI, not redacted"
-        );
+        assertTrue(keccak256(bytes(uri)) != keccak256(bytes(REDACTED_URI)), "Owner should get full URI, not redacted");
     }
 
     function test_tokenURI_viewerGetsFullURI() public {
         vm.prank(viewer);
         string memory uri = tagitCore.tokenURI(1);
-        assertTrue(
-            keccak256(bytes(uri)) != keccak256(bytes(REDACTED_URI)),
-            "Viewer should get full URI, not redacted"
-        );
+        assertTrue(keccak256(bytes(uri)) != keccak256(bytes(REDACTED_URI)), "Viewer should get full URI, not redacted");
     }
 
     function test_tokenURI_auditorGetsFullURI() public {
         vm.prank(auditor);
         string memory uri = tagitCore.tokenURI(1);
-        assertTrue(
-            keccak256(bytes(uri)) != keccak256(bytes(REDACTED_URI)),
-            "Auditor should get full URI, not redacted"
-        );
+        assertTrue(keccak256(bytes(uri)) != keccak256(bytes(REDACTED_URI)), "Auditor should get full URI, not redacted");
     }
 
     function test_tokenURI_unauthorizedGetsRedactedURI() public {
@@ -199,18 +193,10 @@ contract TAGITCoreTokenURITest is Test {
     // ============================================
 
     function test_viewerCapabilityConstant() public view {
-        assertEq(
-            tagitCore.VIEWER_CAPABILITY(),
-            keccak256("VIEWER"),
-            "VIEWER_CAPABILITY should match"
-        );
+        assertEq(tagitCore.VIEWER_CAPABILITY(), keccak256("VIEWER"), "VIEWER_CAPABILITY should match");
     }
 
     function test_auditorCapabilityConstant() public view {
-        assertEq(
-            tagitCore.AUDITOR_CAPABILITY(),
-            keccak256("AUDITOR"),
-            "AUDITOR_CAPABILITY should match"
-        );
+        assertEq(tagitCore.AUDITOR_CAPABILITY(), keccak256("AUDITOR"), "AUDITOR_CAPABILITY should match");
     }
 }

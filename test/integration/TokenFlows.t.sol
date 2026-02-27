@@ -10,7 +10,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * @dev Tests cross-contract token flows
  */
 contract TokenFlowsTest is IntegrationBase {
-
     // ============================================
     // STAKING FLOWS
     // ============================================

@@ -36,9 +36,9 @@ library ReplayProtection {
      * @dev Packed storage for efficiency
      */
     struct Config {
-        uint64 messageExpiry;    // How long messages are valid (0 = no expiry)
-        bool enabled;            // Whether protection is enabled
-        bool requireSequential;  // Whether nonces must be sequential
+        uint64 messageExpiry; // How long messages are valid (0 = no expiry)
+        bool enabled; // Whether protection is enabled
+        bool requireSequential; // Whether nonces must be sequential
     }
 
     /**
@@ -46,8 +46,8 @@ library ReplayProtection {
      * @dev Tracks nonces and processed messages per source chain
      */
     struct ChainState {
-        uint64 lastNonce;        // Last processed sequential nonce
-        uint64 messageCount;     // Total messages processed from this chain
+        uint64 lastNonce; // Last processed sequential nonce
+        uint64 messageCount; // Total messages processed from this chain
     }
 
     // ============================================
@@ -86,12 +86,7 @@ library ReplayProtection {
      * @param timestamp When message was processed
      * @param nonce Message nonce (if applicable)
      */
-    event MessageProcessed(
-        bytes32 indexed messageId,
-        uint64 indexed chainSelector,
-        uint256 timestamp,
-        uint64 nonce
-    );
+    event MessageProcessed(bytes32 indexed messageId, uint64 indexed chainSelector, uint256 timestamp, uint64 nonce);
 
     /**
      * @notice Emitted when a replay attempt is detected
@@ -99,11 +94,7 @@ library ReplayProtection {
      * @param chainSelector Source chain
      * @param timestamp When attempt occurred
      */
-    event ReplayAttempt(
-        bytes32 indexed messageId,
-        uint64 indexed chainSelector,
-        uint256 timestamp
-    );
+    event ReplayAttempt(bytes32 indexed messageId, uint64 indexed chainSelector, uint256 timestamp);
 
     /**
      * @notice Emitted when an expired message is received
@@ -113,10 +104,7 @@ library ReplayProtection {
      * @param expiryDuration Configured expiry duration
      */
     event MessageExpiredEvent(
-        bytes32 indexed messageId,
-        uint64 indexed chainSelector,
-        uint256 messageTimestamp,
-        uint256 expiryDuration
+        bytes32 indexed messageId, uint64 indexed chainSelector, uint256 messageTimestamp, uint256 expiryDuration
     );
 
     /**
@@ -125,11 +113,7 @@ library ReplayProtection {
      * @param expected Expected nonce
      * @param received Received nonce
      */
-    event NonceViolation(
-        uint64 indexed chainSelector,
-        uint64 expected,
-        uint64 received
-    );
+    event NonceViolation(uint64 indexed chainSelector, uint64 expected, uint64 received);
 
     /**
      * @notice Emitted when approaching message limits (early warning)
@@ -137,11 +121,7 @@ library ReplayProtection {
      * @param messageCount Current message count
      * @param warningThreshold Threshold that triggered warning
      */
-    event HighVolumeWarning(
-        uint64 indexed chainSelector,
-        uint256 messageCount,
-        uint256 warningThreshold
-    );
+    event HighVolumeWarning(uint64 indexed chainSelector, uint256 messageCount, uint256 warningThreshold);
 
     // ============================================
     // CONSTANTS
@@ -160,11 +140,7 @@ library ReplayProtection {
      * @param messageExpiry_ How long messages are valid (0 = no expiry)
      * @param requireSequential_ Whether nonces must be sequential
      */
-    function initialize(
-        Config storage self,
-        uint64 messageExpiry_,
-        bool requireSequential_
-    ) internal {
+    function initialize(Config storage self, uint64 messageExpiry_, bool requireSequential_) internal {
         self.messageExpiry = messageExpiry_;
         self.requireSequential = requireSequential_;
         self.enabled = true;
@@ -258,10 +234,11 @@ library ReplayProtection {
      * @param messageId Message ID to check
      * @return processed Whether the message has been processed
      */
-    function isProcessed(
-        mapping(bytes32 => bool) storage processedMessages,
-        bytes32 messageId
-    ) internal view returns (bool processed) {
+    function isProcessed(mapping(bytes32 => bool) storage processedMessages, bytes32 messageId)
+        internal
+        view
+        returns (bool processed)
+    {
         return processedMessages[messageId];
     }
 
@@ -320,10 +297,11 @@ library ReplayProtection {
      * @return lastNonce Last processed nonce
      * @return messageCount Total messages from this chain
      */
-    function getChainState(
-        mapping(uint64 => ChainState) storage chainStates,
-        uint64 chainSelector
-    ) internal view returns (uint64 lastNonce, uint64 messageCount) {
+    function getChainState(mapping(uint64 => ChainState) storage chainStates, uint64 chainSelector)
+        internal
+        view
+        returns (uint64 lastNonce, uint64 messageCount)
+    {
         ChainState storage state = chainStates[chainSelector];
         return (state.lastNonce, state.messageCount);
     }
@@ -335,11 +313,9 @@ library ReplayProtection {
      * @param chainSelector Chain to update
      * @param newNonce New nonce value
      */
-    function setNonce(
-        mapping(uint64 => ChainState) storage chainStates,
-        uint64 chainSelector,
-        uint64 newNonce
-    ) internal {
+    function setNonce(mapping(uint64 => ChainState) storage chainStates, uint64 chainSelector, uint64 newNonce)
+        internal
+    {
         chainStates[chainSelector].lastNonce = newNonce;
     }
 
@@ -421,12 +397,11 @@ library ReplayProtection {
      * @param data Message data
      * @return messageId Computed message ID
      */
-    function computeMessageId(
-        uint64 chainSelector,
-        address sender,
-        uint64 nonce,
-        bytes memory data
-    ) internal pure returns (bytes32 messageId) {
+    function computeMessageId(uint64 chainSelector, address sender, uint64 nonce, bytes memory data)
+        internal
+        pure
+        returns (bytes32 messageId)
+    {
         return keccak256(abi.encodePacked(chainSelector, sender, nonce, data));
     }
 }

@@ -22,12 +22,7 @@ contract TAGITRecoveryNistTest is Test {
     // EVENTS
     // ============================================
 
-    event CircuitTripped(
-        uint256 indexed timestamp,
-        uint256 count,
-        uint256 threshold,
-        uint256 cooldownEnds
-    );
+    event CircuitTripped(uint256 indexed timestamp, uint256 count, uint256 threshold, uint256 cooldownEnds);
     event CircuitReset(uint256 indexed timestamp, uint256 previousCooldownEnds);
     event RateLimitHit(address indexed user, uint256 count, uint256 lockedUntil);
 
@@ -99,18 +94,14 @@ contract TAGITRecoveryNistTest is Test {
 
         // Deploy TAGITToken (upgradeable)
         TAGITToken tokenImpl = new TAGITToken();
-        bytes memory tokenData = abi.encodeCall(
-            TAGITToken.initialize,
-            (owner, treasury)
-        );
+        bytes memory tokenData = abi.encodeCall(TAGITToken.initialize, (owner, treasury));
         ERC1967Proxy tokenProxy = new ERC1967Proxy(address(tokenImpl), tokenData);
         token = TAGITToken(address(tokenProxy));
 
         // Deploy TAGITRecovery (upgradeable)
         TAGITRecovery recoveryImpl = new TAGITRecovery();
         bytes memory recoveryData = abi.encodeCall(
-            TAGITRecovery.initialize,
-            (address(core), address(access), address(token), governor, treasury, owner)
+            TAGITRecovery.initialize, (address(core), address(access), address(token), governor, treasury, owner)
         );
         ERC1967Proxy recoveryProxy = new ERC1967Proxy(address(recoveryImpl), recoveryData);
         recovery = TAGITRecovery(address(recoveryProxy));
@@ -135,7 +126,10 @@ contract TAGITRecoveryNistTest is Test {
     // HELPER FUNCTIONS
     // ============================================
 
-    function _oracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory challengeResponse, bytes memory oracleSignature) {
+    function _oracleSign(uint256 tokenId, bytes32 tagHash)
+        internal
+        returns (bytes memory challengeResponse, bytes memory oracleSignature)
+    {
         challengeResponse = abi.encodePacked("challenge", tokenId);
         bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
         bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);

@@ -56,20 +56,20 @@ library DrainDetector {
      */
     struct Config {
         // Slot 1 - Detection parameters
-        uint64 windowDuration;       // Detection window duration
-        uint64 windowStart;          // Current window start
-        uint16 spikeThresholdBps;    // Max single tx as % of balance (basis points)
+        uint64 windowDuration; // Detection window duration
+        uint64 windowStart; // Current window start
+        uint16 spikeThresholdBps; // Max single tx as % of balance (basis points)
         uint16 velocityThresholdBps; // Max cumulative outflow % in window
-        uint32 maxTxPerWindow;       // Max transactions per window
-        bool enabled;                // Whether detection is enabled
-        bool tripped;                // Whether detector has tripped
+        uint32 maxTxPerWindow; // Max transactions per window
+        bool enabled; // Whether detection is enabled
+        bool tripped; // Whether detector has tripped
         // Slot 2 - Balance tracking
-        uint128 trackedBalance;      // Balance being monitored
-        uint128 windowOutflow;       // Cumulative outflow this window
+        uint128 trackedBalance; // Balance being monitored
+        uint128 windowOutflow; // Cumulative outflow this window
         // Slot 3 - Transaction tracking
-        uint32 windowTxCount;        // Tx count this window
-        uint64 cooldownEnds;         // Cooldown end timestamp
-        uint64 cooldownDuration;     // Cooldown duration after trip
+        uint32 windowTxCount; // Tx count this window
+        uint64 cooldownEnds; // Cooldown end timestamp
+        uint64 cooldownDuration; // Cooldown duration after trip
     }
 
     // ============================================
@@ -112,12 +112,7 @@ library DrainDetector {
      * @param thresholdBps Configured threshold in basis points
      * @param balance Tracked balance at time of detection
      */
-    event SpikeAlert(
-        uint256 indexed timestamp,
-        uint256 amount,
-        uint16 thresholdBps,
-        uint256 balance
-    );
+    event SpikeAlert(uint256 indexed timestamp, uint256 amount, uint16 thresholdBps, uint256 balance);
 
     /**
      * @notice Emitted when velocity threshold breached (cumulative outflow)
@@ -126,12 +121,7 @@ library DrainDetector {
      * @param thresholdBps Configured threshold in basis points
      * @param balance Tracked balance
      */
-    event VelocityAlert(
-        uint256 indexed timestamp,
-        uint256 totalOutflow,
-        uint16 thresholdBps,
-        uint256 balance
-    );
+    event VelocityAlert(uint256 indexed timestamp, uint256 totalOutflow, uint16 thresholdBps, uint256 balance);
 
     /**
      * @notice Emitted when frequency threshold breached
@@ -139,11 +129,7 @@ library DrainDetector {
      * @param txCount Transaction count in window
      * @param maxAllowed Maximum allowed
      */
-    event FrequencyAlert(
-        uint256 indexed timestamp,
-        uint256 txCount,
-        uint256 maxAllowed
-    );
+    event FrequencyAlert(uint256 indexed timestamp, uint256 txCount, uint256 maxAllowed);
 
     /**
      * @notice Emitted when approaching thresholds (early warning)
@@ -152,12 +138,7 @@ library DrainDetector {
      * @param currentValue Current metric value
      * @param threshold Configured threshold
      */
-    event DrainWarning(
-        uint256 indexed timestamp,
-        uint8 warningType,
-        uint256 currentValue,
-        uint256 threshold
-    );
+    event DrainWarning(uint256 indexed timestamp, uint8 warningType, uint256 currentValue, uint256 threshold);
 
     /**
      * @notice Emitted when detector trips (auto-pause)
@@ -165,41 +146,28 @@ library DrainDetector {
      * @param reason Trip reason code (1=spike, 2=velocity, 3=frequency)
      * @param cooldownEnds When cooldown ends
      */
-    event DetectorTripped(
-        uint256 indexed timestamp,
-        uint8 reason,
-        uint256 cooldownEnds
-    );
+    event DetectorTripped(uint256 indexed timestamp, uint8 reason, uint256 cooldownEnds);
 
     /**
      * @notice Emitted when detector resets after cooldown
      * @param timestamp When reset
      * @param previousCooldownEnd Previous cooldown end time
      */
-    event DetectorReset(
-        uint256 indexed timestamp,
-        uint256 previousCooldownEnd
-    );
+    event DetectorReset(uint256 indexed timestamp, uint256 previousCooldownEnd);
 
     /**
      * @notice Emitted when admin force resets detector
      * @param timestamp When reset
      * @param admin Address that triggered reset
      */
-    event DetectorForceReset(
-        uint256 indexed timestamp,
-        address indexed admin
-    );
+    event DetectorForceReset(uint256 indexed timestamp, address indexed admin);
 
     /**
      * @notice Emitted when tracked balance is updated
      * @param oldBalance Previous balance
      * @param newBalance New balance
      */
-    event BalanceUpdated(
-        uint256 oldBalance,
-        uint256 newBalance
-    );
+    event BalanceUpdated(uint256 oldBalance, uint256 newBalance);
 
     // ============================================
     // CONSTANTS
@@ -288,10 +256,7 @@ library DrainDetector {
      * @param withdrawalAmount Amount being withdrawn
      * @return tripReason 0 if OK, 1-3 if tripped (spike/velocity/frequency)
      */
-    function checkWithdrawal(
-        Config storage self,
-        uint256 withdrawalAmount
-    ) internal returns (uint8 tripReason) {
+    function checkWithdrawal(Config storage self, uint256 withdrawalAmount) internal returns (uint8 tripReason) {
         // Skip if disabled
         if (!self.enabled) {
             return 0;
@@ -373,10 +338,7 @@ library DrainDetector {
      * @param self Storage reference to config
      * @param amount Amount that was withdrawn
      */
-    function recordWithdrawal(
-        Config storage self,
-        uint256 amount
-    ) internal {
+    function recordWithdrawal(Config storage self, uint256 amount) internal {
         uint256 oldBalance = self.trackedBalance;
         uint256 newBalance = oldBalance > amount ? oldBalance - amount : 0;
         self.trackedBalance = uint128(newBalance);
@@ -389,10 +351,7 @@ library DrainDetector {
      * @param self Storage reference to config
      * @param amount Amount deposited
      */
-    function recordDeposit(
-        Config storage self,
-        uint256 amount
-    ) internal {
+    function recordDeposit(Config storage self, uint256 amount) internal {
         uint256 oldBalance = self.trackedBalance;
         uint256 newBalance = oldBalance + amount;
         // Cap at uint128 max
@@ -409,10 +368,7 @@ library DrainDetector {
      * @param self Storage reference to config
      * @param admin Address of admin performing reset
      */
-    function forceReset(
-        Config storage self,
-        address admin
-    ) internal {
+    function forceReset(Config storage self, address admin) internal {
         _reset(self);
         emit DetectorForceReset(block.timestamp, admin);
     }
@@ -433,10 +389,7 @@ library DrainDetector {
      * @param self Storage reference to config
      * @param newBalance New balance to track
      */
-    function setBalance(
-        Config storage self,
-        uint128 newBalance
-    ) internal {
+    function setBalance(Config storage self, uint128 newBalance) internal {
         uint256 oldBalance = self.trackedBalance;
         self.trackedBalance = newBalance;
         emit BalanceUpdated(oldBalance, newBalance);
@@ -483,10 +436,7 @@ library DrainDetector {
      * @return isTripped Whether detector is currently tripped
      * @return cooldownRemaining Seconds until cooldown ends (0 if not tripped)
      */
-    function status(Config storage self) internal view returns (
-        bool isTripped,
-        uint256 cooldownRemaining
-    ) {
+    function status(Config storage self) internal view returns (bool isTripped, uint256 cooldownRemaining) {
         if (!self.tripped) {
             return (false, 0);
         }
@@ -506,10 +456,7 @@ library DrainDetector {
      * @return wouldTrip Whether this would trigger detection
      * @return reason 0=OK, 1=spike, 2=velocity, 3=frequency
      */
-    function wouldTrigger(
-        Config storage self,
-        uint256 amount
-    ) internal view returns (bool wouldTrip, uint8 reason) {
+    function wouldTrigger(Config storage self, uint256 amount) internal view returns (bool wouldTrip, uint8 reason) {
         if (!self.enabled || self.tripped) {
             return (false, 0);
         }
@@ -553,12 +500,11 @@ library DrainDetector {
      * @return windowStart_ Start of current window
      * @return windowRemaining Seconds remaining in current window
      */
-    function windowStats(Config storage self) internal view returns (
-        uint256 outflow,
-        uint32 txCount,
-        uint64 windowStart_,
-        uint256 windowRemaining
-    ) {
+    function windowStats(Config storage self)
+        internal
+        view
+        returns (uint256 outflow, uint32 txCount, uint64 windowStart_, uint256 windowRemaining)
+    {
         // If window expired, would reset to 0
         if (block.timestamp >= self.windowStart + self.windowDuration) {
             return (0, 0, uint64(block.timestamp), self.windowDuration);
@@ -575,11 +521,11 @@ library DrainDetector {
      * @return velocityCapacity Remaining cumulative outflow allowed
      * @return txCapacity Remaining transactions allowed
      */
-    function remainingCapacity(Config storage self) internal view returns (
-        uint256 spikeCapacity,
-        uint256 velocityCapacity,
-        uint32 txCapacity
-    ) {
+    function remainingCapacity(Config storage self)
+        internal
+        view
+        returns (uint256 spikeCapacity, uint256 velocityCapacity, uint32 txCapacity)
+    {
         if (!self.enabled || self.tripped) {
             return (type(uint256).max, type(uint256).max, type(uint32).max);
         }
@@ -597,13 +543,9 @@ library DrainDetector {
             effectiveTxCount = 0;
         }
 
-        uint256 velRemaining = velocityThreshold > effectiveOutflow
-            ? velocityThreshold - effectiveOutflow
-            : 0;
+        uint256 velRemaining = velocityThreshold > effectiveOutflow ? velocityThreshold - effectiveOutflow : 0;
 
-        uint32 txRemaining = self.maxTxPerWindow > effectiveTxCount
-            ? self.maxTxPerWindow - effectiveTxCount
-            : 0;
+        uint32 txRemaining = self.maxTxPerWindow > effectiveTxCount ? self.maxTxPerWindow - effectiveTxCount : 0;
 
         return (spikeThreshold, velRemaining, txRemaining);
     }

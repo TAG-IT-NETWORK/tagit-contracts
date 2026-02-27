@@ -80,10 +80,10 @@ contract Deploy is Script {
         proposers[0] = deployer; // TODO: Replace with Gnosis Safe 3-of-5 address
         executors[0] = deployer; // TODO: Replace with Gnosis Safe 3-of-5 address
         timelock = new TimelockController(
-            0,              // minDelay: 0 for initial configuration (bumped to 48hr after setup)
-            proposers,      // proposers: Gnosis Safe multisig
-            executors,      // executors: Gnosis Safe multisig
-            address(0)      // admin: no additional admin (renounced)
+            0, // minDelay: 0 for initial configuration (bumped to 48hr after setup)
+            proposers, // proposers: Gnosis Safe multisig
+            executors, // executors: Gnosis Safe multisig
+            address(0) // admin: no additional admin (renounced)
         );
         console2.log("   TimelockController deployed at:", address(timelock));
 
@@ -117,20 +117,14 @@ contract Deploy is Script {
         // For initial deployment, we use deployer as proposer/executor
         bytes memory setAccessData = abi.encodeCall(TAGITCore.setAccessController, (address(tagitAccess)));
         timelock.schedule(
-            address(tagitCore),     // target
-            0,                       // value
-            setAccessData,           // data
-            bytes32(0),              // predecessor
-            bytes32(0),              // salt
-            0                        // delay (0 for initial setup — deployer is proposer)
+            address(tagitCore), // target
+            0, // value
+            setAccessData, // data
+            bytes32(0), // predecessor
+            bytes32(0), // salt
+            0 // delay (0 for initial setup — deployer is proposer)
         );
-        timelock.execute(
-            address(tagitCore),
-            0,
-            setAccessData,
-            bytes32(0),
-            bytes32(0)
-        );
+        timelock.execute(address(tagitCore), 0, setAccessData, bytes32(0), bytes32(0));
         console2.log("   - Set AccessController via TimelockController");
 
         // ============================================

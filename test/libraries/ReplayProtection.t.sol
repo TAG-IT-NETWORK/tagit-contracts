@@ -20,7 +20,7 @@ contract ReplayProtectionTest is Test {
     // Test parameters
     uint64 constant MESSAGE_EXPIRY = 1 hours;
     uint64 constant CHAIN_SELECTOR_ETH = 5009297550715157269; // Ethereum mainnet
-    uint64 constant CHAIN_SELECTOR_OP = 3734403246176062136;  // OP Mainnet
+    uint64 constant CHAIN_SELECTOR_OP = 3734403246176062136; // OP Mainnet
     uint64 constant CHAIN_SELECTOR_ARB = 4949039107694359620; // Arbitrum
 
     // Test addresses
@@ -91,12 +91,7 @@ contract ReplayProtectionTest is Test {
         for (uint64 i = 1; i <= 5; i++) {
             bytes32 messageId = keccak256(abi.encodePacked("message", i));
 
-            bool valid = harness.validateAndMark(
-                messageId,
-                CHAIN_SELECTOR_ETH,
-                block.timestamp,
-                i
-            );
+            bool valid = harness.validateAndMark(messageId, CHAIN_SELECTOR_ETH, block.timestamp, i);
 
             assertTrue(valid, "Should accept sequential messages");
         }
@@ -127,11 +122,7 @@ contract ReplayProtectionTest is Test {
 
         // Replay attempt should fail
         vm.expectRevert(
-            abi.encodeWithSelector(
-                ReplayProtection.MessageAlreadyProcessed.selector,
-                messageId,
-                CHAIN_SELECTOR_ETH
-            )
+            abi.encodeWithSelector(ReplayProtection.MessageAlreadyProcessed.selector, messageId, CHAIN_SELECTOR_ETH)
         );
         harness.validateAndMark(messageId, CHAIN_SELECTOR_ETH, block.timestamp, 2);
     }
@@ -157,11 +148,7 @@ contract ReplayProtectionTest is Test {
         // Same ID from different chain should still fail (ID is unique globally)
         // This is intentional - message IDs should be globally unique
         vm.expectRevert(
-            abi.encodeWithSelector(
-                ReplayProtection.MessageAlreadyProcessed.selector,
-                messageId,
-                CHAIN_SELECTOR_OP
-            )
+            abi.encodeWithSelector(ReplayProtection.MessageAlreadyProcessed.selector, messageId, CHAIN_SELECTOR_OP)
         );
         harness.validateAndMark(messageId, CHAIN_SELECTOR_OP, block.timestamp, 1);
     }
@@ -189,12 +176,7 @@ contract ReplayProtectionTest is Test {
         vm.warp(block.timestamp + MESSAGE_EXPIRY + 1);
 
         vm.expectRevert(
-            abi.encodeWithSelector(
-                ReplayProtection.MessageExpired.selector,
-                messageId,
-                messageTime,
-                MESSAGE_EXPIRY
-            )
+            abi.encodeWithSelector(ReplayProtection.MessageExpired.selector, messageId, messageTime, MESSAGE_EXPIRY)
         );
         harness.validateAndMark(messageId, CHAIN_SELECTOR_ETH, messageTime, 1);
     }
@@ -340,12 +322,7 @@ contract ReplayProtectionTest is Test {
     function test_wouldBeValid_returnsTrueForNew() public view {
         bytes32 messageId = keccak256("newMessage");
 
-        (bool valid, uint8 reason) = harness.wouldBeValid(
-            messageId,
-            CHAIN_SELECTOR_ETH,
-            block.timestamp,
-            1
-        );
+        (bool valid, uint8 reason) = harness.wouldBeValid(messageId, CHAIN_SELECTOR_ETH, block.timestamp, 1);
 
         assertTrue(valid, "Should be valid");
         assertEq(reason, 0, "No rejection reason");
@@ -355,12 +332,7 @@ contract ReplayProtectionTest is Test {
         bytes32 messageId = keccak256("message1");
         harness.validateAndMark(messageId, CHAIN_SELECTOR_ETH, block.timestamp, 1);
 
-        (bool valid, uint8 reason) = harness.wouldBeValid(
-            messageId,
-            CHAIN_SELECTOR_ETH,
-            block.timestamp,
-            2
-        );
+        (bool valid, uint8 reason) = harness.wouldBeValid(messageId, CHAIN_SELECTOR_ETH, block.timestamp, 2);
 
         assertFalse(valid, "Should not be valid");
         assertEq(reason, 2, "Replay reason");
@@ -372,12 +344,7 @@ contract ReplayProtectionTest is Test {
 
         vm.warp(block.timestamp + MESSAGE_EXPIRY + 1);
 
-        (bool valid, uint8 reason) = harness.wouldBeValid(
-            messageId,
-            CHAIN_SELECTOR_ETH,
-            messageTime,
-            1
-        );
+        (bool valid, uint8 reason) = harness.wouldBeValid(messageId, CHAIN_SELECTOR_ETH, messageTime, 1);
 
         assertFalse(valid, "Should not be valid");
         assertEq(reason, 1, "Expiry reason");
@@ -389,12 +356,13 @@ contract ReplayProtectionTest is Test {
 
         harness.validateAndMark(messageId1, CHAIN_SELECTOR_ETH, block.timestamp, 1);
 
-        (bool valid, uint8 reason) = harness.wouldBeValid(
-            messageId2,
-            CHAIN_SELECTOR_ETH,
-            block.timestamp,
-            5 // Wrong nonce
-        );
+        (bool valid, uint8 reason) =
+            harness.wouldBeValid(
+                messageId2,
+                CHAIN_SELECTOR_ETH,
+                block.timestamp,
+                5 // Wrong nonce
+            );
 
         assertFalse(valid, "Should not be valid");
         assertEq(reason, 3, "Nonce reason");
@@ -453,30 +421,15 @@ contract ReplayProtectionTest is Test {
     // ============================================
 
     function test_computeMessageId_consistent() public pure {
-        bytes32 id1 = ReplayProtection.computeMessageId(
-            CHAIN_SELECTOR_ETH,
-            SENDER,
-            1,
-            hex"1234"
-        );
+        bytes32 id1 = ReplayProtection.computeMessageId(CHAIN_SELECTOR_ETH, SENDER, 1, hex"1234");
 
-        bytes32 id2 = ReplayProtection.computeMessageId(
-            CHAIN_SELECTOR_ETH,
-            SENDER,
-            1,
-            hex"1234"
-        );
+        bytes32 id2 = ReplayProtection.computeMessageId(CHAIN_SELECTOR_ETH, SENDER, 1, hex"1234");
 
         assertEq(id1, id2, "Same inputs should produce same ID");
     }
 
     function test_computeMessageId_differentInputsDifferentIds() public pure {
-        bytes32 id1 = ReplayProtection.computeMessageId(
-            CHAIN_SELECTOR_ETH,
-            SENDER,
-            1,
-            hex"1234"
-        );
+        bytes32 id1 = ReplayProtection.computeMessageId(CHAIN_SELECTOR_ETH, SENDER, 1, hex"1234");
 
         bytes32 id2 = ReplayProtection.computeMessageId(
             CHAIN_SELECTOR_ETH,
@@ -504,11 +457,7 @@ contract ReplayProtectionTest is Test {
 
         // Replay should fail (already processed)
         vm.expectRevert(
-            abi.encodeWithSelector(
-                ReplayProtection.MessageAlreadyProcessed.selector,
-                messageId,
-                CHAIN_SELECTOR_ETH
-            )
+            abi.encodeWithSelector(ReplayProtection.MessageAlreadyProcessed.selector, messageId, CHAIN_SELECTOR_ETH)
         );
         harness.validateAndMark(messageId, CHAIN_SELECTOR_ETH, block.timestamp, nonce + 1);
     }
@@ -601,19 +550,12 @@ contract ReplayProtectionHarness {
         _config.initialize(messageExpiry, requireSequential);
     }
 
-    function validateAndMark(
-        bytes32 messageId,
-        uint64 chainSelector,
-        uint256 messageTimestamp,
-        uint64 nonce
-    ) external returns (bool) {
+    function validateAndMark(bytes32 messageId, uint64 chainSelector, uint256 messageTimestamp, uint64 nonce)
+        external
+        returns (bool)
+    {
         return _config.validateAndMark(
-            _processedMessages,
-            _chainStates,
-            messageId,
-            chainSelector,
-            messageTimestamp,
-            nonce
+            _processedMessages, _chainStates, messageId, chainSelector, messageTimestamp, nonce
         );
     }
 
@@ -621,20 +563,12 @@ contract ReplayProtectionHarness {
         return ReplayProtection.isProcessed(_processedMessages, messageId);
     }
 
-    function wouldBeValid(
-        bytes32 messageId,
-        uint64 chainSelector,
-        uint256 messageTimestamp,
-        uint64 nonce
-    ) external view returns (bool, uint8) {
-        return _config.wouldBeValid(
-            _processedMessages,
-            _chainStates,
-            messageId,
-            chainSelector,
-            messageTimestamp,
-            nonce
-        );
+    function wouldBeValid(bytes32 messageId, uint64 chainSelector, uint256 messageTimestamp, uint64 nonce)
+        external
+        view
+        returns (bool, uint8)
+    {
+        return _config.wouldBeValid(_processedMessages, _chainStates, messageId, chainSelector, messageTimestamp, nonce);
     }
 
     function getChainState(uint64 chainSelector) external view returns (uint64, uint64) {

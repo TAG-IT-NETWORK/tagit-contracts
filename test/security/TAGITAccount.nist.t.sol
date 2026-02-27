@@ -40,25 +40,11 @@ contract TAGITAccountNistTest is Test {
     // EVENTS (mirror from contract)
     // ============================================
 
-    event SessionKeyUsed(
-        address indexed sessionKey,
-        bytes32 indexed userOpHash,
-        uint256 timestamp,
-        uint48 validUntil
-    );
+    event SessionKeyUsed(address indexed sessionKey, bytes32 indexed userOpHash, uint256 timestamp, uint48 validUntil);
 
-    event SessionKeyValidationFailed(
-        address indexed sessionKey,
-        bytes32 indexed userOpHash,
-        string reason
-    );
+    event SessionKeyValidationFailed(address indexed sessionKey, bytes32 indexed userOpHash, string reason);
 
-    event SessionKeyAdded(
-        address indexed key,
-        uint48 validAfter,
-        uint48 validUntil,
-        bytes4[] allowedSelectors
-    );
+    event SessionKeyAdded(address indexed key, uint48 validAfter, uint48 validUntil, bytes4[] allowedSelectors);
 
     event SessionKeyRevoked(address indexed key);
 
@@ -124,11 +110,11 @@ contract TAGITAccountNistTest is Test {
     // HELPER FUNCTIONS
     // ============================================
 
-    function _createUserOp(
-        address signer,
-        uint256 signerPrivateKey,
-        bytes memory callData
-    ) internal view returns (PackedUserOperation memory, bytes32) {
+    function _createUserOp(address signer, uint256 signerPrivateKey, bytes memory callData)
+        internal
+        view
+        returns (PackedUserOperation memory, bytes32)
+    {
         PackedUserOperation memory userOp = PackedUserOperation({
             sender: address(account),
             nonce: 0,
@@ -142,16 +128,18 @@ contract TAGITAccountNistTest is Test {
         });
 
         // Create userOpHash
-        bytes32 userOpHash = keccak256(abi.encode(
-            userOp.sender,
-            userOp.nonce,
-            keccak256(userOp.initCode),
-            keccak256(userOp.callData),
-            userOp.accountGasLimits,
-            userOp.preVerificationGas,
-            userOp.gasFees,
-            keccak256(userOp.paymasterAndData)
-        ));
+        bytes32 userOpHash = keccak256(
+            abi.encode(
+                userOp.sender,
+                userOp.nonce,
+                keccak256(userOp.initCode),
+                keccak256(userOp.callData),
+                userOp.accountGasLimits,
+                userOp.preVerificationGas,
+                userOp.gasFees,
+                keccak256(userOp.paymasterAndData)
+            )
+        );
 
         // Sign the hash
         bytes32 ethSignedHash = userOpHash.toEthSignedMessageHash();
@@ -194,12 +182,7 @@ contract TAGITAccountNistTest is Test {
         });
 
         vm.expectEmit(true, true, true, true);
-        emit SessionKeyAdded(
-            sessionKeyAddr,
-            uint48(block.timestamp),
-            uint48(block.timestamp + 1 hours),
-            selectors
-        );
+        emit SessionKeyAdded(sessionKeyAddr, uint48(block.timestamp), uint48(block.timestamp + 1 hours), selectors);
 
         vm.prank(owner);
         account.addSessionKey(sk);
@@ -219,27 +202,14 @@ contract TAGITAccountNistTest is Test {
         _addSessionKey();
 
         // Create execute call data
-        bytes memory callData = abi.encodeWithSelector(
-            EXECUTE_SELECTOR,
-            address(0x1234),
-            0,
-            ""
-        );
+        bytes memory callData = abi.encodeWithSelector(EXECUTE_SELECTOR, address(0x1234), 0, "");
 
-        (PackedUserOperation memory userOp, bytes32 userOpHash) = _createUserOp(
-            sessionKeyAddr,
-            sessionKeyPrivateKey,
-            callData
-        );
+        (PackedUserOperation memory userOp, bytes32 userOpHash) =
+            _createUserOp(sessionKeyAddr, sessionKeyPrivateKey, callData);
 
         // Expect SessionKeyUsed event
         vm.expectEmit(true, true, false, true);
-        emit SessionKeyUsed(
-            sessionKeyAddr,
-            userOpHash,
-            block.timestamp,
-            uint48(block.timestamp + 1 hours)
-        );
+        emit SessionKeyUsed(sessionKeyAddr, userOpHash, block.timestamp, uint48(block.timestamp + 1 hours));
 
         vm.prank(address(entryPoint));
         account.validateUserOp(userOp, userOpHash, 0);
@@ -251,18 +221,10 @@ contract TAGITAccountNistTest is Test {
         // Fast forward past validity
         vm.warp(block.timestamp + 2 hours);
 
-        bytes memory callData = abi.encodeWithSelector(
-            EXECUTE_SELECTOR,
-            address(0x1234),
-            0,
-            ""
-        );
+        bytes memory callData = abi.encodeWithSelector(EXECUTE_SELECTOR, address(0x1234), 0, "");
 
-        (PackedUserOperation memory userOp, bytes32 userOpHash) = _createUserOp(
-            sessionKeyAddr,
-            sessionKeyPrivateKey,
-            callData
-        );
+        (PackedUserOperation memory userOp, bytes32 userOpHash) =
+            _createUserOp(sessionKeyAddr, sessionKeyPrivateKey, callData);
 
         // Expect SessionKeyValidationFailed event
         vm.expectEmit(true, true, true, true);
@@ -276,16 +238,10 @@ contract TAGITAccountNistTest is Test {
         _addSessionKey();
 
         // Use a selector not in allowed list
-        bytes memory callData = abi.encodeWithSelector(
-            bytes4(keccak256("notAllowed()")),
-            address(0x1234)
-        );
+        bytes memory callData = abi.encodeWithSelector(bytes4(keccak256("notAllowed()")), address(0x1234));
 
-        (PackedUserOperation memory userOp, bytes32 userOpHash) = _createUserOp(
-            sessionKeyAddr,
-            sessionKeyPrivateKey,
-            callData
-        );
+        (PackedUserOperation memory userOp, bytes32 userOpHash) =
+            _createUserOp(sessionKeyAddr, sessionKeyPrivateKey, callData);
 
         // Expect SessionKeyValidationFailed event
         vm.expectEmit(true, true, true, true);
@@ -300,18 +256,10 @@ contract TAGITAccountNistTest is Test {
         uint256 attackerPrivateKey = 0x999;
         address attackerAddr = vm.addr(attackerPrivateKey);
 
-        bytes memory callData = abi.encodeWithSelector(
-            EXECUTE_SELECTOR,
-            address(0x1234),
-            0,
-            ""
-        );
+        bytes memory callData = abi.encodeWithSelector(EXECUTE_SELECTOR, address(0x1234), 0, "");
 
-        (PackedUserOperation memory userOp, bytes32 userOpHash) = _createUserOp(
-            attackerAddr,
-            attackerPrivateKey,
-            callData
-        );
+        (PackedUserOperation memory userOp, bytes32 userOpHash) =
+            _createUserOp(attackerAddr, attackerPrivateKey, callData);
 
         // Expect SessionKeyValidationFailed event
         vm.expectEmit(true, true, true, true);
@@ -326,18 +274,9 @@ contract TAGITAccountNistTest is Test {
     // ============================================
 
     function test_owner_validationSucceedsNoSessionKeyEvent() public {
-        bytes memory callData = abi.encodeWithSelector(
-            EXECUTE_SELECTOR,
-            address(0x1234),
-            0,
-            ""
-        );
+        bytes memory callData = abi.encodeWithSelector(EXECUTE_SELECTOR, address(0x1234), 0, "");
 
-        (PackedUserOperation memory userOp, bytes32 userOpHash) = _createUserOp(
-            owner,
-            ownerPrivateKey,
-            callData
-        );
+        (PackedUserOperation memory userOp, bytes32 userOpHash) = _createUserOp(owner, ownerPrivateKey, callData);
 
         // Owner validation should succeed without emitting SessionKeyUsed
         vm.prank(address(entryPoint));
@@ -354,18 +293,10 @@ contract TAGITAccountNistTest is Test {
     function test_gas_validateUserOpWithSessionKey() public {
         _addSessionKey();
 
-        bytes memory callData = abi.encodeWithSelector(
-            EXECUTE_SELECTOR,
-            address(0x1234),
-            0,
-            ""
-        );
+        bytes memory callData = abi.encodeWithSelector(EXECUTE_SELECTOR, address(0x1234), 0, "");
 
-        (PackedUserOperation memory userOp, bytes32 userOpHash) = _createUserOp(
-            sessionKeyAddr,
-            sessionKeyPrivateKey,
-            callData
-        );
+        (PackedUserOperation memory userOp, bytes32 userOpHash) =
+            _createUserOp(sessionKeyAddr, sessionKeyPrivateKey, callData);
 
         vm.prank(address(entryPoint));
         uint256 gasBefore = gasleft();
@@ -377,18 +308,9 @@ contract TAGITAccountNistTest is Test {
     }
 
     function test_gas_validateUserOpWithOwner() public {
-        bytes memory callData = abi.encodeWithSelector(
-            EXECUTE_SELECTOR,
-            address(0x1234),
-            0,
-            ""
-        );
+        bytes memory callData = abi.encodeWithSelector(EXECUTE_SELECTOR, address(0x1234), 0, "");
 
-        (PackedUserOperation memory userOp, bytes32 userOpHash) = _createUserOp(
-            owner,
-            ownerPrivateKey,
-            callData
-        );
+        (PackedUserOperation memory userOp, bytes32 userOpHash) = _createUserOp(owner, ownerPrivateKey, callData);
 
         vm.prank(address(entryPoint));
         uint256 gasBefore = gasleft();
@@ -404,18 +326,9 @@ contract TAGITAccountNistTest is Test {
     // ============================================
 
     function test_security_onlyEntryPointCanValidate() public {
-        bytes memory callData = abi.encodeWithSelector(
-            EXECUTE_SELECTOR,
-            address(0x1234),
-            0,
-            ""
-        );
+        bytes memory callData = abi.encodeWithSelector(EXECUTE_SELECTOR, address(0x1234), 0, "");
 
-        (PackedUserOperation memory userOp, bytes32 userOpHash) = _createUserOp(
-            owner,
-            ownerPrivateKey,
-            callData
-        );
+        (PackedUserOperation memory userOp, bytes32 userOpHash) = _createUserOp(owner, ownerPrivateKey, callData);
 
         vm.prank(attacker);
         vm.expectRevert();

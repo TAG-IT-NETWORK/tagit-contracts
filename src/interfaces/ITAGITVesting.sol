@@ -13,11 +13,11 @@ interface ITAGITVesting {
 
     /// @notice Vesting schedule for a beneficiary
     struct VestingSchedule {
-        uint256 totalAmount;      // Total tokens granted
-        uint256 startTime;        // When vesting started
-        uint256 cliffDuration;    // Time before any unlock
-        uint256 vestingDuration;  // Total vesting period
-        uint256 claimed;          // Already withdrawn
+        uint256 totalAmount; // Total tokens granted
+        uint256 startTime; // When vesting started
+        uint256 cliffDuration; // Time before any unlock
+        uint256 vestingDuration; // Total vesting period
+        uint256 claimed; // Already withdrawn
     }
 
     // ============================================
@@ -26,11 +26,7 @@ interface ITAGITVesting {
 
     /// @notice Emitted when a vesting schedule is created
     event VestingCreated(
-        address indexed beneficiary,
-        uint256 amount,
-        uint256 startTime,
-        uint256 cliffDuration,
-        uint256 vestingDuration
+        address indexed beneficiary, uint256 amount, uint256 startTime, uint256 cliffDuration, uint256 vestingDuration
     );
 
     /// @notice Emitted when tokens are claimed
@@ -76,12 +72,7 @@ interface ITAGITVesting {
      * @param cliffDuration Seconds before any tokens unlock
      * @param vestingDuration Total vesting period in seconds
      */
-    function createVest(
-        address beneficiary,
-        uint256 amount,
-        uint256 cliffDuration,
-        uint256 vestingDuration
-    ) external;
+    function createVest(address beneficiary, uint256 amount, uint256 cliffDuration, uint256 vestingDuration) external;
 
     // ============================================
     // BENEFICIARY FUNCTIONS

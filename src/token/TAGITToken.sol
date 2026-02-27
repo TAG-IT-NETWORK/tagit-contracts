@@ -2,20 +2,21 @@
 pragma solidity ^0.8.20;
 
 import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-import {ERC20PermitUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
-import {ERC20VotesUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol";
-import {ERC20BurnableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
+import {
+    ERC20PermitUpgradeable
+} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
+import {
+    ERC20VotesUpgradeable
+} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol";
+import {
+    ERC20BurnableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
 import {NoncesUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/NoncesUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import {
-    GENESIS_SUPPLY,
-    TOKEN_NAME,
-    TOKEN_SYMBOL,
-    VERSION
-} from "../libraries/Constants.sol";
+import {GENESIS_SUPPLY, TOKEN_NAME, TOKEN_SYMBOL, VERSION} from "../libraries/Constants.sol";
 
 /**
  * @title TAGITToken
@@ -116,10 +117,7 @@ contract TAGITToken is
      * @param treasury Address to receive the genesis supply
      * @param initialOwner Initial owner of the contract (for admin functions)
      */
-    function initialize(
-        address treasury,
-        address initialOwner
-    ) public initializer {
+    function initialize(address treasury, address initialOwner) public initializer {
         if (treasury == address(0)) revert ZeroAddress();
         if (initialOwner == address(0)) revert ZeroAddress();
 
@@ -246,20 +244,17 @@ contract TAGITToken is
     /**
      * @dev Override required by ERC20Votes
      */
-    function _update(
-        address from,
-        address to,
-        uint256 amount
-    ) internal override(ERC20Upgradeable, ERC20VotesUpgradeable) {
+    function _update(address from, address to, uint256 amount)
+        internal
+        override(ERC20Upgradeable, ERC20VotesUpgradeable)
+    {
         super._update(from, to, amount);
     }
 
     /**
      * @dev Override required for ERC20Permit/Votes nonces
      */
-    function nonces(
-        address owner
-    ) public view override(ERC20PermitUpgradeable, NoncesUpgradeable) returns (uint256) {
+    function nonces(address owner) public view override(ERC20PermitUpgradeable, NoncesUpgradeable) returns (uint256) {
         return super.nonces(owner);
     }
 

@@ -11,7 +11,6 @@ import {IRecovery} from "../../src/interfaces/IRecovery.sol";
  * @dev Tests TAGITCore, TAGITRecovery, TAGITAccess interactions
  */
 contract CoreFlowsTest is IntegrationBase {
-
     // ============================================
     // ASSET LIFECYCLE FLOWS
     // ============================================
@@ -29,7 +28,7 @@ contract CoreFlowsTest is IntegrationBase {
         assertEq(core.ownerOf(tokenId), consumer1, "Owner should be consumer1");
 
         // Verify state is MINTED
-        (, , TAGITCore.State state, , ) = core.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = core.getAsset(tokenId);
         assertEq(uint8(state), 1, "State should be MINTED (1)");
 
         // Step 2: Manufacturer binds tag
@@ -38,7 +37,7 @@ contract CoreFlowsTest is IntegrationBase {
         core.bindTag(tokenId, tagHash, cr, sig);
 
         // Verify state is BOUND
-        (, , TAGITCore.State state2, , ) = core.getAsset(tokenId);
+        (,, TAGITCore.State state2,,) = core.getAsset(tokenId);
         assertEq(uint8(state2), 2, "State should be BOUND (2)");
 
         // Step 3: QA Inspector activates
@@ -46,7 +45,7 @@ contract CoreFlowsTest is IntegrationBase {
         core.activate(tokenId);
 
         // Verify state is ACTIVATED
-        (, , TAGITCore.State state3, , ) = core.getAsset(tokenId);
+        (,, TAGITCore.State state3,,) = core.getAsset(tokenId);
         assertEq(uint8(state3), 3, "State should be ACTIVATED (3)");
 
         // Step 4: Verifier claims for consumer
@@ -54,7 +53,7 @@ contract CoreFlowsTest is IntegrationBase {
         core.claim(tokenId, consumer1);
 
         // Verify state is CLAIMED
-        (, , TAGITCore.State state4, , ) = core.getAsset(tokenId);
+        (,, TAGITCore.State state4,,) = core.getAsset(tokenId);
         assertEq(uint8(state4), 4, "State should be CLAIMED (4)");
     }
 
@@ -119,7 +118,7 @@ contract CoreFlowsTest is IntegrationBase {
         uint256 tokenId = _mintClaimedAsset(consumer1);
 
         // Verify state is CLAIMED
-        (, , TAGITCore.State stateBefore, , ) = core.getAsset(tokenId);
+        (,, TAGITCore.State stateBefore,,) = core.getAsset(tokenId);
         assertEq(uint8(stateBefore), 4, "Should be CLAIMED");
 
         // Law enforcement flags asset
@@ -127,7 +126,7 @@ contract CoreFlowsTest is IntegrationBase {
         core.flag(tokenId);
 
         // Verify state is FLAGGED
-        (, , TAGITCore.State stateAfter, , ) = core.getAsset(tokenId);
+        (,, TAGITCore.State stateAfter,,) = core.getAsset(tokenId);
         assertEq(uint8(stateAfter), 5, "Should be FLAGGED");
     }
 
@@ -153,7 +152,7 @@ contract CoreFlowsTest is IntegrationBase {
         core.resolve(tokenId, consumer1);
 
         // Verify state is CLAIMED again
-        (, , TAGITCore.State state, , ) = core.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = core.getAsset(tokenId);
         assertEq(uint8(state), 4, "Should be CLAIMED after resolution");
     }
 
@@ -169,7 +168,7 @@ contract CoreFlowsTest is IntegrationBase {
         core.recycle(tokenId);
 
         // Verify state is RECYCLED
-        (, , TAGITCore.State state, , ) = core.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = core.getAsset(tokenId);
         assertEq(uint8(state), 6, "Should be RECYCLED");
     }
 
@@ -292,7 +291,7 @@ contract CoreFlowsTest is IntegrationBase {
         // Programs should have recorded activity
         // Note: This depends on Programs contract implementation
         // For now, verify asset is in correct state
-        (, , TAGITCore.State state, , ) = core.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = core.getAsset(tokenId);
         assertEq(uint8(state), 4, "Asset should be CLAIMED");
     }
 

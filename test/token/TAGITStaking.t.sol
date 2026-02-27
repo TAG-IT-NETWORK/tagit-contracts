@@ -7,11 +7,7 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 import {TAGITToken} from "../../src/token/TAGITToken.sol";
 import {TAGITStaking} from "../../src/token/TAGITStaking.sol";
 import {ITAGITStaking} from "../../src/interfaces/ITAGITStaking.sol";
-import {
-    GENESIS_SUPPLY,
-    MIN_STAKE_FOR_REP,
-    VERSION
-} from "../../src/libraries/Constants.sol";
+import {GENESIS_SUPPLY, MIN_STAKE_FOR_REP, VERSION} from "../../src/libraries/Constants.sol";
 
 /**
  * @title TAGITStaking Unit Tests
@@ -54,22 +50,14 @@ contract TAGITStakingTest is Test {
 
         // Deploy TAGITToken
         tokenImpl = new TAGITToken();
-        bytes memory tokenInitData = abi.encodeWithSelector(
-            TAGITToken.initialize.selector,
-            treasury,
-            owner
-        );
+        bytes memory tokenInitData = abi.encodeWithSelector(TAGITToken.initialize.selector, treasury, owner);
         ERC1967Proxy tokenProxy = new ERC1967Proxy(address(tokenImpl), tokenInitData);
         token = TAGITToken(address(tokenProxy));
 
         // Deploy TAGITStaking
         stakingImpl = new TAGITStaking();
-        bytes memory stakingInitData = abi.encodeWithSelector(
-            TAGITStaking.initialize.selector,
-            address(token),
-            governor,
-            owner
-        );
+        bytes memory stakingInitData =
+            abi.encodeWithSelector(TAGITStaking.initialize.selector, address(token), governor, owner);
         ERC1967Proxy stakingProxy = new ERC1967Proxy(address(stakingImpl), stakingInitData);
         staking = TAGITStaking(address(stakingProxy));
 
@@ -118,12 +106,7 @@ contract TAGITStakingTest is Test {
 
     function test_initialize_revert_zeroToken() public {
         TAGITStaking newImpl = new TAGITStaking();
-        bytes memory initData = abi.encodeWithSelector(
-            TAGITStaking.initialize.selector,
-            address(0),
-            governor,
-            owner
-        );
+        bytes memory initData = abi.encodeWithSelector(TAGITStaking.initialize.selector, address(0), governor, owner);
 
         vm.expectRevert(ITAGITStaking.ZeroAddress.selector);
         new ERC1967Proxy(address(newImpl), initData);
@@ -131,12 +114,8 @@ contract TAGITStakingTest is Test {
 
     function test_initialize_revert_zeroGovernor() public {
         TAGITStaking newImpl = new TAGITStaking();
-        bytes memory initData = abi.encodeWithSelector(
-            TAGITStaking.initialize.selector,
-            address(token),
-            address(0),
-            owner
-        );
+        bytes memory initData =
+            abi.encodeWithSelector(TAGITStaking.initialize.selector, address(token), address(0), owner);
 
         vm.expectRevert(ITAGITStaking.ZeroAddress.selector);
         new ERC1967Proxy(address(newImpl), initData);
@@ -246,11 +225,9 @@ contract TAGITStakingTest is Test {
         staking.stake(STAKE_AMOUNT);
 
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITStaking.InsufficientStake.selector,
-            STAKE_AMOUNT * 2,
-            STAKE_AMOUNT
-        ));
+        vm.expectRevert(
+            abi.encodeWithSelector(ITAGITStaking.InsufficientStake.selector, STAKE_AMOUNT * 2, STAKE_AMOUNT)
+        );
         staking.unstake(STAKE_AMOUNT * 2);
     }
 
@@ -504,9 +481,7 @@ contract TAGITStakingTest is Test {
         vm.prank(charlie);
         staking.stake(STAKE_AMOUNT * 3);
 
-        uint256 sum = staking.stakedBalance(alice) +
-                      staking.stakedBalance(bob) +
-                      staking.stakedBalance(charlie);
+        uint256 sum = staking.stakedBalance(alice) + staking.stakedBalance(bob) + staking.stakedBalance(charlie);
 
         assertEq(staking.totalStaked(), sum);
 
@@ -514,9 +489,7 @@ contract TAGITStakingTest is Test {
         vm.prank(alice);
         staking.unstake(STAKE_AMOUNT / 2);
 
-        sum = staking.stakedBalance(alice) +
-              staking.stakedBalance(bob) +
-              staking.stakedBalance(charlie);
+        sum = staking.stakedBalance(alice) + staking.stakedBalance(bob) + staking.stakedBalance(charlie);
 
         assertEq(staking.totalStaked(), sum);
     }

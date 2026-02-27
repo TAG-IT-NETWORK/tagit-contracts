@@ -129,12 +129,10 @@ contract CCIPAdapter is
      * @param tagitCoreAddr TAGITCore contract address
      * @param initialOwner Initial owner for upgrades
      */
-    function initialize(
-        address routerAddr,
-        address governorAddr,
-        address tagitCoreAddr,
-        address initialOwner
-    ) external initializer {
+    function initialize(address routerAddr, address governorAddr, address tagitCoreAddr, address initialOwner)
+        external
+        initializer
+    {
         if (routerAddr == address(0)) revert ZeroAddress();
         if (governorAddr == address(0)) revert ZeroAddress();
         if (tagitCoreAddr == address(0)) revert ZeroAddress();
@@ -185,9 +183,7 @@ contract CCIPAdapter is
 
     /// @inheritdoc IERC165
     function supportsInterface(bytes4 interfaceId) public pure override returns (bool) {
-        return
-            interfaceId == type(IAny2EVMMessageReceiver).interfaceId ||
-            interfaceId == type(IERC165).interfaceId;
+        return interfaceId == type(IAny2EVMMessageReceiver).interfaceId || interfaceId == type(IERC165).interfaceId;
     }
 
     // ============================================
@@ -195,9 +191,13 @@ contract CCIPAdapter is
     // ============================================
 
     /// @inheritdoc IAny2EVMMessageReceiver
-    function ccipReceive(
-        Client.Any2EVMMessage calldata message
-    ) external override onlyRouter nonReentrant whenNotPaused {
+    function ccipReceive(Client.Any2EVMMessage calldata message)
+        external
+        override
+        onlyRouter
+        nonReentrant
+        whenNotPaused
+    {
         // Validate source chain is in allowlist
         uint64 sourceChain = message.sourceChainSelector;
         ChainConfig storage chainConfig = _chains[sourceChain];
@@ -212,10 +212,7 @@ contract CCIPAdapter is
         }
 
         // Decode message data
-        (bytes32 requestId, uint8 messageType, bytes memory payload) = abi.decode(
-            message.data,
-            (bytes32, uint8, bytes)
-        );
+        (bytes32 requestId, uint8 messageType, bytes memory payload) = abi.decode(message.data, (bytes32, uint8, bytes));
 
         // NIST SC-8: Replay protection with expiry and per-chain tracking
         // Uses ReplayProtection library for comprehensive message deduplication
@@ -252,21 +249,12 @@ contract CCIPAdapter is
     /**
      * @dev Process incoming verification request
      */
-    function _processRequest(
-        uint64 sourceChain,
-        address sender,
-        bytes32 requestId,
-        bytes memory payload
-    ) internal {
+    function _processRequest(uint64 sourceChain, address sender, bytes32 requestId, bytes memory payload) internal {
         (uint256 tokenId, RequestType reqType) = abi.decode(payload, (uint256, RequestType));
 
         // Store request
         _requests[requestId] = CrossChainRequest({
-            sourceChain: sourceChain,
-            sender: sender,
-            tokenId: tokenId,
-            requestId: requestId,
-            reqType: reqType
+            sourceChain: sourceChain, sender: sender, tokenId: tokenId, requestId: requestId, reqType: reqType
         });
 
         // Get asset data from TAGITCore
@@ -274,11 +262,7 @@ contract CCIPAdapter is
 
         // Build response
         CrossChainResponse memory response = CrossChainResponse({
-            requestId: requestId,
-            valid: valid,
-            status: status,
-            owner: owner,
-            metadataHash: metadataHash
+            requestId: requestId, valid: valid, status: status, owner: owner, metadataHash: metadataHash
         });
 
         // Send response back
@@ -290,23 +274,13 @@ contract CCIPAdapter is
     /**
      * @dev Process incoming verification response
      */
-    function _processResponse(
-        uint64 sourceChain,
-        bytes32 requestId,
-        bytes memory payload
-    ) internal {
-        (bool valid, uint8 status, address owner, bytes32 metadataHash) = abi.decode(
-            payload,
-            (bool, uint8, address, bytes32)
-        );
+    function _processResponse(uint64 sourceChain, bytes32 requestId, bytes memory payload) internal {
+        (bool valid, uint8 status, address owner, bytes32 metadataHash) =
+            abi.decode(payload, (bool, uint8, address, bytes32));
 
         // Store response
         _responses[requestId] = CrossChainResponse({
-            requestId: requestId,
-            valid: valid,
-            status: status,
-            owner: owner,
-            metadataHash: metadataHash
+            requestId: requestId, valid: valid, status: status, owner: owner, metadataHash: metadataHash
         });
 
         // Get tokenId from original request
@@ -318,17 +292,14 @@ contract CCIPAdapter is
     /**
      * @dev Get asset data from TAGITCore
      */
-    function _getAssetData(uint256 tokenId) internal view returns (
-        bool valid,
-        uint8 status,
-        address owner,
-        bytes32 metadataHash
-    ) {
+    function _getAssetData(uint256 tokenId)
+        internal
+        view
+        returns (bool valid, uint8 status, address owner, bytes32 metadataHash)
+    {
         // Interface to TAGITCore - simplified for now
         // In production, this would call actual TAGITCore methods
-        (bool success, bytes memory data) = _tagitCore.staticcall(
-            abi.encodeWithSignature("getAsset(uint256)", tokenId)
-        );
+        (bool success, bytes memory data) = _tagitCore.staticcall(abi.encodeWithSignature("getAsset(uint256)", tokenId));
 
         if (success && data.length > 0) {
             // Decode asset data (simplified)
@@ -348,11 +319,7 @@ contract CCIPAdapter is
     /**
      * @dev Send response back to source chain
      */
-    function _sendResponse(
-        uint64 destChain,
-        bytes32 requestId,
-        CrossChainResponse memory response
-    ) internal {
+    function _sendResponse(uint64 destChain, bytes32 requestId, CrossChainResponse memory response) internal {
         ChainConfig storage chainConfig = _chains[destChain];
 
         // Encode response
@@ -369,10 +336,7 @@ contract CCIPAdapter is
             tokenAmounts: new Client.EVMTokenAmount[](0),
             feeToken: address(0), // Pay in native
             extraArgs: Client._argsToBytes(
-                Client.GenericExtraArgsV2({
-                    gasLimit: chainConfig.gasLimit,
-                    allowOutOfOrderExecution: true
-                })
+                Client.GenericExtraArgsV2({gasLimit: chainConfig.gasLimit, allowOutOfOrderExecution: true})
             )
         });
 
@@ -391,38 +355,45 @@ contract CCIPAdapter is
     // ============================================
 
     /// @inheritdoc ICCIPAdapter
-    function requestVerification(
-        uint64 destChain,
-        uint256 tokenId
-    ) external payable override nonReentrant whenNotPaused returns (bytes32 requestId) {
+    function requestVerification(uint64 destChain, uint256 tokenId)
+        external
+        payable
+        override
+        nonReentrant
+        whenNotPaused
+        returns (bytes32 requestId)
+    {
         return _sendRequest(destChain, tokenId, RequestType.VERIFY);
     }
 
     /// @inheritdoc ICCIPAdapter
-    function requestStatus(
-        uint64 destChain,
-        uint256 tokenId
-    ) external payable override nonReentrant whenNotPaused returns (bytes32 requestId) {
+    function requestStatus(uint64 destChain, uint256 tokenId)
+        external
+        payable
+        override
+        nonReentrant
+        whenNotPaused
+        returns (bytes32 requestId)
+    {
         return _sendRequest(destChain, tokenId, RequestType.STATUS);
     }
 
     /// @inheritdoc ICCIPAdapter
-    function requestData(
-        uint64 destChain,
-        uint256 tokenId,
-        RequestType reqType
-    ) external payable override nonReentrant whenNotPaused returns (bytes32 requestId) {
+    function requestData(uint64 destChain, uint256 tokenId, RequestType reqType)
+        external
+        payable
+        override
+        nonReentrant
+        whenNotPaused
+        returns (bytes32 requestId)
+    {
         return _sendRequest(destChain, tokenId, reqType);
     }
 
     /**
      * @dev Internal function to send a request
      */
-    function _sendRequest(
-        uint64 destChain,
-        uint256 tokenId,
-        RequestType reqType
-    ) internal returns (bytes32 requestId) {
+    function _sendRequest(uint64 destChain, uint256 tokenId, RequestType reqType) internal returns (bytes32 requestId) {
         // Check chain is supported
         ChainConfig storage chainConfig = _chains[destChain];
         if (!chainConfig.active) {
@@ -438,14 +409,8 @@ contract CCIPAdapter is
         _hourlyRequests[currentHour] = hourlyCount + 1;
 
         // Generate unique request ID
-        requestId = keccak256(abi.encodePacked(
-            block.chainid,
-            address(this),
-            msg.sender,
-            tokenId,
-            _nonce++,
-            block.timestamp
-        ));
+        requestId =
+            keccak256(abi.encodePacked(block.chainid, address(this), msg.sender, tokenId, _nonce++, block.timestamp));
 
         // Store request
         _requests[requestId] = CrossChainRequest({
@@ -473,10 +438,7 @@ contract CCIPAdapter is
             tokenAmounts: new Client.EVMTokenAmount[](0),
             feeToken: address(0), // Pay in native
             extraArgs: Client._argsToBytes(
-                Client.GenericExtraArgsV2({
-                    gasLimit: chainConfig.gasLimit,
-                    allowOutOfOrderExecution: true
-                })
+                Client.GenericExtraArgsV2({gasLimit: chainConfig.gasLimit, allowOutOfOrderExecution: true})
             )
         });
 
@@ -512,11 +474,8 @@ contract CCIPAdapter is
         uint48 scheduledAt = uint48(block.timestamp);
         uint48 readyAt = scheduledAt + CHAIN_ADDITION_TIMELOCK;
 
-        _pendingChains[config.chainSelector] = PendingChainAddition({
-            config: config,
-            scheduledAt: scheduledAt,
-            executed: false
-        });
+        _pendingChains[config.chainSelector] =
+            PendingChainAddition({config: config, scheduledAt: scheduledAt, executed: false});
 
         emit ChainAdditionScheduled(config.chainSelector, config.adapter, scheduledAt, readyAt);
     }
@@ -669,7 +628,12 @@ contract CCIPAdapter is
     }
 
     /// @inheritdoc ICCIPAdapter
-    function getPendingChainAddition(uint64 chainSelector) external view override returns (PendingChainAddition memory) {
+    function getPendingChainAddition(uint64 chainSelector)
+        external
+        view
+        override
+        returns (PendingChainAddition memory)
+    {
         return _pendingChains[chainSelector];
     }
 
@@ -681,7 +645,7 @@ contract CCIPAdapter is
         // Estimate based on typical message size
         bytes memory dummyData = abi.encode(
             bytes32(0), // requestId
-            uint8(0),   // messageType
+            uint8(0), // messageType
             abi.encode(uint256(0), reqType) // payload
         );
 
@@ -691,10 +655,7 @@ contract CCIPAdapter is
             tokenAmounts: new Client.EVMTokenAmount[](0),
             feeToken: address(0),
             extraArgs: Client._argsToBytes(
-                Client.GenericExtraArgsV2({
-                    gasLimit: chainConfig.gasLimit,
-                    allowOutOfOrderExecution: true
-                })
+                Client.GenericExtraArgsV2({gasLimit: chainConfig.gasLimit, allowOutOfOrderExecution: true})
             )
         });
 
@@ -750,10 +711,11 @@ contract CCIPAdapter is
      * @param sourceChainSelector Source chain selector
      * @return processed Whether the message has been processed on this chain
      */
-    function isCcipMessageProcessed(
-        bytes32 messageId,
-        uint64 sourceChainSelector
-    ) external view returns (bool processed) {
+    function isCcipMessageProcessed(bytes32 messageId, uint64 sourceChainSelector)
+        external
+        view
+        returns (bool processed)
+    {
         bytes32 key = keccak256(abi.encodePacked(messageId, block.chainid, sourceChainSelector));
         return _processedCcipMessages[key];
     }
@@ -764,10 +726,11 @@ contract CCIPAdapter is
      * @return lastNonce Last processed nonce
      * @return messageCount Total messages from this chain
      */
-    function getReplayProtectionState(uint64 chainSelector) external view returns (
-        uint64 lastNonce,
-        uint64 messageCount
-    ) {
+    function getReplayProtectionState(uint64 chainSelector)
+        external
+        view
+        returns (uint64 lastNonce, uint64 messageCount)
+    {
         return ReplayProtection.getChainState(_chainStates, chainSelector);
     }
 

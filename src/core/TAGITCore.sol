@@ -36,13 +36,7 @@ import {RateLimiter} from "../libraries/RateLimiter.sol";
  * Security: All state-changing functions must follow Checks-Effects-Interactions pattern
  * and include ReentrancyGuard. BIDGES capability checks enforce zero-trust access control.
  */
-contract TAGITCore is
-    Initializable,
-    ERC721Upgradeable,
-    OwnableUpgradeable,
-    UUPSUpgradeable,
-    ReentrancyGuard
-{
+contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard {
     using CircuitBreaker for CircuitBreaker.Config;
     using RateLimiter for RateLimiter.Config;
 
@@ -56,13 +50,13 @@ contract TAGITCore is
      * @custom:security State transitions are strictly enforced - see isValidTransition
      */
     enum State {
-        NONE,       // 0 - Default/not created
-        MINTED,     // 1 - NFT exists, no tag bound
-        BOUND,      // 2 - Tag cryptographically linked
-        ACTIVATED,  // 3 - QA passed, ready for distribution
-        CLAIMED,    // 4 - Owned by end consumer
-        FLAGGED,    // 5 - Lost/stolen/recall initiated
-        RECYCLED    // 6 - End of life, permanently retired
+        NONE, // 0 - Default/not created
+        MINTED, // 1 - NFT exists, no tag bound
+        BOUND, // 2 - Tag cryptographically linked
+        ACTIVATED, // 3 - QA passed, ready for distribution
+        CLAIMED, // 4 - Owned by end consumer
+        FLAGGED, // 5 - Lost/stolen/recall initiated
+        RECYCLED // 6 - End of life, permanently retired
     }
 
     // ============================================
@@ -110,12 +104,12 @@ contract TAGITCore is
      * @custom:security Packed struct saves ~15,000 gas per mint vs unpacked
      */
     struct Asset {
-        address owner;       // 20 bytes - Current owner address
-        uint64 timestamp;    // 8 bytes - Last state change timestamp
-        State state;         // 1 byte - Current lifecycle state
-        uint8 flags;         // 1 byte - Bit flags (reserved for future use)
-        uint16 reserved;     // 2 bytes - Reserved for future metadata
-    }   // Total: 32 bytes = 1 storage slot
+        address owner; // 20 bytes - Current owner address
+        uint64 timestamp; // 8 bytes - Last state change timestamp
+        State state; // 1 byte - Current lifecycle state
+        uint8 flags; // 1 byte - Bit flags (reserved for future use)
+        uint16 reserved; // 2 bytes - Reserved for future metadata
+    } // Total: 32 bytes = 1 storage slot
 
     // ============================================
     // CUSTOM ERRORS
@@ -237,10 +231,7 @@ contract TAGITCore is
      * @param previousController Previous access controller address
      * @param newController New access controller address
      */
-    event AccessControllerUpdated(
-        address indexed previousController,
-        address indexed newController
-    );
+    event AccessControllerUpdated(address indexed previousController, address indexed newController);
 
     /**
      * @notice Emitted when new asset NFT is minted
@@ -249,11 +240,7 @@ contract TAGITCore is
      * @param metadata IPFS hash or metadata identifier
      * @custom:security Event provides immutable audit trail
      */
-    event AssetMinted(
-        uint256 indexed tokenId,
-        address indexed to,
-        bytes32 metadata
-    );
+    event AssetMinted(uint256 indexed tokenId, address indexed to, bytes32 metadata);
 
     /**
      * @notice Emitted on every state transition
@@ -263,12 +250,7 @@ contract TAGITCore is
      * @param actor Address that triggered the transition
      * @custom:security Enables full lifecycle tracking and audit
      */
-    event StateChanged(
-        uint256 indexed tokenId,
-        State from,
-        State to,
-        address actor
-    );
+    event StateChanged(uint256 indexed tokenId, State from, State to, address actor);
 
     /**
      * @notice Emitted when NFC tag is bound to asset
@@ -276,10 +258,7 @@ contract TAGITCore is
      * @param tagHash Keccak256 hash of NFC tag UID
      * @custom:security Tag binding is irreversible - provides cryptographic proof
      */
-    event TagBound(
-        uint256 indexed tokenId,
-        bytes32 indexed tagHash
-    );
+    event TagBound(uint256 indexed tokenId, bytes32 indexed tagHash);
 
     /**
      * @notice Emitted when a contract upgrade is authorized
@@ -289,9 +268,7 @@ contract TAGITCore is
      * @custom:security Transparency event — allows monitoring of upgrade schedule
      */
     event UpgradeScheduled(
-        address indexed oldImplementation,
-        address indexed newImplementation,
-        address indexed scheduledBy
+        address indexed oldImplementation, address indexed newImplementation, address indexed scheduledBy
     );
 
     /**
@@ -324,21 +301,14 @@ contract TAGITCore is
      * @param approver Address of the resolver who approved
      * @param approvalCount Total approvals after this one
      */
-    event ResolveApproved(
-        uint256 indexed tokenId,
-        address indexed approver,
-        uint256 approvalCount
-    );
+    event ResolveApproved(uint256 indexed tokenId, address indexed approver, uint256 approvalCount);
 
     /**
      * @notice Emitted when the trusted NFC oracle address is updated
      * @param previousOracle Previous oracle address
      * @param newOracle New oracle address
      */
-    event TrustedOracleUpdated(
-        address indexed previousOracle,
-        address indexed newOracle
-    );
+    event TrustedOracleUpdated(address indexed previousOracle, address indexed newOracle);
 
     // ============================================
     // STORAGE
@@ -451,9 +421,9 @@ contract TAGITCore is
         // Threshold: 50 flags per hour triggers circuit breaker
         // Cooldown: 30 minutes before operations resume
         _flagCircuitBreaker.initialize(
-            50,             // threshold
-            1 hours,        // window duration
-            30 minutes      // cooldown duration
+            50, // threshold
+            1 hours, // window duration
+            30 minutes // cooldown duration
         );
 
         // NIST AC-7: Rate limiter for mint operations
@@ -461,10 +431,10 @@ contract TAGITCore is
         // Cooldown: 15 minutes after hitting limit
         // Global: 1000 mints per hour across all users
         _mintRateLimiter.initialize(
-            100,            // max per user per window
-            1 hours,        // window duration
-            15 minutes,     // cooldown duration
-            1000            // global max per window
+            100, // max per user per window
+            1 hours, // window duration
+            15 minutes, // cooldown duration
+            1000 // global max per window
         );
     }
 
@@ -481,11 +451,7 @@ contract TAGITCore is
      * @custom:security UpgradeScheduled event enables 48hr monitoring window
      */
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {
-        emit UpgradeScheduled(
-            ERC1967Utils.getImplementation(),
-            newImplementation,
-            msg.sender
-        );
+        emit UpgradeScheduled(ERC1967Utils.getImplementation(), newImplementation, msg.sender);
     }
 
     /**
@@ -567,13 +533,8 @@ contract TAGITCore is
         _totalSupply++;
 
         // Create asset in MINTED state
-        _assets[tokenId] = Asset({
-            owner: to,
-            timestamp: uint64(block.timestamp),
-            state: State.MINTED,
-            flags: 0,
-            reserved: 0
-        });
+        _assets[tokenId] =
+            Asset({owner: to, timestamp: uint64(block.timestamp), state: State.MINTED, flags: 0, reserved: 0});
 
         // Mint ERC721 token
         _mint(to, tokenId);
@@ -631,11 +592,7 @@ contract TAGITCore is
             _totalSupply++;
 
             _assets[tokenId] = Asset({
-                owner: recipients[i],
-                timestamp: uint64(block.timestamp),
-                state: State.MINTED,
-                flags: 0,
-                reserved: 0
+                owner: recipients[i], timestamp: uint64(block.timestamp), state: State.MINTED, flags: 0, reserved: 0
             });
 
             _mint(recipients[i], tokenId);
@@ -645,7 +602,9 @@ contract TAGITCore is
 
             // PATCH-03: CustodyTransfer audit trail
             bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.NONE), address(0), block.number - 1));
-            emit CustodyTransfer(tokenId, uint8(State.NONE), uint8(State.MINTED), address(0), recipients[i], block.timestamp, prevHash);
+            emit CustodyTransfer(
+                tokenId, uint8(State.NONE), uint8(State.MINTED), address(0), recipients[i], block.timestamp, prevHash
+            );
 
             tokenIds[i] = tokenId;
         }
@@ -718,7 +677,9 @@ contract TAGITCore is
 
         // PATCH-03: CustodyTransfer audit trail
         bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.MINTED), asset.owner, block.number - 1));
-        emit CustodyTransfer(tokenId, uint8(State.MINTED), uint8(State.BOUND), asset.owner, asset.owner, block.timestamp, prevHash);
+        emit CustodyTransfer(
+            tokenId, uint8(State.MINTED), uint8(State.BOUND), asset.owner, asset.owner, block.timestamp, prevHash
+        );
     }
 
     /**
@@ -732,11 +693,7 @@ contract TAGITCore is
      * @custom:security In production, requires CAP_ACTIVATE capability (BIDGES)
      * @custom:emits StateChanged
      */
-    function activate(uint256 tokenId)
-        external
-        nonReentrant
-        requiresCapability(ACTIVATOR_CAPABILITY)
-    {
+    function activate(uint256 tokenId) external nonReentrant requiresCapability(ACTIVATOR_CAPABILITY) {
         // ============================================
         // CHECKS
         // ============================================
@@ -764,7 +721,9 @@ contract TAGITCore is
 
         // PATCH-03: CustodyTransfer audit trail
         bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.BOUND), asset.owner, block.number - 1));
-        emit CustodyTransfer(tokenId, uint8(State.BOUND), uint8(State.ACTIVATED), asset.owner, asset.owner, block.timestamp, prevHash);
+        emit CustodyTransfer(
+            tokenId, uint8(State.BOUND), uint8(State.ACTIVATED), asset.owner, asset.owner, block.timestamp, prevHash
+        );
     }
 
     /**
@@ -787,11 +746,7 @@ contract TAGITCore is
     ///      3. INTERACTIONS — _transfer() and event emissions AFTER all state mutations
     ///      nonReentrant prevents reentry via onERC721Received or any callback.
     ///      _update() override blocks external ERC721 transfers, preventing ownership desync.
-    function claim(uint256 tokenId, address newOwner)
-        external
-        nonReentrant
-        requiresCapability(CLAIMER_CAPABILITY)
-    {
+    function claim(uint256 tokenId, address newOwner) external nonReentrant requiresCapability(CLAIMER_CAPABILITY) {
         // ============================================
         // CHECKS
         // ============================================
@@ -830,7 +785,9 @@ contract TAGITCore is
 
         // PATCH-03: CustodyTransfer audit trail
         bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.ACTIVATED), previousOwner, block.number - 1));
-        emit CustodyTransfer(tokenId, uint8(State.ACTIVATED), uint8(State.CLAIMED), previousOwner, newOwner, block.timestamp, prevHash);
+        emit CustodyTransfer(
+            tokenId, uint8(State.ACTIVATED), uint8(State.CLAIMED), previousOwner, newOwner, block.timestamp, prevHash
+        );
     }
 
     /**
@@ -843,11 +800,7 @@ contract TAGITCore is
      * @custom:security In production, requires CAP_FLAG capability
      * @custom:emits StateChanged
      */
-    function flag(uint256 tokenId)
-        external
-        nonReentrant
-        requiresCapability(FLAGGER_CAPABILITY)
-    {
+    function flag(uint256 tokenId) external nonReentrant requiresCapability(FLAGGER_CAPABILITY) {
         // ============================================
         // CHECKS
         // ============================================
@@ -879,7 +832,9 @@ contract TAGITCore is
 
         // PATCH-03: CustodyTransfer audit trail
         bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.CLAIMED), asset.owner, block.number - 1));
-        emit CustodyTransfer(tokenId, uint8(State.CLAIMED), uint8(State.FLAGGED), asset.owner, asset.owner, block.timestamp, prevHash);
+        emit CustodyTransfer(
+            tokenId, uint8(State.CLAIMED), uint8(State.FLAGGED), asset.owner, asset.owner, block.timestamp, prevHash
+        );
     }
 
     /**
@@ -962,11 +917,7 @@ contract TAGITCore is
     ///      3. INTERACTIONS — _transfer() and event emissions AFTER all state mutations
     ///      nonReentrant prevents reentry via onERC721Received or any callback.
     ///      _update() override blocks external ERC721 transfers, preventing ownership desync.
-    function resolve(uint256 tokenId, address newOwner)
-        external
-        nonReentrant
-        requiresCapability(RESOLVER_CAPABILITY)
-    {
+    function resolve(uint256 tokenId, address newOwner) external nonReentrant requiresCapability(RESOLVER_CAPABILITY) {
         // ============================================
         // CHECKS
         // ============================================
@@ -1020,7 +971,9 @@ contract TAGITCore is
 
         // PATCH-03: CustodyTransfer audit trail
         bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.FLAGGED), previousOwner, block.number - 1));
-        emit CustodyTransfer(tokenId, uint8(State.FLAGGED), uint8(State.CLAIMED), previousOwner, newOwner, block.timestamp, prevHash);
+        emit CustodyTransfer(
+            tokenId, uint8(State.FLAGGED), uint8(State.CLAIMED), previousOwner, newOwner, block.timestamp, prevHash
+        );
     }
 
     /**
@@ -1035,11 +988,7 @@ contract TAGITCore is
      * @custom:security In production, requires CAP_RECYCLE capability
      * @custom:emits StateChanged
      */
-    function recycle(uint256 tokenId)
-        external
-        nonReentrant
-        requiresCapability(RECYCLER_CAPABILITY)
-    {
+    function recycle(uint256 tokenId) external nonReentrant requiresCapability(RECYCLER_CAPABILITY) {
         // ============================================
         // CHECKS
         // ============================================
@@ -1068,7 +1017,9 @@ contract TAGITCore is
 
         // PATCH-03: CustodyTransfer audit trail
         bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(currentState), asset.owner, block.number - 1));
-        emit CustodyTransfer(tokenId, uint8(currentState), uint8(State.RECYCLED), asset.owner, asset.owner, block.timestamp, prevHash);
+        emit CustodyTransfer(
+            tokenId, uint8(currentState), uint8(State.RECYCLED), asset.owner, asset.owner, block.timestamp, prevHash
+        );
     }
 
     // ============================================
@@ -1087,11 +1038,7 @@ contract TAGITCore is
      * @return Previous owner address
      * @custom:security Prevents bypassing lifecycle state machine via direct transfer
      */
-    function _update(address to, uint256 tokenId, address auth)
-        internal
-        override
-        returns (address)
-    {
+    function _update(address to, uint256 tokenId, address auth) internal override returns (address) {
         if (auth != address(0)) revert TransferDisabled();
         return super._update(to, tokenId, auth);
     }
@@ -1163,22 +1110,10 @@ contract TAGITCore is
     function getAsset(uint256 tokenId)
         external
         view
-        returns (
-            address assetOwner,
-            uint64 timestamp,
-            State state,
-            uint8 flags,
-            uint16 reserved
-        )
+        returns (address assetOwner, uint64 timestamp, State state, uint8 flags, uint16 reserved)
     {
         Asset memory asset = _assets[tokenId];
-        return (
-            asset.owner,
-            asset.timestamp,
-            asset.state,
-            asset.flags,
-            asset.reserved
-        );
+        return (asset.owner, asset.timestamp, asset.state, asset.flags, asset.reserved);
     }
 
     /**
@@ -1313,11 +1248,11 @@ contract TAGITCore is
      * @return lockedUntil Lockout end timestamp (0 if not locked)
      * @custom:security NIST SI-4 system monitoring
      */
-    function getMintRateLimitStatus(address user) external view returns (
-        bool canMint,
-        uint256 remaining,
-        uint256 lockedUntil
-    ) {
+    function getMintRateLimitStatus(address user)
+        external
+        view
+        returns (bool canMint, uint256 remaining, uint256 lockedUntil)
+    {
         return _mintRateLimiter.canAct(_mintRateLimits, user);
     }
 

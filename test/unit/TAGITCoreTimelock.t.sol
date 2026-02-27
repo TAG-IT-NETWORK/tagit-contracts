@@ -58,31 +58,15 @@ contract TAGITCoreTimelockTest is Test {
         tagitAccess.setCapabilityBadge(address(capabilityBadge));
 
         // Configure access controller through timelock (schedule + wait + execute)
-        bytes memory setAccessData = abi.encodeCall(
-            TAGITCore.setAccessController,
-            (address(tagitAccess))
-        );
+        bytes memory setAccessData = abi.encodeCall(TAGITCore.setAccessController, (address(tagitAccess)));
 
         vm.prank(proposer);
-        timelock.schedule(
-            address(proxy),
-            0,
-            setAccessData,
-            bytes32(0),
-            bytes32(0),
-            TIMELOCK_DELAY
-        );
+        timelock.schedule(address(proxy), 0, setAccessData, bytes32(0), bytes32(0), TIMELOCK_DELAY);
 
         vm.warp(block.timestamp + TIMELOCK_DELAY);
 
         vm.prank(executor);
-        timelock.execute(
-            address(proxy),
-            0,
-            setAccessData,
-            bytes32(0),
-            bytes32(0)
-        );
+        timelock.execute(address(proxy), 0, setAccessData, bytes32(0), bytes32(0));
     }
 
     // ============================================
@@ -142,10 +126,7 @@ contract TAGITCoreTimelockTest is Test {
     // ============================================
 
     function test_timelock_scheduleAndExecuteSetThreshold() public {
-        bytes memory data = abi.encodeCall(
-            TAGITCore.setFlagCircuitBreakerThreshold,
-            (100)
-        );
+        bytes memory data = abi.encodeCall(TAGITCore.setFlagCircuitBreakerThreshold, (100));
         bytes32 salt = keccak256("threshold_update_1");
 
         // Schedule
@@ -214,10 +195,7 @@ contract TAGITCoreTimelockTest is Test {
     // ============================================
 
     function test_timelock_cannotExecuteBeforeDelay() public {
-        bytes memory data = abi.encodeCall(
-            TAGITCore.setFlagCircuitBreakerThreshold,
-            (200)
-        );
+        bytes memory data = abi.encodeCall(TAGITCore.setFlagCircuitBreakerThreshold, (200));
         bytes32 salt = keccak256("early_exec_1");
 
         vm.prank(proposer);
@@ -232,10 +210,7 @@ contract TAGITCoreTimelockTest is Test {
     }
 
     function test_timelock_canExecuteExactlyAtDelay() public {
-        bytes memory data = abi.encodeCall(
-            TAGITCore.setFlagCircuitBreakerThreshold,
-            (200)
-        );
+        bytes memory data = abi.encodeCall(TAGITCore.setFlagCircuitBreakerThreshold, (200));
         bytes32 salt = keccak256("exact_delay_1");
 
         vm.prank(proposer);
@@ -249,10 +224,7 @@ contract TAGITCoreTimelockTest is Test {
     }
 
     function test_timelock_canExecuteAfterDelay() public {
-        bytes memory data = abi.encodeCall(
-            TAGITCore.setFlagCircuitBreakerThreshold,
-            (200)
-        );
+        bytes memory data = abi.encodeCall(TAGITCore.setFlagCircuitBreakerThreshold, (200));
         bytes32 salt = keccak256("after_delay_1");
 
         vm.prank(proposer);
@@ -270,10 +242,7 @@ contract TAGITCoreTimelockTest is Test {
     // ============================================
 
     function test_timelock_onlyProposerCanSchedule() public {
-        bytes memory data = abi.encodeCall(
-            TAGITCore.setFlagCircuitBreakerThreshold,
-            (100)
-        );
+        bytes memory data = abi.encodeCall(TAGITCore.setFlagCircuitBreakerThreshold, (100));
         bytes32 salt = keccak256("unauth_schedule_1");
 
         vm.prank(attacker);
@@ -282,10 +251,7 @@ contract TAGITCoreTimelockTest is Test {
     }
 
     function test_timelock_onlyExecutorCanExecute() public {
-        bytes memory data = abi.encodeCall(
-            TAGITCore.setFlagCircuitBreakerThreshold,
-            (100)
-        );
+        bytes memory data = abi.encodeCall(TAGITCore.setFlagCircuitBreakerThreshold, (100));
         bytes32 salt = keccak256("unauth_exec_1");
 
         vm.prank(proposer);
@@ -303,10 +269,7 @@ contract TAGITCoreTimelockTest is Test {
     // ============================================
 
     function test_timelock_proposerCanCancel() public {
-        bytes memory data = abi.encodeCall(
-            TAGITCore.setFlagCircuitBreakerThreshold,
-            (100)
-        );
+        bytes memory data = abi.encodeCall(TAGITCore.setFlagCircuitBreakerThreshold, (100));
         bytes32 salt = keccak256("cancel_test_1");
 
         // Schedule
@@ -326,10 +289,7 @@ contract TAGITCoreTimelockTest is Test {
     }
 
     function test_timelock_attackerCannotCancel() public {
-        bytes memory data = abi.encodeCall(
-            TAGITCore.setFlagCircuitBreakerThreshold,
-            (100)
-        );
+        bytes memory data = abi.encodeCall(TAGITCore.setFlagCircuitBreakerThreshold, (100));
         bytes32 salt = keccak256("cancel_attack_1");
 
         vm.prank(proposer);
@@ -351,10 +311,7 @@ contract TAGITCoreTimelockTest is Test {
     }
 
     function test_timelock_cannotScheduleBelowMinDelay() public {
-        bytes memory data = abi.encodeCall(
-            TAGITCore.setFlagCircuitBreakerThreshold,
-            (100)
-        );
+        bytes memory data = abi.encodeCall(TAGITCore.setFlagCircuitBreakerThreshold, (100));
         bytes32 salt = keccak256("low_delay_1");
 
         vm.prank(proposer);

@@ -55,10 +55,7 @@ contract UpgradeTAGITCore is Script {
         console2.log("   New impl:    ", address(newImpl));
 
         // 2. Build upgradeToAndCall calldata (no reinitializer data)
-        bytes memory upgradeCall = abi.encodeCall(
-            proxy.upgradeToAndCall,
-            (address(newImpl), "")
-        );
+        bytes memory upgradeCall = abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), ""));
 
         // 3. Schedule on timelock
         bytes32 salt = keccak256(abi.encodePacked("upgrade-tagitcore-", block.timestamp));
@@ -68,21 +65,15 @@ contract UpgradeTAGITCore is Script {
         console2.log("   Min delay:   ", minDelay, "seconds");
 
         timelock.schedule(
-            proxyAddr,      // target
-            0,              // value
-            upgradeCall,    // data
-            bytes32(0),     // predecessor
-            salt,           // salt
-            minDelay        // delay
+            proxyAddr, // target
+            0, // value
+            upgradeCall, // data
+            bytes32(0), // predecessor
+            salt, // salt
+            minDelay // delay
         );
 
-        bytes32 operationId = timelock.hashOperation(
-            proxyAddr,
-            0,
-            upgradeCall,
-            bytes32(0),
-            salt
-        );
+        bytes32 operationId = timelock.hashOperation(proxyAddr, 0, upgradeCall, bytes32(0), salt);
 
         vm.stopBroadcast();
 
@@ -98,7 +89,9 @@ contract UpgradeTAGITCore is Script {
         console2.log("Earliest execute: ", block.timestamp + minDelay);
         console2.log("");
         console2.log("Next: Wait for delay, then run execute() with:");
-        console2.log("  NEW_IMPL=<new impl address> SALT=<salt> forge script script/UpgradeTAGITCore.s.sol --sig 'execute()' ...");
+        console2.log(
+            "  NEW_IMPL=<new impl address> SALT=<salt> forge script script/UpgradeTAGITCore.s.sol --sig 'execute()' ..."
+        );
         console2.log("");
     }
 
@@ -126,18 +119,9 @@ contract UpgradeTAGITCore is Script {
         console2.log("");
 
         // Rebuild the same calldata used in schedule()
-        bytes memory upgradeCall = abi.encodeCall(
-            proxy.upgradeToAndCall,
-            (newImplAddr, "")
-        );
+        bytes memory upgradeCall = abi.encodeCall(proxy.upgradeToAndCall, (newImplAddr, ""));
 
-        bytes32 operationId = timelock.hashOperation(
-            proxyAddr,
-            0,
-            upgradeCall,
-            bytes32(0),
-            salt
-        );
+        bytes32 operationId = timelock.hashOperation(proxyAddr, 0, upgradeCall, bytes32(0), salt);
 
         console2.log("Operation ID:   ", vm.toString(operationId));
         console2.log("Is ready:       ", timelock.isOperationReady(operationId));
@@ -146,13 +130,7 @@ contract UpgradeTAGITCore is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         console2.log("Executing upgrade...");
-        timelock.execute(
-            proxyAddr,
-            0,
-            upgradeCall,
-            bytes32(0),
-            salt
-        );
+        timelock.execute(proxyAddr, 0, upgradeCall, bytes32(0), salt);
 
         vm.stopBroadcast();
 

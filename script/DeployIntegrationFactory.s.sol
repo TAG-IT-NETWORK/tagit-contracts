@@ -50,12 +50,7 @@ contract DeployIntegrationFactory is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        factory = new IntegrationFactory(
-            burnerAddr,
-            deployer,
-            signers,
-            requiredSigs
-        );
+        factory = new IntegrationFactory(burnerAddr, deployer, signers, requiredSigs);
 
         vm.stopBroadcast();
 

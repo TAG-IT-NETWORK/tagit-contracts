@@ -68,7 +68,10 @@ contract TAGITCoreOracleVerificationTest is Test {
     // ORACLE SIGNING HELPERS
     // ============================================
 
-    function _oracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory challengeResponse, bytes memory oracleSignature) {
+    function _oracleSign(uint256 tokenId, bytes32 tagHash)
+        internal
+        returns (bytes memory challengeResponse, bytes memory oracleSignature)
+    {
         challengeResponse = abi.encodePacked("challenge", tokenId);
         bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
         bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
@@ -76,7 +79,10 @@ contract TAGITCoreOracleVerificationTest is Test {
         oracleSignature = abi.encodePacked(r, s, v);
     }
 
-    function _wrongOracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory challengeResponse, bytes memory oracleSignature) {
+    function _wrongOracleSign(uint256 tokenId, bytes32 tagHash)
+        internal
+        returns (bytes memory challengeResponse, bytes memory oracleSignature)
+    {
         challengeResponse = abi.encodePacked("challenge", tokenId);
         bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
         bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
@@ -99,7 +105,7 @@ contract TAGITCoreOracleVerificationTest is Test {
         tagitCore.bindTag(tokenId, tagHash, cr, sig);
 
         // Verify binding succeeded
-        (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.BOUND), "Should be BOUND");
         assertEq(tagitCore.getTokenByTag(tagHash), tokenId, "Tag should map to token");
         assertEq(tagitCore.getTagByToken(tokenId), tagHash, "Token should map to tag");
@@ -122,7 +128,7 @@ contract TAGITCoreOracleVerificationTest is Test {
         vm.prank(manufacturer);
         tagitCore.bindTag(tokenId, tagHash, cr1, sig1);
 
-        (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.BOUND), "Should be BOUND");
     }
 
@@ -272,7 +278,7 @@ contract TAGITCoreOracleVerificationTest is Test {
         vm.prank(manufacturer);
         tagitCore.bindTag(tokenId, tagHash, cr2, sig2);
 
-        (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.BOUND), "Should be BOUND");
     }
 
@@ -304,12 +310,11 @@ contract TAGITCoreOracleVerificationTest is Test {
         (bytes memory cr2, bytes memory sig2) = _oracleSign(tokenId, tag2);
 
         vm.prank(manufacturer);
-        vm.expectRevert(abi.encodeWithSelector(
-            TAGITCore.InvalidState.selector,
-            tokenId,
-            TAGITCore.State.BOUND,
-            TAGITCore.State.MINTED
-        ));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TAGITCore.InvalidState.selector, tokenId, TAGITCore.State.BOUND, TAGITCore.State.MINTED
+            )
+        );
         tagitCore.bindTag(tokenId, tag2, cr2, sig2);
     }
 
@@ -361,7 +366,7 @@ contract TAGITCoreOracleVerificationTest is Test {
 
         // 3. Verify binding
         assertEq(tagitCore.getTokenByTag(tagHash), tokenId, "Tag bound");
-        (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.BOUND), "BOUND state");
     }
 }

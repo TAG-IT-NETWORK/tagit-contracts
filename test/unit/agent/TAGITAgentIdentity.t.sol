@@ -29,15 +29,16 @@ contract TAGITAgentIdentityTest is Test {
     address public noKycUser;
 
     // EIP-712 domain separator components
-    bytes32 constant AGENT_WALLET_TYPEHASH =
-        keccak256("AgentWallet(uint256 agentId,address wallet,uint256 nonce)");
+    bytes32 constant AGENT_WALLET_TYPEHASH = keccak256("AgentWallet(uint256 agentId,address wallet,uint256 nonce)");
 
     // Events
     event AgentRegistered(uint256 indexed agentId, address indexed registrant, address indexed wallet, string uri);
     event AgentURIUpdated(uint256 indexed agentId, string newURI);
     event AgentWalletUpdated(uint256 indexed agentId, address indexed oldWallet, address indexed newWallet);
     event AgentMetadataSet(uint256 indexed agentId, string key, string value);
-    event AgentStatusChanged(uint256 indexed agentId, TAGITAgentIdentity.AgentStatus oldStatus, TAGITAgentIdentity.AgentStatus newStatus);
+    event AgentStatusChanged(
+        uint256 indexed agentId, TAGITAgentIdentity.AgentStatus oldStatus, TAGITAgentIdentity.AgentStatus newStatus
+    );
 
     function setUp() public {
         // Create test accounts
@@ -338,7 +339,9 @@ contract TAGITAgentIdentityTest is Test {
         uint256 agentId = agentIdentity.register(agentWallet1, "ipfs://QmAgent1");
 
         vm.expectEmit(true, false, false, true);
-        emit AgentStatusChanged(agentId, TAGITAgentIdentity.AgentStatus.ACTIVE, TAGITAgentIdentity.AgentStatus.SUSPENDED);
+        emit AgentStatusChanged(
+            agentId, TAGITAgentIdentity.AgentStatus.ACTIVE, TAGITAgentIdentity.AgentStatus.SUSPENDED
+        );
 
         vm.prank(owner);
         agentIdentity.suspendAgent(agentId);
@@ -391,11 +394,11 @@ contract TAGITAgentIdentityTest is Test {
         agentIdentity.suspendAgent(agentId);
 
         vm.prank(owner);
-        vm.expectRevert(abi.encodeWithSelector(
-            TAGITAgentIdentity.AgentAlreadyInStatus.selector,
-            agentId,
-            TAGITAgentIdentity.AgentStatus.SUSPENDED
-        ));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TAGITAgentIdentity.AgentAlreadyInStatus.selector, agentId, TAGITAgentIdentity.AgentStatus.SUSPENDED
+            )
+        );
         agentIdentity.suspendAgent(agentId);
     }
 
@@ -437,13 +440,15 @@ contract TAGITAgentIdentityTest is Test {
     // ============================================
 
     function _getTypedDataHash(bytes32 structHash) internal view returns (bytes32) {
-        bytes32 domainSeparator = keccak256(abi.encode(
-            keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
-            keccak256("TAGITAgentIdentity"),
-            keccak256("1"),
-            block.chainid,
-            address(agentIdentity)
-        ));
+        bytes32 domainSeparator = keccak256(
+            abi.encode(
+                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256("TAGITAgentIdentity"),
+                keccak256("1"),
+                block.chainid,
+                address(agentIdentity)
+            )
+        );
         return keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
     }
 }

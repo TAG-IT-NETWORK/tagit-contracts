@@ -127,11 +127,7 @@ contract TAGITAccess is Ownable, ITAGITAccess {
      * @custom:security View function, safe to call from any context
      * @custom:security Returns false if capability badge not set (zero-trust)
      */
-    function hasCapability(address account, uint256 capabilityId)
-        external
-        view
-        returns (bool)
-    {
+    function hasCapability(address account, uint256 capabilityId) external view returns (bool) {
         // Zero-trust: Return false if badge contract not set
         if (_capabilityBadge == address(0)) return false;
 
@@ -167,11 +163,7 @@ contract TAGITAccess is Ownable, ITAGITAccess {
      * @custom:security View function, safe to call from any context
      * @custom:security Returns false if identity badge not set (zero-trust)
      */
-    function hasIdentity(address account, uint256 identityId)
-        external
-        view
-        returns (bool)
-    {
+    function hasIdentity(address account, uint256 identityId) external view returns (bool) {
         // Zero-trust: Return false if badge contract not set
         if (_identityBadge == address(0)) return false;
 

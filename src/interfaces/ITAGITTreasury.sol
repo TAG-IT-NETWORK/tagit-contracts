@@ -16,9 +16,9 @@ interface ITAGITTreasury {
      * @notice Status of a pending withdrawal
      */
     enum WithdrawalStatus {
-        PENDING,    // 0 - Queued, waiting for timelock
-        EXECUTED,   // 1 - Successfully executed
-        CANCELED    // 2 - Canceled by recipient or governor
+        PENDING, // 0 - Queued, waiting for timelock
+        EXECUTED, // 1 - Successfully executed
+        CANCELED // 2 - Canceled by recipient or governor
     }
 
     // ============================================
@@ -30,13 +30,13 @@ interface ITAGITTreasury {
      * @dev Tracks budget, spending, and expiration for each program
      */
     struct Allocation {
-        bytes32 programId;      // e.g., keccak256("ECOSYSTEM_GRANTS")
-        uint256 amount;         // TAGIT allocated
-        uint256 spent;          // TAGIT disbursed
-        address recipient;      // Authorized spender
-        uint48 createdAt;       // Allocation creation time
-        uint48 expiresAt;       // Allocation deadline
-        bool active;            // Whether allocation is active
+        bytes32 programId; // e.g., keccak256("ECOSYSTEM_GRANTS")
+        uint256 amount; // TAGIT allocated
+        uint256 spent; // TAGIT disbursed
+        address recipient; // Authorized spender
+        uint48 createdAt; // Allocation creation time
+        uint48 expiresAt; // Allocation deadline
+        bool active; // Whether allocation is active
     }
 
     /**
@@ -44,13 +44,13 @@ interface ITAGITTreasury {
      * @dev Tracks withdrawal queue with timelock enforcement
      */
     struct PendingWithdrawal {
-        uint256 allocationId;   // Source allocation
-        uint256 amount;         // Amount to withdraw
-        address token;          // Token address (address(0) for ETH)
-        address to;             // Recipient address
-        uint48 queuedAt;        // When withdrawal was queued
-        uint48 executesAt;      // When withdrawal can be executed
-        WithdrawalStatus status;// Current status
+        uint256 allocationId; // Source allocation
+        uint256 amount; // Amount to withdraw
+        address token; // Token address (address(0) for ETH)
+        address to; // Recipient address
+        uint48 queuedAt; // When withdrawal was queued
+        uint48 executesAt; // When withdrawal can be executed
+        WithdrawalStatus status; // Current status
     }
 
     // ============================================
@@ -125,17 +125,10 @@ interface ITAGITTreasury {
     // ============================================
 
     /// @notice Emitted when ETH is deposited
-    event ETHDeposited(
-        address indexed from,
-        uint256 amount
-    );
+    event ETHDeposited(address indexed from, uint256 amount);
 
     /// @notice Emitted when tokens are deposited
-    event TokenDeposited(
-        address indexed token,
-        address indexed from,
-        uint256 amount
-    );
+    event TokenDeposited(address indexed token, address indexed from, uint256 amount);
 
     /// @notice Emitted when allocation is created
     event AllocationCreated(
@@ -147,10 +140,7 @@ interface ITAGITTreasury {
     );
 
     /// @notice Emitted when allocation is closed
-    event AllocationClosed(
-        uint256 indexed allocationId,
-        uint256 unspentAmount
-    );
+    event AllocationClosed(uint256 indexed allocationId, uint256 unspentAmount);
 
     /// @notice Emitted when withdrawal is queued
     event WithdrawalQueued(
@@ -163,38 +153,19 @@ interface ITAGITTreasury {
     );
 
     /// @notice Emitted when withdrawal is executed
-    event WithdrawalExecuted(
-        uint256 indexed withdrawalId,
-        address indexed to,
-        address token,
-        uint256 amount
-    );
+    event WithdrawalExecuted(uint256 indexed withdrawalId, address indexed to, address token, uint256 amount);
 
     /// @notice Emitted when withdrawal is canceled
-    event WithdrawalCanceled(
-        uint256 indexed withdrawalId,
-        address indexed canceledBy
-    );
+    event WithdrawalCanceled(uint256 indexed withdrawalId, address indexed canceledBy);
 
     /// @notice Emitted when emergency sweep is executed
-    event EmergencySweep(
-        address indexed token,
-        address indexed to,
-        uint256 amount,
-        uint256 signerCount
-    );
+    event EmergencySweep(address indexed token, address indexed to, uint256 amount, uint256 signerCount);
 
     /// @notice Emitted when governor is updated
-    event GovernorUpdated(
-        address indexed oldGovernor,
-        address indexed newGovernor
-    );
+    event GovernorUpdated(address indexed oldGovernor, address indexed newGovernor);
 
     /// @notice Emitted when multisig signer is added/removed
-    event SignerUpdated(
-        address indexed signer,
-        bool active
-    );
+    event SignerUpdated(address indexed signer, bool active);
 
     // ============================================
     // DEPOSIT FUNCTIONS
@@ -225,12 +196,9 @@ interface ITAGITTreasury {
      * @param duration Duration in seconds until expiration
      * @return allocationId The created allocation ID
      */
-    function createAllocation(
-        bytes32 programId,
-        uint256 amount,
-        address recipient,
-        uint48 duration
-    ) external returns (uint256 allocationId);
+    function createAllocation(bytes32 programId, uint256 amount, address recipient, uint48 duration)
+        external
+        returns (uint256 allocationId);
 
     /**
      * @notice Close an allocation and return unspent funds
@@ -250,12 +218,9 @@ interface ITAGITTreasury {
      * @param to Recipient address
      * @return withdrawalId The created withdrawal ID
      */
-    function queueWithdrawal(
-        uint256 allocationId,
-        address token,
-        uint256 amount,
-        address to
-    ) external returns (uint256 withdrawalId);
+    function queueWithdrawal(uint256 allocationId, address token, uint256 amount, address to)
+        external
+        returns (uint256 withdrawalId);
 
     /**
      * @notice Execute a pending withdrawal after timelock
@@ -279,11 +244,7 @@ interface ITAGITTreasury {
      * @param to Recipient address
      * @param signatures Array of signatures from signers
      */
-    function emergencySweep(
-        address token,
-        address to,
-        bytes[] calldata signatures
-    ) external;
+    function emergencySweep(address token, address to, bytes[] calldata signatures) external;
 
     // ============================================
     // VIEW FUNCTIONS
@@ -360,10 +321,7 @@ interface ITAGITTreasury {
      * @return timelockSeconds Timelock duration in seconds
      * @return requiresMultisig Whether multisig is required
      */
-    function getTimelockForAmount(uint256 amount) external view returns (
-        uint48 timelockSeconds,
-        bool requiresMultisig
-    );
+    function getTimelockForAmount(uint256 amount) external view returns (uint48 timelockSeconds, bool requiresMultisig);
 
     /**
      * @notice Get contract version

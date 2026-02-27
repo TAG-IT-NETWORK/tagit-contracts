@@ -9,12 +9,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {ITAGITBurner} from "../interfaces/ITAGITBurner.sol";
 import {TAGITToken} from "./TAGITToken.sol";
-import {
-    BURN_FLOOR,
-    DEFAULT_BURN_RATE,
-    BASIS_POINTS,
-    VERSION
-} from "../libraries/Constants.sol";
+import {BURN_FLOOR, DEFAULT_BURN_RATE, BASIS_POINTS, VERSION} from "../libraries/Constants.sol";
 
 /**
  * @title TAGITBurner
@@ -40,12 +35,7 @@ import {
  *
  * @custom:security-contact security@tagit.network
  */
-contract TAGITBurner is
-    ITAGITBurner,
-    OwnableUpgradeable,
-    UUPSUpgradeable,
-    ReentrancyGuard
-{
+contract TAGITBurner is ITAGITBurner, OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     // ============================================
@@ -93,12 +83,7 @@ contract TAGITBurner is
      * @param _governor Address authorized to update burn rate
      * @param initialOwner Owner of the contract (for upgrades)
      */
-    function initialize(
-        address _token,
-        address treasury_,
-        address _governor,
-        address initialOwner
-    ) public initializer {
+    function initialize(address _token, address treasury_, address _governor, address initialOwner) public initializer {
         if (_token == address(0)) revert ZeroAddress();
         if (treasury_ == address(0)) revert ZeroAddress();
         if (_governor == address(0)) revert ZeroAddress();

@@ -66,11 +66,7 @@ contract CapabilityBadge is ERC1155, Ownable, ICapabilityBadge {
      * @custom:security Capability ID must be non-zero
      * @custom:emits CapabilityGranted
      */
-    function grantCapability(address account, uint256 capabilityId)
-        external
-        onlyOwner
-        returns (uint256 amount)
-    {
+    function grantCapability(address account, uint256 capabilityId) external onlyOwner returns (uint256 amount) {
         // ============================================
         // CHECKS
         // ============================================
@@ -101,10 +97,7 @@ contract CapabilityBadge is ERC1155, Ownable, ICapabilityBadge {
      * @custom:security Reverts if account doesn't have capability
      * @custom:emits CapabilityRevoked
      */
-    function revokeCapability(address account, uint256 capabilityId)
-        external
-        onlyOwner
-    {
+    function revokeCapability(address account, uint256 capabilityId) external onlyOwner {
         // ============================================
         // CHECKS
         // ============================================
@@ -137,10 +130,7 @@ contract CapabilityBadge is ERC1155, Ownable, ICapabilityBadge {
      * @custom:security Zero address check prevents invalid grants
      * @custom:emits CapabilityGranted for each capability
      */
-    function batchGrantCapabilities(address account, uint256[] calldata capabilityIds)
-        external
-        onlyOwner
-    {
+    function batchGrantCapabilities(address account, uint256[] calldata capabilityIds) external onlyOwner {
         // ============================================
         // CHECKS
         // ============================================
@@ -184,10 +174,7 @@ contract CapabilityBadge is ERC1155, Ownable, ICapabilityBadge {
      * @custom:security Only owner can call
      * @custom:emits CapabilityRevoked for each capability
      */
-    function batchRevokeCapabilities(address account, uint256[] calldata capabilityIds)
-        external
-        onlyOwner
-    {
+    function batchRevokeCapabilities(address account, uint256[] calldata capabilityIds) external onlyOwner {
         uint256 length = capabilityIds.length;
 
         // Prepare amounts array (all 1s)
@@ -228,11 +215,7 @@ contract CapabilityBadge is ERC1155, Ownable, ICapabilityBadge {
      * @return bool True if account has capability (balance ≥ 1)
      * @custom:security View function, safe to call from any context
      */
-    function hasCapability(address account, uint256 capabilityId)
-        external
-        view
-        returns (bool)
-    {
+    function hasCapability(address account, uint256 capabilityId) external view returns (bool) {
         return balanceOf(account, capabilityId) >= 1;
     }
 }

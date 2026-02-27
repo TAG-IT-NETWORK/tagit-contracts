@@ -119,10 +119,8 @@ contract TAGITAccountTest is Test {
 
         // Deploy paymaster
         TAGITPaymaster paymasterImpl = new TAGITPaymaster();
-        bytes memory paymasterInit = abi.encodeCall(
-            TAGITPaymaster.initialize,
-            (address(entryPoint), governor, governor)
-        );
+        bytes memory paymasterInit =
+            abi.encodeCall(TAGITPaymaster.initialize, (address(entryPoint), governor, governor));
         ERC1967Proxy paymasterProxy = new ERC1967Proxy(address(paymasterImpl), paymasterInit);
         paymaster = TAGITPaymaster(payable(address(paymasterProxy)));
 
@@ -295,10 +293,7 @@ contract TAGITAccountTest is Test {
         account.addSessionKey(sessionKey);
 
         // Check validity
-        assertTrue(
-            account.isValidSessionKey(sessionKeyAddr, selectors[0]),
-            "Session key should be valid"
-        );
+        assertTrue(account.isValidSessionKey(sessionKeyAddr, selectors[0]), "Session key should be valid");
     }
 
     function test_sessionKey_expiredReverts() public {
@@ -346,10 +341,7 @@ contract TAGITAccountTest is Test {
 
         // Try different selector
         bytes4 wrongSelector = bytes4(keccak256("transfer(uint256)"));
-        assertFalse(
-            account.isValidSessionKey(sessionKeyAddr, wrongSelector),
-            "Should reject wrong selector"
-        );
+        assertFalse(account.isValidSessionKey(sessionKeyAddr, wrongSelector), "Should reject wrong selector");
     }
 
     function test_sessionKey_revokeRemovesAccess() public {
@@ -376,10 +368,7 @@ contract TAGITAccountTest is Test {
         account.revokeSessionKey(sessionKeyAddr);
 
         // Should no longer be valid
-        assertFalse(
-            account.isValidSessionKey(sessionKeyAddr, selectors[0]),
-            "Should be invalid after revoke"
-        );
+        assertFalse(account.isValidSessionKey(sessionKeyAddr, selectors[0]), "Should be invalid after revoke");
     }
 
     // ============================================
@@ -453,12 +442,8 @@ contract TAGITAccountTest is Test {
         // Setup sponsorship config
         bytes4 verifySelector = bytes4(keccak256("verify(uint256)"));
 
-        ITAGITPaymaster.SponsorshipConfig memory config = ITAGITPaymaster.SponsorshipConfig({
-            selector: verifySelector,
-            maxGas: 100000,
-            dailyLimit: 10,
-            active: true
-        });
+        ITAGITPaymaster.SponsorshipConfig memory config =
+            ITAGITPaymaster.SponsorshipConfig({selector: verifySelector, maxGas: 100000, dailyLimit: 10, active: true});
 
         vm.prank(governor);
         paymaster.setSponsorshipConfig(verifySelector, config);
@@ -474,12 +459,8 @@ contract TAGITAccountTest is Test {
     function test_paymaster_respectsDailyLimit() public {
         bytes4 verifySelector = bytes4(keccak256("verify(uint256)"));
 
-        ITAGITPaymaster.SponsorshipConfig memory config = ITAGITPaymaster.SponsorshipConfig({
-            selector: verifySelector,
-            maxGas: 100000,
-            dailyLimit: 2,
-            active: true
-        });
+        ITAGITPaymaster.SponsorshipConfig memory config =
+            ITAGITPaymaster.SponsorshipConfig({selector: verifySelector, maxGas: 100000, dailyLimit: 2, active: true});
 
         vm.prank(governor);
         paymaster.setSponsorshipConfig(verifySelector, config);

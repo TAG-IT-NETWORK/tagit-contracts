@@ -128,7 +128,7 @@ contract StateInvariants is Test {
         vm.prank(actor);
         uint256 tokenId = tagitCore.mint(actor, metadata);
 
-        (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assert(state == TAGITCore.State.MINTED);
     }
 
@@ -141,7 +141,7 @@ contract StateInvariants is Test {
         vm.prank(actor);
         tagitCore.bindTag(tokenId, tagHash, cr, sig);
 
-        (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assert(state == TAGITCore.State.BOUND);
     }
 
@@ -152,7 +152,7 @@ contract StateInvariants is Test {
         vm.prank(actor);
         tagitCore.activate(tokenId);
 
-        (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assert(state == TAGITCore.State.ACTIVATED);
     }
 
@@ -164,7 +164,7 @@ contract StateInvariants is Test {
         vm.prank(actor);
         tagitCore.claim(tokenId, consumer);
 
-        (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assert(state == TAGITCore.State.CLAIMED);
     }
 
@@ -175,7 +175,7 @@ contract StateInvariants is Test {
         vm.prank(actor);
         tagitCore.flag(tokenId);
 
-        (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assert(state == TAGITCore.State.FLAGGED);
     }
 
@@ -193,7 +193,7 @@ contract StateInvariants is Test {
         vm.prank(actor);
         tagitCore.resolve(tokenId, newOwner);
 
-        (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assert(state == TAGITCore.State.CLAIMED);
     }
 
@@ -204,7 +204,7 @@ contract StateInvariants is Test {
         vm.prank(actor);
         tagitCore.recycle(tokenId);
 
-        (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assert(state == TAGITCore.State.RECYCLED);
     }
 
@@ -215,7 +215,7 @@ contract StateInvariants is Test {
         vm.prank(actor);
         tagitCore.recycle(tokenId);
 
-        (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assert(state == TAGITCore.State.RECYCLED);
     }
 
@@ -273,7 +273,7 @@ contract StateInvariants is Test {
         vm.prank(actor);
         tagitCore.resolve(tokenId, newOwner);
 
-        (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assert(state == TAGITCore.State.CLAIMED);
     }
 
@@ -439,7 +439,7 @@ contract StateInvariants is Test {
         vm.prank(actor);
         uint256 tokenId = tagitCore.mint(actor, keccak256("m1"));
 
-        (address assetOwner, , , , ) = tagitCore.getAsset(tokenId);
+        (address assetOwner,,,,) = tagitCore.getAsset(tokenId);
         assert(assetOwner == tagitCore.ownerOf(tokenId));
     }
 
@@ -452,7 +452,7 @@ contract StateInvariants is Test {
         vm.prank(actor);
         tagitCore.claim(tokenId, consumer);
 
-        (address assetOwner, , , , ) = tagitCore.getAsset(tokenId);
+        (address assetOwner,,,,) = tagitCore.getAsset(tokenId);
         assert(assetOwner == tagitCore.ownerOf(tokenId));
         assert(assetOwner == consumer);
     }

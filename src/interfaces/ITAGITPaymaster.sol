@@ -106,40 +106,19 @@ interface ITAGITPaymaster {
     event PaymasterUnpausedEvent(uint256 indexed timestamp);
 
     /// @notice Emitted when sponsorship config is set
-    event SponsorshipConfigSet(
-        bytes4 indexed selector,
-        uint256 maxGas,
-        uint256 dailyLimit,
-        bool active
-    );
+    event SponsorshipConfigSet(bytes4 indexed selector, uint256 maxGas, uint256 dailyLimit, bool active);
 
     /// @notice Emitted when operation is sponsored
-    event OperationSponsored(
-        address indexed user,
-        bytes4 indexed selector,
-        uint256 gasCost,
-        bytes32 brandId
-    );
+    event OperationSponsored(address indexed user, bytes4 indexed selector, uint256 gasCost, bytes32 brandId);
 
     /// @notice Emitted when brand deposits funds
-    event BrandDeposited(
-        bytes32 indexed brandId,
-        uint256 amount,
-        uint256 newBalance
-    );
+    event BrandDeposited(bytes32 indexed brandId, uint256 amount, uint256 newBalance);
 
     /// @notice Emitted when brand withdraws funds
-    event BrandWithdrawn(
-        bytes32 indexed brandId,
-        uint256 amount,
-        uint256 newBalance
-    );
+    event BrandWithdrawn(bytes32 indexed brandId, uint256 amount, uint256 newBalance);
 
     /// @notice Emitted when brand status changes
-    event BrandStatusChanged(
-        bytes32 indexed brandId,
-        bool active
-    );
+    event BrandStatusChanged(bytes32 indexed brandId, bool active);
 
     /// @notice Emitted when protocol deposit is added
     event ProtocolDeposited(uint256 amount);
@@ -168,20 +147,14 @@ interface ITAGITPaymaster {
      * @param selector Function selector
      * @param config Sponsorship configuration
      */
-    function setSponsorshipConfig(
-        bytes4 selector,
-        SponsorshipConfig calldata config
-    ) external;
+    function setSponsorshipConfig(bytes4 selector, SponsorshipConfig calldata config) external;
 
     /**
      * @notice Batch set sponsorship configs (Governor only)
      * @param selectors Function selectors
      * @param configs Sponsorship configurations
      */
-    function batchSetSponsorshipConfig(
-        bytes4[] calldata selectors,
-        SponsorshipConfig[] calldata configs
-    ) external;
+    function batchSetSponsorshipConfig(bytes4[] calldata selectors, SponsorshipConfig[] calldata configs) external;
 
     /**
      * @notice Check if operation is sponsored
@@ -238,10 +211,7 @@ interface ITAGITPaymaster {
      * @param selector Function selector
      * @return count Number of sponsored calls today
      */
-    function getUserDailyUsage(
-        address user,
-        bytes4 selector
-    ) external view returns (uint256 count);
+    function getUserDailyUsage(address user, bytes4 selector) external view returns (uint256 count);
 
     /**
      * @notice Check if user can be sponsored
@@ -249,10 +219,7 @@ interface ITAGITPaymaster {
      * @param selector Function selector
      * @return canSponsor True if user hasn't exceeded limits
      */
-    function canSponsor(
-        address user,
-        bytes4 selector
-    ) external view returns (bool canSponsor);
+    function canSponsor(address user, bytes4 selector) external view returns (bool canSponsor);
 
     // ============================================
     // PROTOCOL OPERATIONS

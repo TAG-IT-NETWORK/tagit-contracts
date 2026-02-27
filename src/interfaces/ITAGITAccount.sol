@@ -120,61 +120,34 @@ interface ITAGITAccount {
     // ============================================
 
     /// @notice Emitted when account is initialized
-    event AccountInitialized(
-        address indexed owner,
-        bytes32 indexed emailHash,
-        address indexed factory
-    );
+    event AccountInitialized(address indexed owner, bytes32 indexed emailHash, address indexed factory);
 
     /// @notice Emitted when session key is added
-    event SessionKeyAdded(
-        address indexed key,
-        uint48 validAfter,
-        uint48 validUntil,
-        bytes4[] allowedSelectors
-    );
+    event SessionKeyAdded(address indexed key, uint48 validAfter, uint48 validUntil, bytes4[] allowedSelectors);
 
     /// @notice Emitted when session key is revoked
     event SessionKeyRevoked(address indexed key);
 
     /// @notice Emitted when guardian is added
-    event GuardianAdded(
-        address indexed guardian,
-        uint8 newThreshold
-    );
+    event GuardianAdded(address indexed guardian, uint8 newThreshold);
 
     /// @notice Emitted when guardian is removed
-    event GuardianRemoved(
-        address indexed guardian,
-        uint8 newThreshold
-    );
+    event GuardianRemoved(address indexed guardian, uint8 newThreshold);
 
     /// @notice Emitted when protocol guardian removal is requested
-    event ProtocolGuardianRemovalRequested(
-        uint48 requestedAt,
-        uint48 readyAt
-    );
+    event ProtocolGuardianRemovalRequested(uint48 requestedAt, uint48 readyAt);
 
     /// @notice Emitted when protocol guardian is removed
     event ProtocolGuardianRemoved();
 
     /// @notice Emitted when asset is exported
-    event AssetExported(
-        uint256 indexed tokenId,
-        address indexed destination
-    );
+    event AssetExported(uint256 indexed tokenId, address indexed destination);
 
     /// @notice Emitted when all assets are exported
-    event AllAssetsExported(
-        address indexed destination
-    );
+    event AllAssetsExported(address indexed destination);
 
     /// @notice Emitted when execution succeeds
-    event Executed(
-        address indexed target,
-        uint256 value,
-        bytes data
-    );
+    event Executed(address indexed target, uint256 value, bytes data);
 
     // ============================================
     // ERC-4337 FUNCTIONS
@@ -187,11 +160,9 @@ interface ITAGITAccount {
      * @param missingAccountFunds Funds to transfer to EntryPoint
      * @return validationData Packed validation result
      */
-    function validateUserOp(
-        PackedUserOperation calldata userOp,
-        bytes32 userOpHash,
-        uint256 missingAccountFunds
-    ) external returns (uint256 validationData);
+    function validateUserOp(PackedUserOperation calldata userOp, bytes32 userOpHash, uint256 missingAccountFunds)
+        external
+        returns (uint256 validationData);
 
     /**
      * @notice Execute a single call
@@ -207,11 +178,7 @@ interface ITAGITAccount {
      * @param values ETH values to send
      * @param func Calldatas to execute
      */
-    function executeBatch(
-        address[] calldata dest,
-        uint256[] calldata values,
-        bytes[] calldata func
-    ) external;
+    function executeBatch(address[] calldata dest, uint256[] calldata values, bytes[] calldata func) external;
 
     // ============================================
     // SESSION KEY MANAGEMENT

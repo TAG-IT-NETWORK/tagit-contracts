@@ -50,12 +50,7 @@ contract TAGITTreasuryTest is Test {
         uint256 amount,
         uint48 executesAt
     );
-    event WithdrawalExecuted(
-        uint256 indexed withdrawalId,
-        address indexed to,
-        address token,
-        uint256 amount
-    );
+    event WithdrawalExecuted(uint256 indexed withdrawalId, address indexed to, address token, uint256 amount);
     event WithdrawalCanceled(uint256 indexed withdrawalId, address indexed canceledBy);
     event EmergencySweep(address indexed token, address indexed to, uint256 amount, uint256 signerCount);
 
@@ -90,10 +85,14 @@ contract TAGITTreasuryTest is Test {
 
         // Deploy treasury
         treasuryImpl = new TAGITTreasury();
-        treasury = TAGITTreasury(payable(address(new ERC1967Proxy(
-            address(treasuryImpl),
-            abi.encodeCall(TAGITTreasury.initialize, (governor, address(token), signerArray))
-        ))));
+        treasury = TAGITTreasury(
+            payable(address(
+                    new ERC1967Proxy(
+                        address(treasuryImpl),
+                        abi.encodeCall(TAGITTreasury.initialize, (governor, address(token), signerArray))
+                    )
+                ))
+        );
 
         // Fund treasury with tokens
         token.transfer(address(treasury), INITIAL_BALANCE);
@@ -125,8 +124,7 @@ contract TAGITTreasuryTest is Test {
 
         vm.expectRevert(ITAGITTreasury.ZeroAddress.selector);
         new ERC1967Proxy(
-            address(newTreasury),
-            abi.encodeCall(TAGITTreasury.initialize, (address(0), address(token), signerArray))
+            address(newTreasury), abi.encodeCall(TAGITTreasury.initialize, (address(0), address(token), signerArray))
         );
     }
 
@@ -145,7 +143,7 @@ contract TAGITTreasuryTest is Test {
 
         treasury.deposit{value: amount}();
 
-        (uint256 ethBalance, ) = treasury.getBalance();
+        (uint256 ethBalance,) = treasury.getBalance();
         assertEq(ethBalance, amount);
     }
 
@@ -155,10 +153,10 @@ contract TAGITTreasuryTest is Test {
         vm.deal(alice, amount);
         vm.prank(alice);
 
-        (bool success, ) = address(treasury).call{value: amount}("");
+        (bool success,) = address(treasury).call{value: amount}("");
         assertTrue(success);
 
-        (uint256 ethBalance, ) = treasury.getBalance();
+        (uint256 ethBalance,) = treasury.getBalance();
         assertEq(ethBalance, amount);
     }
 
@@ -221,11 +219,9 @@ contract TAGITTreasuryTest is Test {
 
     function test_createAllocation_revert_exceedsBalance() public {
         vm.prank(governor);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITTreasury.ExceedsBalance.selector,
-            INITIAL_BALANCE + 1,
-            INITIAL_BALANCE
-        ));
+        vm.expectRevert(
+            abi.encodeWithSelector(ITAGITTreasury.ExceedsBalance.selector, INITIAL_BALANCE + 1, INITIAL_BALANCE)
+        );
         treasury.createAllocation(ECOSYSTEM_GRANTS, INITIAL_BALANCE + 1, recipient1, 30 days);
     }
 
@@ -296,12 +292,11 @@ contract TAGITTreasuryTest is Test {
         uint256 allocationId = treasury.createAllocation(ECOSYSTEM_GRANTS, allocAmount, recipient1, 30 days);
 
         vm.prank(recipient1);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITTreasury.ExceedsAllocation.selector,
-            allocationId,
-            allocAmount + 1,
-            allocAmount
-        ));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ITAGITTreasury.ExceedsAllocation.selector, allocationId, allocAmount + 1, allocAmount
+            )
+        );
         treasury.queueWithdrawal(allocationId, address(token), allocAmount + 1, alice);
     }
 
@@ -342,12 +337,14 @@ contract TAGITTreasuryTest is Test {
         uint256 withdrawalId = treasury.queueWithdrawal(allocationId, address(token), withdrawAmount, alice);
 
         // Try to execute before timelock
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITTreasury.TimelockNotPassed.selector,
-            withdrawalId,
-            uint48(block.timestamp + 48 hours),
-            uint48(block.timestamp)
-        ));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ITAGITTreasury.TimelockNotPassed.selector,
+                withdrawalId,
+                uint48(block.timestamp + 48 hours),
+                uint48(block.timestamp)
+            )
+        );
         treasury.executeWithdrawal(withdrawalId);
     }
 
@@ -426,14 +423,16 @@ contract TAGITTreasuryTest is Test {
         vm.deal(address(treasury), 100 ether);
 
         // Create message hash
-        bytes32 messageHash = keccak256(abi.encodePacked(
-            "TAGIT_EMERGENCY_SWEEP",
-            block.chainid,
-            address(treasury),
-            address(0), // ETH
-            alice,
-            uint256(0) // PATCH-08: counter-based nonce (starts at 0)
-        ));
+        bytes32 messageHash = keccak256(
+            abi.encodePacked(
+                "TAGIT_EMERGENCY_SWEEP",
+                block.chainid,
+                address(treasury),
+                address(0), // ETH
+                alice,
+                uint256(0) // PATCH-08: counter-based nonce (starts at 0)
+            )
+        );
         bytes32 ethSignedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
 
         // Sign with 6 signers
@@ -456,14 +455,16 @@ contract TAGITTreasuryTest is Test {
     function test_emergencySweep_revert_insufficientSigners() public {
         bytes[] memory sigs = new bytes[](5); // Only 5 signers
 
-        bytes32 messageHash = keccak256(abi.encodePacked(
-            "TAGIT_EMERGENCY_SWEEP",
-            block.chainid,
-            address(treasury),
-            address(0),
-            alice,
-            uint256(0) // PATCH-08: counter-based nonce (starts at 0)
-        ));
+        bytes32 messageHash = keccak256(
+            abi.encodePacked(
+                "TAGIT_EMERGENCY_SWEEP",
+                block.chainid,
+                address(treasury),
+                address(0),
+                alice,
+                uint256(0) // PATCH-08: counter-based nonce (starts at 0)
+            )
+        );
         bytes32 ethSignedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
 
         for (uint256 i = 0; i < 5; i++) {

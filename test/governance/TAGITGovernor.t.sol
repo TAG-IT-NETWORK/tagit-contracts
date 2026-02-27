@@ -4,7 +4,9 @@ pragma solidity ^0.8.20;
 import {Test} from "@forge-std/Test.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
-import {TimelockControllerUpgradeable} from "@openzeppelin/contracts-upgradeable/governance/TimelockControllerUpgradeable.sol";
+import {
+    TimelockControllerUpgradeable
+} from "@openzeppelin/contracts-upgradeable/governance/TimelockControllerUpgradeable.sol";
 import {TAGITGovernor} from "../../src/governance/TAGITGovernor.sol";
 import {ITAGITGovernor} from "../../src/interfaces/ITAGITGovernor.sol";
 import {TAGITToken} from "../../src/token/TAGITToken.sol";
@@ -54,11 +56,7 @@ contract TAGITGovernorTest is Test {
 
     // Events
     event HouseVoteCast(
-        uint256 indexed proposalId,
-        address indexed voter,
-        ITAGITGovernor.House house,
-        uint8 support,
-        uint256 weight
+        uint256 indexed proposalId, address indexed voter, ITAGITGovernor.House house, uint8 support, uint256 weight
     );
     event EmergencyPaused(address indexed guardian);
     event GovernorUnpaused(address indexed guardian);
@@ -81,10 +79,7 @@ contract TAGITGovernorTest is Test {
 
         // Deploy token (upgradeable)
         TAGITToken tokenImpl = new TAGITToken();
-        bytes memory tokenData = abi.encodeCall(
-            TAGITToken.initialize,
-            (owner, treasury)
-        );
+        bytes memory tokenData = abi.encodeCall(TAGITToken.initialize, (owner, treasury));
         ERC1967Proxy tokenProxy = new ERC1967Proxy(address(tokenImpl), tokenData);
         token = TAGITToken(address(tokenProxy));
 
@@ -97,10 +92,13 @@ contract TAGITGovernorTest is Test {
 
         // Deploy staking (upgradeable)
         stakingImpl = new TAGITStaking();
-        staking = TAGITStaking(address(new ERC1967Proxy(
-            address(stakingImpl),
-            abi.encodeCall(TAGITStaking.initialize, (address(token), owner, owner))
-        )));
+        staking = TAGITStaking(
+            address(
+                new ERC1967Proxy(
+                    address(stakingImpl), abi.encodeCall(TAGITStaking.initialize, (address(token), owner, owner))
+                )
+            )
+        );
 
         // Deploy timelock (non-upgradeable)
         address[] memory proposers = new address[](1);
@@ -112,17 +110,24 @@ contract TAGITGovernorTest is Test {
 
         // Deploy governor (upgradeable)
         governorImpl = new TAGITGovernor();
-        governor = TAGITGovernor(payable(address(new ERC1967Proxy(
-            address(governorImpl),
-            abi.encodeCall(TAGITGovernor.initialize, (
-                IVotes(address(token)),
-                TimelockControllerUpgradeable(payable(address(timelock))),
-                access,
-                staking,
-                guardian,
-                owner
-            ))
-        ))));
+        governor = TAGITGovernor(
+            payable(address(
+                    new ERC1967Proxy(
+                        address(governorImpl),
+                        abi.encodeCall(
+                            TAGITGovernor.initialize,
+                            (
+                                IVotes(address(token)),
+                                TimelockControllerUpgradeable(payable(address(timelock))),
+                                access,
+                                staking,
+                                guardian,
+                                owner
+                            )
+                        )
+                    )
+                ))
+        );
 
         // Grant timelock roles to governor
         bytes32 proposerRole = timelock.PROPOSER_ROLE();
@@ -187,14 +192,17 @@ contract TAGITGovernorTest is Test {
         vm.expectRevert(ITAGITGovernor.ZeroAddress.selector);
         new ERC1967Proxy(
             address(newGov),
-            abi.encodeCall(TAGITGovernor.initialize, (
-                IVotes(address(0)),
-                TimelockControllerUpgradeable(payable(address(timelock))),
-                access,
-                staking,
-                guardian,
-                owner
-            ))
+            abi.encodeCall(
+                TAGITGovernor.initialize,
+                (
+                    IVotes(address(0)),
+                    TimelockControllerUpgradeable(payable(address(timelock))),
+                    access,
+                    staking,
+                    guardian,
+                    owner
+                )
+            )
         );
     }
 
@@ -269,12 +277,7 @@ contract TAGITGovernorTest is Test {
         calldatas[0] = abi.encodeCall(governor.setGuardian, (alice));
 
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITGovernor.InsufficientStake.selector,
-            alice,
-            PROPOSAL_THRESHOLD,
-            0
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITGovernor.InsufficientStake.selector, alice, PROPOSAL_THRESHOLD, 0));
         governor.propose(targets, values, calldatas, "Set new guardian");
     }
 
@@ -340,11 +343,7 @@ contract TAGITGovernorTest is Test {
         vm.startPrank(govMilVoter);
         governor.castVote(proposalId, 1);
 
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITGovernor.AlreadyVoted.selector,
-            proposalId,
-            govMilVoter
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITGovernor.AlreadyVoted.selector, proposalId, govMilVoter));
         governor.castVote(proposalId, 0);
         vm.stopPrank();
     }
@@ -356,10 +355,7 @@ contract TAGITGovernorTest is Test {
         vm.roll(block.number + governor.votingDelay() + 1);
 
         vm.prank(nobody);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITGovernor.NoVotingPower.selector,
-            nobody
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITGovernor.NoVotingPower.selector, nobody));
         governor.castVote(proposalId, 1);
     }
 
@@ -369,10 +365,7 @@ contract TAGITGovernorTest is Test {
         vm.roll(block.number + governor.votingDelay() + 1);
 
         vm.prank(govMilVoter);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITGovernor.InvalidVoteType.selector,
-            3
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITGovernor.InvalidVoteType.selector, 3));
         governor.castVote(proposalId, 3);
     }
 
@@ -414,10 +407,7 @@ contract TAGITGovernorTest is Test {
 
     function test_emergencyPause_revert_notGuardian() public {
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITGovernor.NotGuardian.selector,
-            alice
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITGovernor.NotGuardian.selector, alice));
         governor.emergencyPause();
     }
 
@@ -439,10 +429,7 @@ contract TAGITGovernorTest is Test {
         governor.emergencyPause();
 
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITGovernor.NotGuardian.selector,
-            alice
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITGovernor.NotGuardian.selector, alice));
         governor.unpause();
     }
 

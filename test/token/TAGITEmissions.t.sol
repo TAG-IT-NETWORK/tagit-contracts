@@ -50,22 +50,14 @@ contract TAGITEmissionsTest is Test {
 
         // Deploy TAGITToken
         tokenImpl = new TAGITToken();
-        bytes memory tokenInitData = abi.encodeWithSelector(
-            TAGITToken.initialize.selector,
-            treasury,
-            owner
-        );
+        bytes memory tokenInitData = abi.encodeWithSelector(TAGITToken.initialize.selector, treasury, owner);
         ERC1967Proxy tokenProxy = new ERC1967Proxy(address(tokenImpl), tokenInitData);
         token = TAGITToken(address(tokenProxy));
 
         // Deploy TAGITEmissions
         emissionsImpl = new TAGITEmissions();
-        bytes memory emissionsInitData = abi.encodeWithSelector(
-            TAGITEmissions.initialize.selector,
-            address(token),
-            governor,
-            owner
-        );
+        bytes memory emissionsInitData =
+            abi.encodeWithSelector(TAGITEmissions.initialize.selector, address(token), governor, owner);
         ERC1967Proxy emissionsProxy = new ERC1967Proxy(address(emissionsImpl), emissionsInitData);
         emissions = TAGITEmissions(address(emissionsProxy));
 
@@ -100,24 +92,15 @@ contract TAGITEmissionsTest is Test {
 
     function test_initialize_revert_zeroToken() public {
         TAGITEmissions newImpl = new TAGITEmissions();
-        bytes memory initData = abi.encodeWithSelector(
-            TAGITEmissions.initialize.selector,
-            address(0),
-            governor,
-            owner
-        );
+        bytes memory initData = abi.encodeWithSelector(TAGITEmissions.initialize.selector, address(0), governor, owner);
         vm.expectRevert(ITAGITEmissions.ZeroAddress.selector);
         new ERC1967Proxy(address(newImpl), initData);
     }
 
     function test_initialize_revert_zeroGovernor() public {
         TAGITEmissions newImpl = new TAGITEmissions();
-        bytes memory initData = abi.encodeWithSelector(
-            TAGITEmissions.initialize.selector,
-            address(token),
-            address(0),
-            owner
-        );
+        bytes memory initData =
+            abi.encodeWithSelector(TAGITEmissions.initialize.selector, address(token), address(0), owner);
         vm.expectRevert(ITAGITEmissions.ZeroAddress.selector);
         new ERC1967Proxy(address(newImpl), initData);
     }
@@ -229,10 +212,7 @@ contract TAGITEmissionsTest is Test {
 
     function test_distributeEpoch_revert_cannotDistributeEpochZero() public {
         // At genesis, epoch 0 cannot be distributed (nothing has elapsed)
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITEmissions.EpochAlreadyDistributed.selector,
-            0
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITEmissions.EpochAlreadyDistributed.selector, 0));
         emissions.distributeEpoch();
     }
 
@@ -242,10 +222,7 @@ contract TAGITEmissionsTest is Test {
         emissions.distributeEpoch();
 
         // Try to distribute same epoch again
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITEmissions.EpochAlreadyDistributed.selector,
-            1
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITEmissions.EpochAlreadyDistributed.selector, 1));
         emissions.distributeEpoch();
     }
 
@@ -267,9 +244,9 @@ contract TAGITEmissionsTest is Test {
         recipients[0] = ecosystem;
         recipients[1] = staking;
         recipients[2] = devFund;
-        weights[0] = 5000;  // 50%
-        weights[1] = 3000;  // 30%
-        weights[2] = 2000;  // 20%
+        weights[0] = 5000; // 50%
+        weights[1] = 3000; // 30%
+        weights[2] = 2000; // 20%
 
         vm.prank(governor);
         emissions.setAllocationWeights(recipients, weights);
@@ -329,13 +306,10 @@ contract TAGITEmissionsTest is Test {
         recipients[0] = ecosystem;
         recipients[1] = staking;
         weights[0] = 5000;
-        weights[1] = 4000;  // Only 9000 total
+        weights[1] = 4000; // Only 9000 total
 
         vm.prank(governor);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITEmissions.InvalidAllocationWeights.selector,
-            9000
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITEmissions.InvalidAllocationWeights.selector, 9000));
         emissions.setAllocationWeights(recipients, weights);
     }
 
@@ -437,7 +411,7 @@ contract TAGITEmissionsTest is Test {
     // ============================================
 
     function testFuzz_distributeEpoch_timing(uint256 weeksElapsed) public {
-        weeksElapsed = bound(weeksElapsed, 1, 520);  // Up to 10 years
+        weeksElapsed = bound(weeksElapsed, 1, 520); // Up to 10 years
 
         vm.warp(block.timestamp + weeksElapsed * 1 weeks);
 

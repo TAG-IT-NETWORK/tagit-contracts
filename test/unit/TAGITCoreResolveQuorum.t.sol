@@ -90,7 +90,10 @@ contract TAGITCoreResolveQuorumTest is Test {
     // ORACLE HELPER
     // ============================================
 
-    function _oracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory challengeResponse, bytes memory oracleSignature) {
+    function _oracleSign(uint256 tokenId, bytes32 tagHash)
+        internal
+        returns (bytes memory challengeResponse, bytes memory oracleSignature)
+    {
         challengeResponse = abi.encodePacked("challenge", tokenId);
         bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
         bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
@@ -185,7 +188,7 @@ contract TAGITCoreResolveQuorumTest is Test {
         tagitCore.resolve(tokenId, consumer);
 
         // Verify state
-        (address assetOwner, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (address assetOwner,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.CLAIMED), "State should be CLAIMED");
         assertEq(assetOwner, consumer, "Owner should be consumer");
         assertEq(tagitCore.ownerOf(tokenId), consumer, "ERC721 owner should be consumer");
@@ -200,9 +203,7 @@ contract TAGITCoreResolveQuorumTest is Test {
 
         // Resolve should revert
         vm.prank(resolver2);
-        vm.expectRevert(
-            abi.encodeWithSelector(TAGITCore.QuorumNotReached.selector, tokenId, 1, 2)
-        );
+        vm.expectRevert(abi.encodeWithSelector(TAGITCore.QuorumNotReached.selector, tokenId, 1, 2));
         tagitCore.resolve(tokenId, consumer);
     }
 
@@ -210,9 +211,7 @@ contract TAGITCoreResolveQuorumTest is Test {
         uint256 tokenId = _setupFlaggedAsset();
 
         vm.prank(resolver1);
-        vm.expectRevert(
-            abi.encodeWithSelector(TAGITCore.QuorumNotReached.selector, tokenId, 0, 2)
-        );
+        vm.expectRevert(abi.encodeWithSelector(TAGITCore.QuorumNotReached.selector, tokenId, 0, 2));
         tagitCore.resolve(tokenId, consumer);
     }
 
@@ -247,7 +246,7 @@ contract TAGITCoreResolveQuorumTest is Test {
         vm.prank(resolver1);
         tagitCore.resolve(tokenId, consumer);
 
-        (address assetOwner, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (address assetOwner,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.CLAIMED), "State should be CLAIMED");
         assertEq(assetOwner, consumer, "Owner should be consumer");
     }
@@ -264,9 +263,7 @@ contract TAGITCoreResolveQuorumTest is Test {
 
         // Same resolver tries to approve again
         vm.prank(resolver1);
-        vm.expectRevert(
-            abi.encodeWithSelector(TAGITCore.AlreadyApproved.selector, tokenId, resolver1)
-        );
+        vm.expectRevert(abi.encodeWithSelector(TAGITCore.AlreadyApproved.selector, tokenId, resolver1));
         tagitCore.approveResolve(tokenId, consumer);
     }
 
@@ -344,10 +341,7 @@ contract TAGITCoreResolveQuorumTest is Test {
         vm.prank(resolver1);
         vm.expectRevert(
             abi.encodeWithSelector(
-                TAGITCore.InvalidState.selector,
-                tokenId,
-                TAGITCore.State.CLAIMED,
-                TAGITCore.State.FLAGGED
+                TAGITCore.InvalidState.selector, tokenId, TAGITCore.State.CLAIMED, TAGITCore.State.FLAGGED
             )
         );
         tagitCore.approveResolve(tokenId, consumer);
@@ -442,7 +436,7 @@ contract TAGITCoreResolveQuorumTest is Test {
         vm.prank(resolver3);
         tagitCore.approveResolve(tokenId, consumer);
 
-        (uint256 count, , bool quorumReached) = tagitCore.getResolveApprovalStatus(tokenId);
+        (uint256 count,, bool quorumReached) = tagitCore.getResolveApprovalStatus(tokenId);
         assertEq(count, 3, "Count should be 3");
         assertTrue(quorumReached, "Quorum should be reached with 3 approvals");
 
@@ -450,7 +444,7 @@ contract TAGITCoreResolveQuorumTest is Test {
         vm.prank(resolver1);
         tagitCore.resolve(tokenId, consumer);
 
-        (, , TAGITCore.State state, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(state), uint8(TAGITCore.State.CLAIMED), "State should be CLAIMED");
     }
 }

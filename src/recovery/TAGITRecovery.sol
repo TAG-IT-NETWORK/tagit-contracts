@@ -235,10 +235,12 @@ contract TAGITRecovery is
      * @custom:security Stake transferred before state changes (CEI)
      * @custom:emits RecoveryInitiated, AssetQuarantined
      */
-    function initiateRecovery(
-        uint256 tokenId,
-        bytes32 evidenceHash
-    ) external nonReentrant whenNotPaused returns (uint256 caseId) {
+    function initiateRecovery(uint256 tokenId, bytes32 evidenceHash)
+        external
+        nonReentrant
+        whenNotPaused
+        returns (uint256 caseId)
+    {
         // ============================================
         // NIST SECURITY CHECKS (IR-4, AC-7)
         // ============================================
@@ -321,10 +323,7 @@ contract TAGITRecovery is
      * @custom:security Only parties to the case can submit
      * @custom:emits EvidenceSubmitted
      */
-    function submitEvidence(
-        uint256 caseId,
-        bytes32 evidenceHash
-    ) external nonReentrant whenNotPaused {
+    function submitEvidence(uint256 caseId, bytes32 evidenceHash) external nonReentrant whenNotPaused {
         // ============================================
         // CHECKS
         // ============================================
@@ -358,11 +357,7 @@ contract TAGITRecovery is
      * @custom:security Double-vote prevention
      * @custom:emits VoteCast
      */
-    function vote(
-        uint256 caseId,
-        bool approve,
-        bytes32 reasonHash
-    ) external nonReentrant whenNotPaused {
+    function vote(uint256 caseId, bool approve, bytes32 reasonHash) external nonReentrant whenNotPaused {
         // ============================================
         // CHECKS
         // ============================================
@@ -392,11 +387,7 @@ contract TAGITRecovery is
         // EFFECTS
         // ============================================
         _hasVoted[caseId][msg.sender] = true;
-        _votes[caseId][msg.sender] = Vote({
-            approve: approve,
-            weight: weight,
-            reasonHash: reasonHash
-        });
+        _votes[caseId][msg.sender] = Vote({approve: approve, weight: weight, reasonHash: reasonHash});
 
         if (approve) {
             recoveryCase.votesFor += weight;
@@ -511,10 +502,7 @@ contract TAGITRecovery is
      * @custom:security Requires 2x bond
      * @custom:emits AppealFiled
      */
-    function appeal(
-        uint256 caseId,
-        bytes32 newEvidenceHash
-    ) external nonReentrant whenNotPaused {
+    function appeal(uint256 caseId, bytes32 newEvidenceHash) external nonReentrant whenNotPaused {
         // ============================================
         // NIST SECURITY CHECKS (IR-4, AC-7)
         // ============================================
@@ -790,19 +778,11 @@ contract TAGITRecovery is
      * @param globalMax Max global actions per window (0 = no global limit)
      * @custom:security Governor-gated
      */
-    function setRateLimitConfig(
-        uint64 maxPerWindow,
-        uint64 windowDuration,
-        uint64 cooldownDuration,
-        uint64 globalMax
-    ) external onlyGovernor {
-        RateLimiter.updateConfig(
-            _rateLimitConfig,
-            maxPerWindow,
-            windowDuration,
-            cooldownDuration,
-            globalMax
-        );
+    function setRateLimitConfig(uint64 maxPerWindow, uint64 windowDuration, uint64 cooldownDuration, uint64 globalMax)
+        external
+        onlyGovernor
+    {
+        RateLimiter.updateConfig(_rateLimitConfig, maxPerWindow, windowDuration, cooldownDuration, globalMax);
     }
 
     /**
@@ -821,12 +801,11 @@ contract TAGITRecovery is
      * @return tripped Whether circuit is tripped
      * @return cooldownEnds Cooldown end timestamp
      */
-    function getCircuitBreakerState() external view returns (
-        uint64 count,
-        uint64 windowStart,
-        bool tripped,
-        uint64 cooldownEnds
-    ) {
+    function getCircuitBreakerState()
+        external
+        view
+        returns (uint64 count, uint64 windowStart, bool tripped, uint64 cooldownEnds)
+    {
         return (
             _recoveryCircuit.count,
             _recoveryCircuit.windowStart,
@@ -842,11 +821,11 @@ contract TAGITRecovery is
      * @return windowStart Window start timestamp
      * @return lockedUntil Lockout end timestamp (0 = not locked)
      */
-    function getUserRateLimitState(address user) external view returns (
-        uint64 count,
-        uint64 windowStart,
-        uint64 lockedUntil
-    ) {
+    function getUserRateLimitState(address user)
+        external
+        view
+        returns (uint64 count, uint64 windowStart, uint64 lockedUntil)
+    {
         return RateLimiter.getUserState(_rateLimitStates, user);
     }
 
@@ -857,11 +836,11 @@ contract TAGITRecovery is
      * @return remaining Actions remaining in current window
      * @return lockedUntil Lockout end timestamp (0 = not locked)
      */
-    function getRemainingActions(address user) external view returns (
-        bool canAct_,
-        uint256 remaining,
-        uint256 lockedUntil
-    ) {
+    function getRemainingActions(address user)
+        external
+        view
+        returns (bool canAct_, uint256 remaining, uint256 lockedUntil)
+    {
         return _rateLimitConfig.canAct(_rateLimitStates, user);
     }
 

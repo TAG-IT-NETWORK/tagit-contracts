@@ -61,13 +61,13 @@ contract TAGITAgentReputation is Ownable, Pausable, ReentrancyGuard {
      * @dev Stores a single feedback entry for an agent
      */
     struct Feedback {
-        address reviewer;       // Address that gave the feedback
-        uint256 agentId;        // Agent being reviewed
-        uint8 rating;           // 1-5 star rating
-        string comment;         // Feedback text
-        string response;        // Agent's response (if any)
-        uint64 timestamp;       // When feedback was given
-        bool revoked;           // Whether feedback has been revoked
+        address reviewer; // Address that gave the feedback
+        uint256 agentId; // Agent being reviewed
+        uint8 rating; // 1-5 star rating
+        string comment; // Feedback text
+        string response; // Agent's response (if any)
+        uint64 timestamp; // When feedback was given
+        bool revoked; // Whether feedback has been revoked
     }
 
     /**
@@ -75,11 +75,11 @@ contract TAGITAgentReputation is Ownable, Pausable, ReentrancyGuard {
      * @dev Computed on-chain for gas-efficient reads
      */
     struct ReputationSummary {
-        uint256 totalFeedback;      // Total feedback received (including revoked)
-        uint256 activeFeedback;     // Non-revoked feedback count
-        uint256 averageRating;      // Simple average (scaled by 100 for precision)
-        uint256 weightedScore;      // Time-weighted score (scaled by 100)
-        uint64 lastFeedbackAt;      // Timestamp of most recent feedback
+        uint256 totalFeedback; // Total feedback received (including revoked)
+        uint256 activeFeedback; // Non-revoked feedback count
+        uint256 averageRating; // Simple average (scaled by 100 for precision)
+        uint256 weightedScore; // Time-weighted score (scaled by 100)
+        uint64 lastFeedbackAt; // Timestamp of most recent feedback
     }
 
     // ============================================
@@ -133,12 +133,7 @@ contract TAGITAgentReputation is Ownable, Pausable, ReentrancyGuard {
     // ============================================
 
     /// @notice Emitted when feedback is given
-    event FeedbackGiven(
-        uint256 indexed feedbackId,
-        uint256 indexed agentId,
-        address indexed reviewer,
-        uint8 rating
-    );
+    event FeedbackGiven(uint256 indexed feedbackId, uint256 indexed agentId, address indexed reviewer, uint8 rating);
 
     /// @notice Emitted when feedback is revoked
     event FeedbackRevoked(uint256 indexed feedbackId, uint256 indexed agentId);
@@ -321,11 +316,7 @@ contract TAGITAgentReputation is Ownable, Pausable, ReentrancyGuard {
      * @custom:security Only reviewer, ReentrancyGuard
      * @custom:emits FeedbackRevoked
      */
-    function revokeFeedback(uint256 feedbackId)
-        external
-        nonReentrant
-        whenNotPaused
-    {
+    function revokeFeedback(uint256 feedbackId) external nonReentrant whenNotPaused {
         // ============================================
         // CHECKS
         // ============================================
@@ -354,11 +345,7 @@ contract TAGITAgentReputation is Ownable, Pausable, ReentrancyGuard {
      * @custom:security Only agent registrant, ReentrancyGuard, Pausable
      * @custom:emits ResponseAppended
      */
-    function appendResponse(uint256 feedbackId, string calldata responseText)
-        external
-        nonReentrant
-        whenNotPaused
-    {
+    function appendResponse(uint256 feedbackId, string calldata responseText) external nonReentrant whenNotPaused {
         // ============================================
         // CHECKS
         // ============================================

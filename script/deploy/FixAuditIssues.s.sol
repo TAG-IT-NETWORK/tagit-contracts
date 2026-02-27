@@ -25,12 +25,12 @@ contract FixAuditIssues is Script {
     // Deployed addresses from registry
     address constant CAPABILITY_BADGE = 0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505;
     address constant TAGIT_CORE_PROXY = 0x8BdE22da889306d422802728cb98B6Da42ed8e1a;
-    address constant TAGIT_PROGRAMS   = 0x4d1007eB4823a5a13905A0361478C339421ce4C9;
-    address constant TAGIT_RECOVERY   = 0x17c0af6B37aBD06587303f1695a06A668F8A5A8c;
-    address constant TAGIT_TREASURY   = 0x841B07Ad929CCC589446e29Aa0C4Dd1639B48674;
+    address constant TAGIT_PROGRAMS = 0x4d1007eB4823a5a13905A0361478C339421ce4C9;
+    address constant TAGIT_RECOVERY = 0x17c0af6B37aBD06587303f1695a06A668F8A5A8c;
+    address constant TAGIT_TREASURY = 0x841B07Ad929CCC589446e29Aa0C4Dd1639B48674;
 
     // Capability IDs
-    uint256 constant CAP_BIND     = 101;
+    uint256 constant CAP_BIND = 101;
     uint256 constant CAP_ACTIVATE = 102;
 
     function run() external {

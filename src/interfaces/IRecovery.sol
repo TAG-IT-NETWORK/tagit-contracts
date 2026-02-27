@@ -17,12 +17,12 @@ interface IRecovery {
      * @dev NONE is default (case doesn't exist), others represent case lifecycle
      */
     enum CaseStatus {
-        NONE,       // 0 - Case doesn't exist
-        PENDING,    // 1 - Case created, awaiting votes
-        VOTING,     // 2 - Voting period active
-        RESOLVED,   // 3 - Approved - asset returned to claimant
-        REJECTED,   // 4 - Rejected - asset stays with holder
-        APPEALED    // 5 - Under appeal with higher bond
+        NONE, // 0 - Case doesn't exist
+        PENDING, // 1 - Case created, awaiting votes
+        VOTING, // 2 - Voting period active
+        RESOLVED, // 3 - Approved - asset returned to claimant
+        REJECTED, // 4 - Rejected - asset stays with holder
+        APPEALED // 5 - Under appeal with higher bond
     }
 
     // ============================================
@@ -34,26 +34,26 @@ interface IRecovery {
      * @dev Packed for gas efficiency where possible
      */
     struct RecoveryCase {
-        uint256 tokenId;           // Asset in dispute
-        address claimant;          // Who initiated recovery
-        address currentHolder;     // Current NFT owner at initiation
-        bytes32 evidenceHash;      // Initial evidence IPFS hash
-        uint48 createdAt;          // Case creation timestamp
-        uint48 votingEndsAt;       // Voting deadline
-        CaseStatus status;         // Current case status
-        uint256 stakeBond;         // Claimant's staked collateral
-        uint256 votesFor;          // Weighted votes approving return to claimant
-        uint256 votesAgainst;      // Weighted votes rejecting claim
-        uint256 voteCount;         // Total number of votes cast
+        uint256 tokenId; // Asset in dispute
+        address claimant; // Who initiated recovery
+        address currentHolder; // Current NFT owner at initiation
+        bytes32 evidenceHash; // Initial evidence IPFS hash
+        uint48 createdAt; // Case creation timestamp
+        uint48 votingEndsAt; // Voting deadline
+        CaseStatus status; // Current case status
+        uint256 stakeBond; // Claimant's staked collateral
+        uint256 votesFor; // Weighted votes approving return to claimant
+        uint256 votesAgainst; // Weighted votes rejecting claim
+        uint256 voteCount; // Total number of votes cast
     }
 
     /**
      * @notice Individual vote record
      */
     struct Vote {
-        bool approve;              // true = return to claimant
-        uint256 weight;            // Badge-weighted vote power
-        bytes32 reasonHash;        // Optional rationale (IPFS hash)
+        bool approve; // true = return to claimant
+        uint256 weight; // Badge-weighted vote power
+        bytes32 reasonHash; // Optional rationale (IPFS hash)
     }
 
     // ============================================
@@ -135,120 +135,57 @@ interface IRecovery {
     );
 
     /// @notice Emitted when additional evidence is submitted
-    event EvidenceSubmitted(
-        uint256 indexed caseId,
-        address indexed submitter,
-        bytes32 evidenceHash
-    );
+    event EvidenceSubmitted(uint256 indexed caseId, address indexed submitter, bytes32 evidenceHash);
 
     /// @notice Emitted when vote is cast
-    event VoteCast(
-        uint256 indexed caseId,
-        address indexed voter,
-        bool approve,
-        uint256 weight,
-        bytes32 reasonHash
-    );
+    event VoteCast(uint256 indexed caseId, address indexed voter, bool approve, uint256 weight, bytes32 reasonHash);
 
     /// @notice Emitted when case is resolved
     event CaseResolved(
-        uint256 indexed caseId,
-        CaseStatus outcome,
-        address winner,
-        uint256 votesFor,
-        uint256 votesAgainst
+        uint256 indexed caseId, CaseStatus outcome, address winner, uint256 votesFor, uint256 votesAgainst
     );
 
     /// @notice Emitted when asset is quarantined
-    event AssetQuarantined(
-        uint256 indexed tokenId,
-        uint256 indexed caseId
-    );
+    event AssetQuarantined(uint256 indexed tokenId, uint256 indexed caseId);
 
     /// @notice Emitted when quarantine is released
-    event QuarantineReleased(
-        uint256 indexed tokenId
-    );
+    event QuarantineReleased(uint256 indexed tokenId);
 
     /// @notice Emitted when stake is slashed
-    event StakeSlashed(
-        uint256 indexed caseId,
-        address indexed claimant,
-        uint256 amount,
-        address treasury
-    );
+    event StakeSlashed(uint256 indexed caseId, address indexed claimant, uint256 amount, address treasury);
 
     /// @notice Emitted when stake is returned
-    event StakeReturned(
-        uint256 indexed caseId,
-        address indexed claimant,
-        uint256 amount
-    );
+    event StakeReturned(uint256 indexed caseId, address indexed claimant, uint256 amount);
 
     /// @notice Emitted when appeal is filed
-    event AppealFiled(
-        uint256 indexed caseId,
-        address indexed appellant,
-        uint256 newBond,
-        bytes32 newEvidenceHash
-    );
+    event AppealFiled(uint256 indexed caseId, address indexed appellant, uint256 newBond, bytes32 newEvidenceHash);
 
     /// @notice Emitted when governor is updated
-    event GovernorUpdated(
-        address indexed oldGovernor,
-        address indexed newGovernor
-    );
+    event GovernorUpdated(address indexed oldGovernor, address indexed newGovernor);
 
     /// @notice Emitted when treasury is updated
-    event TreasuryUpdated(
-        address indexed oldTreasury,
-        address indexed newTreasury
-    );
+    event TreasuryUpdated(address indexed oldTreasury, address indexed newTreasury);
 
     /// @notice Emitted when core contract is updated
-    event CoreUpdated(
-        address indexed oldCore,
-        address indexed newCore
-    );
+    event CoreUpdated(address indexed oldCore, address indexed newCore);
 
     /// @notice Emitted when token contract is updated
-    event TokenUpdated(
-        address indexed oldToken,
-        address indexed newToken
-    );
+    event TokenUpdated(address indexed oldToken, address indexed newToken);
 
     /// @notice Emitted when voting duration is updated
-    event VotingDurationUpdated(
-        uint256 oldDuration,
-        uint256 newDuration
-    );
+    event VotingDurationUpdated(uint256 oldDuration, uint256 newDuration);
 
     /// @notice Emitted when minimum stake is updated
-    event MinimumStakeUpdated(
-        uint256 oldStake,
-        uint256 newStake
-    );
+    event MinimumStakeUpdated(uint256 oldStake, uint256 newStake);
 
     /// @notice Emitted when circuit breaker trips
-    event CircuitTripped(
-        uint256 indexed timestamp,
-        uint256 count,
-        uint256 threshold,
-        uint256 cooldownEnds
-    );
+    event CircuitTripped(uint256 indexed timestamp, uint256 count, uint256 threshold, uint256 cooldownEnds);
 
     /// @notice Emitted when circuit breaker resets
-    event CircuitReset(
-        uint256 indexed timestamp,
-        uint256 previousCooldownEnds
-    );
+    event CircuitReset(uint256 indexed timestamp, uint256 previousCooldownEnds);
 
     /// @notice Emitted when rate limit is hit
-    event RateLimitHit(
-        address indexed user,
-        uint256 count,
-        uint256 lockedUntil
-    );
+    event RateLimitHit(address indexed user, uint256 count, uint256 lockedUntil);
 
     // ============================================
     // CORE FUNCTIONS
@@ -261,10 +198,7 @@ interface IRecovery {
      * @param evidenceHash IPFS hash of supporting evidence
      * @return caseId The ID of the created recovery case
      */
-    function initiateRecovery(
-        uint256 tokenId,
-        bytes32 evidenceHash
-    ) external returns (uint256 caseId);
+    function initiateRecovery(uint256 tokenId, bytes32 evidenceHash) external returns (uint256 caseId);
 
     /**
      * @notice Submit additional evidence to an active case
@@ -272,10 +206,7 @@ interface IRecovery {
      * @param caseId The recovery case ID
      * @param evidenceHash IPFS hash of additional evidence
      */
-    function submitEvidence(
-        uint256 caseId,
-        bytes32 evidenceHash
-    ) external;
+    function submitEvidence(uint256 caseId, bytes32 evidenceHash) external;
 
     /**
      * @notice Cast a vote on a recovery case
@@ -284,11 +215,7 @@ interface IRecovery {
      * @param approve True to approve return to claimant, false to reject
      * @param reasonHash Optional IPFS hash of vote rationale
      */
-    function vote(
-        uint256 caseId,
-        bool approve,
-        bytes32 reasonHash
-    ) external;
+    function vote(uint256 caseId, bool approve, bytes32 reasonHash) external;
 
     /**
      * @notice Execute resolution after voting period ends
@@ -303,10 +230,7 @@ interface IRecovery {
      * @param caseId The recovery case ID
      * @param newEvidenceHash IPFS hash of appeal evidence
      */
-    function appeal(
-        uint256 caseId,
-        bytes32 newEvidenceHash
-    ) external;
+    function appeal(uint256 caseId, bytes32 newEvidenceHash) external;
 
     // ============================================
     // VIEW FUNCTIONS

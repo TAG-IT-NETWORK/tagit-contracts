@@ -31,12 +31,7 @@ import {BASIS_POINTS} from "../libraries/Constants.sol";
  *
  * @custom:security-contact security@tagit.network
  */
-contract IntegrationFactory is
-    IIntegrationFactory,
-    Ownable,
-    Pausable,
-    ReentrancyGuard
-{
+contract IntegrationFactory is IIntegrationFactory, Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using ECDSA for bytes32;
     using MessageHashUtils for bytes32;
@@ -102,12 +97,9 @@ contract IntegrationFactory is
      * @param signers Initial multi-sig signers (minimum 3)
      * @param requiredSigs Required signatures (e.g., 2 of 3)
      */
-    constructor(
-        address burnerAddr,
-        address initialOwner,
-        address[] memory signers,
-        uint256 requiredSigs
-    ) Ownable(initialOwner) {
+    constructor(address burnerAddr, address initialOwner, address[] memory signers, uint256 requiredSigs)
+        Ownable(initialOwner)
+    {
         if (burnerAddr == address(0)) revert ZeroAddress();
         if (initialOwner == address(0)) revert ZeroAddress();
         if (signers.length < MIN_SIGNERS) revert MinimumSignersRequired();
@@ -145,12 +137,13 @@ contract IntegrationFactory is
     // ============================================
 
     /// @inheritdoc IIntegrationFactory
-    function deployIntegration(
-        uint256 agentId,
-        address partnerWallet,
-        uint96 feeRate,
-        address paymentToken
-    ) external onlyOwner nonReentrant whenNotPaused returns (uint256 integrationId) {
+    function deployIntegration(uint256 agentId, address partnerWallet, uint96 feeRate, address paymentToken)
+        external
+        onlyOwner
+        nonReentrant
+        whenNotPaused
+        returns (uint256 integrationId)
+    {
         // CHECKS
         if (agentId == 0) revert InvalidAgentId(agentId);
         if (partnerWallet == address(0)) revert ZeroAddress();
@@ -178,10 +171,12 @@ contract IntegrationFactory is
     }
 
     /// @inheritdoc IIntegrationFactory
-    function processPayment(
-        uint256 integrationId,
-        uint256 amount
-    ) external nonReentrant whenNotPaused onlyAuthorizedIntegrator {
+    function processPayment(uint256 integrationId, uint256 amount)
+        external
+        nonReentrant
+        whenNotPaused
+        onlyAuthorizedIntegrator
+    {
         // CHECKS
         if (amount == 0) revert ZeroAmount();
         if (amount > _maxPaymentPerTx) revert PaymentExceedsCap(amount, _maxPaymentPerTx);
@@ -214,9 +209,7 @@ contract IntegrationFactory is
     }
 
     /// @inheritdoc IIntegrationFactory
-    function deactivateIntegration(
-        uint256 integrationId
-    ) external onlyOwner nonReentrant {
+    function deactivateIntegration(uint256 integrationId) external onlyOwner nonReentrant {
         Integration storage integration = _integrations[integrationId];
         if (!integration.active) revert IntegrationNotActive(integrationId);
         if (integration.deactivateRequestedAt != 0) {
@@ -231,9 +224,7 @@ contract IntegrationFactory is
     }
 
     /// @inheritdoc IIntegrationFactory
-    function executeDeactivation(
-        uint256 integrationId
-    ) external nonReentrant {
+    function executeDeactivation(uint256 integrationId) external nonReentrant {
         Integration storage integration = _integrations[integrationId];
         if (!integration.active) revert IntegrationNotActive(integrationId);
         if (integration.deactivateRequestedAt == 0) {
@@ -253,14 +244,8 @@ contract IntegrationFactory is
     }
 
     /// @inheritdoc IIntegrationFactory
-    function reactivateIntegration(
-        uint256 integrationId,
-        bytes[] calldata signatures
-    ) external nonReentrant {
-        _verifyMultiSig(
-            keccak256(abi.encodePacked("REACTIVATE", integrationId, _nonce)),
-            signatures
-        );
+    function reactivateIntegration(uint256 integrationId, bytes[] calldata signatures) external nonReentrant {
+        _verifyMultiSig(keccak256(abi.encodePacked("REACTIVATE", integrationId, _nonce)), signatures);
         _nonce++;
 
         Integration storage integration = _integrations[integrationId];
@@ -280,16 +265,10 @@ contract IntegrationFactory is
     // ============================================
 
     /// @inheritdoc IIntegrationFactory
-    function setMaxPayment(
-        uint256 newMax,
-        bytes[] calldata signatures
-    ) external nonReentrant {
+    function setMaxPayment(uint256 newMax, bytes[] calldata signatures) external nonReentrant {
         if (newMax == 0) revert ZeroAmount();
 
-        _verifyMultiSig(
-            keccak256(abi.encodePacked("SET_MAX_PAYMENT", newMax, _nonce)),
-            signatures
-        );
+        _verifyMultiSig(keccak256(abi.encodePacked("SET_MAX_PAYMENT", newMax, _nonce)), signatures);
         _nonce++;
 
         uint256 oldMax = _maxPaymentPerTx;
@@ -299,17 +278,11 @@ contract IntegrationFactory is
     }
 
     /// @inheritdoc IIntegrationFactory
-    function addSigner(
-        address signer,
-        bytes[] calldata signatures
-    ) external nonReentrant {
+    function addSigner(address signer, bytes[] calldata signatures) external nonReentrant {
         if (signer == address(0)) revert ZeroAddress();
         if (_signers[signer]) revert SignerAlreadyExists(signer);
 
-        _verifyMultiSig(
-            keccak256(abi.encodePacked("ADD_SIGNER", signer, _nonce)),
-            signatures
-        );
+        _verifyMultiSig(keccak256(abi.encodePacked("ADD_SIGNER", signer, _nonce)), signatures);
         _nonce++;
 
         _signers[signer] = true;
@@ -319,17 +292,11 @@ contract IntegrationFactory is
     }
 
     /// @inheritdoc IIntegrationFactory
-    function removeSigner(
-        address signer,
-        bytes[] calldata signatures
-    ) external nonReentrant {
+    function removeSigner(address signer, bytes[] calldata signatures) external nonReentrant {
         if (!_signers[signer]) revert SignerNotFound(signer);
         if (_signerList.length <= MIN_SIGNERS) revert MinimumSignersRequired();
 
-        _verifyMultiSig(
-            keccak256(abi.encodePacked("REMOVE_SIGNER", signer, _nonce)),
-            signatures
-        );
+        _verifyMultiSig(keccak256(abi.encodePacked("REMOVE_SIGNER", signer, _nonce)), signatures);
         _nonce++;
 
         _signers[signer] = false;
@@ -351,10 +318,7 @@ contract IntegrationFactory is
      * @param signatures Multi-sig signatures
      */
     function emergencyPause(bytes[] calldata signatures) external nonReentrant {
-        _verifyMultiSig(
-            keccak256(abi.encodePacked("EMERGENCY_PAUSE", _nonce)),
-            signatures
-        );
+        _verifyMultiSig(keccak256(abi.encodePacked("EMERGENCY_PAUSE", _nonce)), signatures);
         _nonce++;
 
         _pause();
@@ -365,10 +329,7 @@ contract IntegrationFactory is
      * @param signatures Multi-sig signatures
      */
     function emergencyUnpause(bytes[] calldata signatures) external nonReentrant {
-        _verifyMultiSig(
-            keccak256(abi.encodePacked("EMERGENCY_UNPAUSE", _nonce)),
-            signatures
-        );
+        _verifyMultiSig(keccak256(abi.encodePacked("EMERGENCY_UNPAUSE", _nonce)), signatures);
         _nonce++;
 
         _unpause();
@@ -402,23 +363,17 @@ contract IntegrationFactory is
     // ============================================
 
     /// @inheritdoc IIntegrationFactory
-    function getIntegration(uint256 integrationId)
-        external view returns (Integration memory)
-    {
+    function getIntegration(uint256 integrationId) external view returns (Integration memory) {
         return _integrations[integrationId];
     }
 
     /// @inheritdoc IIntegrationFactory
-    function getIntegrationByAgent(uint256 agentId)
-        external view returns (uint256)
-    {
+    function getIntegrationByAgent(uint256 agentId) external view returns (uint256) {
         return _agentToIntegration[agentId];
     }
 
     /// @inheritdoc IIntegrationFactory
-    function getIntegrationStatus(uint256 integrationId)
-        external view returns (IntegrationStatus)
-    {
+    function getIntegrationStatus(uint256 integrationId) external view returns (IntegrationStatus) {
         Integration storage integration = _integrations[integrationId];
 
         if (!integration.active) {
@@ -431,9 +386,7 @@ contract IntegrationFactory is
     }
 
     /// @inheritdoc IIntegrationFactory
-    function isIntegrationActive(uint256 integrationId)
-        external view returns (bool)
-    {
+    function isIntegrationActive(uint256 integrationId) external view returns (bool) {
         return _integrations[integrationId].active;
     }
 
@@ -482,10 +435,7 @@ contract IntegrationFactory is
      * @param messageHash The hash of the operation being authorized
      * @param signatures Array of signatures from signers
      */
-    function _verifyMultiSig(
-        bytes32 messageHash,
-        bytes[] calldata signatures
-    ) internal view {
+    function _verifyMultiSig(bytes32 messageHash, bytes[] calldata signatures) internal view {
         if (signatures.length < _requiredSignatures) {
             revert InsufficientSignatures(signatures.length, _requiredSignatures);
         }

@@ -124,12 +124,7 @@ contract CircuitBreakerTest is Test {
         vm.warp(block.timestamp + COOLDOWN_DURATION / 2);
 
         // Should revert with remaining time
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                CircuitBreaker.CircuitBreakerCooldown.selector,
-                COOLDOWN_DURATION / 2
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(CircuitBreaker.CircuitBreakerCooldown.selector, COOLDOWN_DURATION / 2));
         harness.check();
     }
 
@@ -192,12 +187,7 @@ contract CircuitBreakerTest is Test {
         uint256 expectedCooldownEnds = block.timestamp + COOLDOWN_DURATION;
 
         vm.expectEmit(true, false, false, true);
-        emit CircuitBreaker.CircuitTripped(
-            block.timestamp,
-            THRESHOLD,
-            THRESHOLD,
-            expectedCooldownEnds
-        );
+        emit CircuitBreaker.CircuitTripped(block.timestamp, THRESHOLD, THRESHOLD, expectedCooldownEnds);
         harness.check();
     }
 
@@ -457,11 +447,7 @@ contract CircuitBreakerHarness {
 
     CircuitBreaker.Config private _config;
 
-    function initialize(
-        uint32 threshold,
-        uint64 windowDuration,
-        uint64 cooldownDuration
-    ) external {
+    function initialize(uint32 threshold, uint64 windowDuration, uint64 cooldownDuration) external {
         _config.initialize(threshold, windowDuration, cooldownDuration);
     }
 
@@ -501,15 +487,19 @@ contract CircuitBreakerHarness {
         return _config.isInitialized();
     }
 
-    function getConfig() external view returns (
-        uint64 windowStart,
-        uint64 cooldownEnds,
-        uint64 count,
-        uint32 threshold,
-        bool tripped,
-        uint64 windowDuration,
-        uint64 cooldownDuration
-    ) {
+    function getConfig()
+        external
+        view
+        returns (
+            uint64 windowStart,
+            uint64 cooldownEnds,
+            uint64 count,
+            uint32 threshold,
+            bool tripped,
+            uint64 windowDuration,
+            uint64 cooldownDuration
+        )
+    {
         return (
             _config.windowStart,
             _config.cooldownEnds,

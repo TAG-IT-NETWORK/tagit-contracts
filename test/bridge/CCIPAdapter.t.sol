@@ -42,13 +42,8 @@ contract CCIPAdapterTest is Test {
         adapterImpl = new CCIPAdapter();
 
         // Deploy proxy
-        bytes memory initData = abi.encodeWithSelector(
-            CCIPAdapter.initialize.selector,
-            router,
-            governor,
-            tagitCore,
-            owner
-        );
+        bytes memory initData =
+            abi.encodeWithSelector(CCIPAdapter.initialize.selector, router, governor, tagitCore, owner);
         ERC1967Proxy proxy = new ERC1967Proxy(address(adapterImpl), initData);
         adapter = CCIPAdapter(payable(address(proxy)));
 
@@ -75,13 +70,7 @@ contract CCIPAdapterTest is Test {
         vm.expectRevert(ICCIPAdapter.ZeroAddress.selector);
         new ERC1967Proxy(
             address(newImpl),
-            abi.encodeWithSelector(
-                CCIPAdapter.initialize.selector,
-                address(0),
-                governor,
-                tagitCore,
-                owner
-            )
+            abi.encodeWithSelector(CCIPAdapter.initialize.selector, address(0), governor, tagitCore, owner)
         );
     }
 
@@ -102,10 +91,7 @@ contract CCIPAdapterTest is Test {
 
     function test_scheduleChainAddition_createsTimelock() public {
         ICCIPAdapter.ChainConfig memory config = ICCIPAdapter.ChainConfig({
-            chainSelector: OP_MAINNET_SELECTOR,
-            adapter: makeAddr("remoteAdapter"),
-            gasLimit: DEFAULT_GAS,
-            active: true
+            chainSelector: OP_MAINNET_SELECTOR, adapter: makeAddr("remoteAdapter"), gasLimit: DEFAULT_GAS, active: true
         });
 
         vm.prank(governor);
@@ -119,10 +105,7 @@ contract CCIPAdapterTest is Test {
 
     function test_scheduleChainAddition_revertsIfNotGovernor() public {
         ICCIPAdapter.ChainConfig memory config = ICCIPAdapter.ChainConfig({
-            chainSelector: OP_MAINNET_SELECTOR,
-            adapter: makeAddr("remoteAdapter"),
-            gasLimit: DEFAULT_GAS,
-            active: true
+            chainSelector: OP_MAINNET_SELECTOR, adapter: makeAddr("remoteAdapter"), gasLimit: DEFAULT_GAS, active: true
         });
 
         vm.prank(user);
@@ -134,10 +117,7 @@ contract CCIPAdapterTest is Test {
         // Schedule
         address remoteAdapter = makeAddr("remoteAdapter");
         ICCIPAdapter.ChainConfig memory config = ICCIPAdapter.ChainConfig({
-            chainSelector: OP_MAINNET_SELECTOR,
-            adapter: remoteAdapter,
-            gasLimit: DEFAULT_GAS,
-            active: true
+            chainSelector: OP_MAINNET_SELECTOR, adapter: remoteAdapter, gasLimit: DEFAULT_GAS, active: true
         });
 
         vm.prank(governor);
@@ -159,10 +139,7 @@ contract CCIPAdapterTest is Test {
     function test_executeChainAddition_revertsBeforeTimelock() public {
         // Schedule
         ICCIPAdapter.ChainConfig memory config = ICCIPAdapter.ChainConfig({
-            chainSelector: OP_MAINNET_SELECTOR,
-            adapter: makeAddr("remoteAdapter"),
-            gasLimit: DEFAULT_GAS,
-            active: true
+            chainSelector: OP_MAINNET_SELECTOR, adapter: makeAddr("remoteAdapter"), gasLimit: DEFAULT_GAS, active: true
         });
 
         vm.prank(governor);
@@ -177,10 +154,7 @@ contract CCIPAdapterTest is Test {
     function test_cancelChainAddition_works() public {
         // Schedule
         ICCIPAdapter.ChainConfig memory config = ICCIPAdapter.ChainConfig({
-            chainSelector: OP_MAINNET_SELECTOR,
-            adapter: makeAddr("remoteAdapter"),
-            gasLimit: DEFAULT_GAS,
-            active: true
+            chainSelector: OP_MAINNET_SELECTOR, adapter: makeAddr("remoteAdapter"), gasLimit: DEFAULT_GAS, active: true
         });
 
         vm.prank(governor);
@@ -326,18 +300,10 @@ contract CCIPAdapterTest is Test {
         });
 
         // Mock the router's getFee function
-        vm.mockCall(
-            router,
-            abi.encodeWithSelector(IRouterClient.getFee.selector),
-            abi.encode(0.01 ether)
-        );
+        vm.mockCall(router, abi.encodeWithSelector(IRouterClient.getFee.selector), abi.encode(0.01 ether));
 
         // Mock ccipSend
-        vm.mockCall(
-            router,
-            abi.encodeWithSelector(IRouterClient.ccipSend.selector),
-            abi.encode(keccak256("msgId"))
-        );
+        vm.mockCall(router, abi.encodeWithSelector(IRouterClient.ccipSend.selector), abi.encode(keccak256("msgId")));
 
         // First call should succeed
         vm.prank(router);
@@ -415,16 +381,8 @@ contract CCIPAdapterTest is Test {
 
     function test_rateLimit_enforced_at100() public {
         // Mock router for sending
-        vm.mockCall(
-            router,
-            abi.encodeWithSelector(IRouterClient.getFee.selector),
-            abi.encode(0.01 ether)
-        );
-        vm.mockCall(
-            router,
-            abi.encodeWithSelector(IRouterClient.ccipSend.selector),
-            abi.encode(keccak256("msgId"))
-        );
+        vm.mockCall(router, abi.encodeWithSelector(IRouterClient.getFee.selector), abi.encode(0.01 ether));
+        vm.mockCall(router, abi.encodeWithSelector(IRouterClient.ccipSend.selector), abi.encode(keccak256("msgId")));
 
         // Add chain
         _addChainWithTimelock(OP_MAINNET_SELECTOR, makeAddr("remoteAdapter"));
@@ -453,10 +411,7 @@ contract CCIPAdapterTest is Test {
 
     function _addChainWithTimelock(uint64 chainSelector, address remoteAdapter) internal {
         ICCIPAdapter.ChainConfig memory config = ICCIPAdapter.ChainConfig({
-            chainSelector: chainSelector,
-            adapter: remoteAdapter,
-            gasLimit: DEFAULT_GAS,
-            active: true
+            chainSelector: chainSelector, adapter: remoteAdapter, gasLimit: DEFAULT_GAS, active: true
         });
 
         vm.prank(governor);
@@ -478,7 +433,11 @@ contract CCIPAdapterTest is Test {
         });
     }
 
-    function _createValidMessage(uint64 sourceChain, address sender) internal pure returns (Client.Any2EVMMessage memory) {
+    function _createValidMessage(uint64 sourceChain, address sender)
+        internal
+        pure
+        returns (Client.Any2EVMMessage memory)
+    {
         bytes32 requestId = keccak256("validRequest");
         bytes memory data = abi.encode(requestId, uint8(0), abi.encode(uint256(1), ICCIPAdapter.RequestType.VERIFY));
 

@@ -81,44 +81,44 @@ contract TAGITAgentValidation is Ownable, Pausable, ReentrancyGuard {
      * @notice Validation request
      */
     struct ValidationRequest {
-        uint256 agentId;            // Agent being validated
-        address requester;          // Who requested validation
-        uint8 quorum;               // Required number of responses
-        uint8 responseCount;        // Number of responses received
-        uint64 createdAt;           // Request creation timestamp
-        RequestStatus status;       // Current status
-        bool isDefense;             // Whether this is a defense-grade validation
+        uint256 agentId; // Agent being validated
+        address requester; // Who requested validation
+        uint8 quorum; // Required number of responses
+        uint8 responseCount; // Number of responses received
+        uint64 createdAt; // Request creation timestamp
+        RequestStatus status; // Current status
+        bool isDefense; // Whether this is a defense-grade validation
     }
 
     /**
      * @notice Validator response to a request
      */
     struct ValidatorResponse {
-        address validator;          // Validator address
-        uint8 score;                // 0-100 score
-        string justification;       // Reasoning
-        uint64 timestamp;           // Response timestamp
+        address validator; // Validator address
+        uint8 score; // 0-100 score
+        string justification; // Reasoning
+        uint64 timestamp; // Response timestamp
     }
 
     /**
      * @notice Per-agent validation summary
      */
     struct ValidationSummary {
-        uint256 totalRequests;      // Total validation requests
-        uint256 passedCount;        // Number of passed validations
-        uint256 failedCount;        // Number of failed validations
-        uint256 latestScore;        // Most recent validation score
-        uint64 lastValidatedAt;     // Last successful validation timestamp
-        bool isValidated;           // Currently validated
+        uint256 totalRequests; // Total validation requests
+        uint256 passedCount; // Number of passed validations
+        uint256 failedCount; // Number of failed validations
+        uint256 latestScore; // Most recent validation score
+        uint64 lastValidatedAt; // Last successful validation timestamp
+        bool isValidated; // Currently validated
     }
 
     /**
      * @notice Validator reputation tracking
      */
     struct ValidatorStats {
-        uint256 totalResponses;     // Total responses given
-        uint256 accurateResponses;  // Responses aligned with final outcome
-        uint64 lastResponseAt;      // Last response timestamp
+        uint256 totalResponses; // Total responses given
+        uint256 accurateResponses; // Responses aligned with final outcome
+        uint64 lastResponseAt; // Last response timestamp
     }
 
     // ============================================
@@ -170,27 +170,16 @@ contract TAGITAgentValidation is Ownable, Pausable, ReentrancyGuard {
 
     /// @notice Emitted when a validation request is created
     event ValidationRequested(
-        uint256 indexed requestId,
-        uint256 indexed agentId,
-        address indexed requester,
-        bool isDefense
+        uint256 indexed requestId, uint256 indexed agentId, address indexed requester, bool isDefense
     );
 
     /// @notice Emitted when a validator responds
     event ValidationResponseSubmitted(
-        uint256 indexed requestId,
-        uint256 indexed agentId,
-        address indexed validator,
-        uint8 score
+        uint256 indexed requestId, uint256 indexed agentId, address indexed validator, uint8 score
     );
 
     /// @notice Emitted when validation is finalized
-    event ValidationFinalized(
-        uint256 indexed requestId,
-        uint256 indexed agentId,
-        bool passed,
-        uint256 finalScore
-    );
+    event ValidationFinalized(uint256 indexed requestId, uint256 indexed agentId, bool passed, uint256 finalScore);
 
     /// @notice Emitted when access controller is updated
     event AccessControllerUpdated(address indexed previousController, address indexed newController);
@@ -373,12 +362,11 @@ contract TAGITAgentValidation is Ownable, Pausable, ReentrancyGuard {
         // ============================================
         // EFFECTS
         // ============================================
-        _responses[requestId].push(ValidatorResponse({
-            validator: msg.sender,
-            score: score,
-            justification: justification,
-            timestamp: uint64(block.timestamp)
-        }));
+        _responses[requestId].push(
+            ValidatorResponse({
+                validator: msg.sender, score: score, justification: justification, timestamp: uint64(block.timestamp)
+            })
+        );
 
         _hasResponded[requestId][msg.sender] = true;
         req.responseCount++;

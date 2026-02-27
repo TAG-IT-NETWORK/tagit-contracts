@@ -63,19 +63,13 @@ contract TAGITStakingNistTest is Test {
 
         // Deploy TAGITToken (upgradeable)
         TAGITToken tokenImpl = new TAGITToken();
-        bytes memory tokenData = abi.encodeCall(
-            TAGITToken.initialize,
-            (owner, treasury)
-        );
+        bytes memory tokenData = abi.encodeCall(TAGITToken.initialize, (owner, treasury));
         ERC1967Proxy tokenProxy = new ERC1967Proxy(address(tokenImpl), tokenData);
         token = TAGITToken(address(tokenProxy));
 
         // Deploy TAGITStaking (upgradeable)
         TAGITStaking stakingImpl = new TAGITStaking();
-        bytes memory stakingData = abi.encodeCall(
-            TAGITStaking.initialize,
-            (address(token), governor, owner)
-        );
+        bytes memory stakingData = abi.encodeCall(TAGITStaking.initialize, (address(token), governor, owner));
         ERC1967Proxy stakingProxy = new ERC1967Proxy(address(stakingImpl), stakingData);
         staking = TAGITStaking(address(stakingProxy));
 

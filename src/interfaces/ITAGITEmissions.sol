@@ -74,10 +74,7 @@ interface ITAGITEmissions {
      * @param recipients Array of recipient addresses
      * @param weights Array of weights in basis points (must sum to 10000)
      */
-    function setAllocationWeights(
-        address[] calldata recipients,
-        uint256[] calldata weights
-    ) external;
+    function setAllocationWeights(address[] calldata recipients, uint256[] calldata weights) external;
 
     // ============================================
     // VIEW FUNCTIONS

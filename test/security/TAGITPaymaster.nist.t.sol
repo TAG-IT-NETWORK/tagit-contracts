@@ -98,10 +98,7 @@ contract TAGITPaymasterNistTest is Test {
 
         // Deploy TAGITPaymaster (upgradeable)
         TAGITPaymaster paymasterImpl = new TAGITPaymaster();
-        bytes memory paymasterData = abi.encodeCall(
-            TAGITPaymaster.initialize,
-            (address(entryPoint), governor, owner)
-        );
+        bytes memory paymasterData = abi.encodeCall(TAGITPaymaster.initialize, (address(entryPoint), governor, owner));
         ERC1967Proxy paymasterProxy = new ERC1967Proxy(address(paymasterImpl), paymasterData);
         paymaster = TAGITPaymaster(payable(address(paymasterProxy)));
 
@@ -115,12 +112,7 @@ contract TAGITPaymasterNistTest is Test {
         vm.prank(governor);
         paymaster.setSponsorshipConfig(
             TEST_SELECTOR,
-            ITAGITPaymaster.SponsorshipConfig({
-                selector: TEST_SELECTOR,
-                maxGas: 500000,
-                dailyLimit: 100,
-                active: true
-            })
+            ITAGITPaymaster.SponsorshipConfig({selector: TEST_SELECTOR, maxGas: 500000, dailyLimit: 100, active: true})
         );
 
         // Fund paymaster with protocol deposit for drain detection tests
@@ -138,12 +130,7 @@ contract TAGITPaymasterNistTest is Test {
 
         // Call postOp as if from EntryPoint
         vm.prank(address(entryPoint));
-        paymaster.postOp(
-            IPaymaster.PostOpMode.opSucceeded,
-            context,
-            gasCost,
-            tx.gasprice
-        );
+        paymaster.postOp(IPaymaster.PostOpMode.opSucceeded, context, gasCost, tx.gasprice);
     }
 
     // ============================================
@@ -210,7 +197,7 @@ contract TAGITPaymasterNistTest is Test {
         vm.prank(user);
         paymaster.depositForBrand{value: 5 ether}(TEST_BRAND_ID);
 
-        (uint128 trackedBalance,,,,, ) = paymaster.getDrainDetectorState();
+        (uint128 trackedBalance,,,,,) = paymaster.getDrainDetectorState();
         assertEq(trackedBalance, 15 ether); // 10 + 5
     }
 
@@ -222,12 +209,7 @@ contract TAGITPaymasterNistTest is Test {
         // Need to fund the tracked balance to allow the check
         // Spike check: 2 ETH > 1 ETH (10% of 10 ETH) = should trip
         vm.prank(address(entryPoint));
-        paymaster.postOp(
-            IPaymaster.PostOpMode.opSucceeded,
-            context,
-            2 ether,
-            tx.gasprice
-        );
+        paymaster.postOp(IPaymaster.PostOpMode.opSucceeded, context, 2 ether, tx.gasprice);
 
         // Should be paused now
         assertTrue(paymaster.paused());
@@ -237,7 +219,7 @@ contract TAGITPaymasterNistTest is Test {
         vm.prank(governor);
         paymaster.updateDrainBalance(50 ether);
 
-        (uint128 trackedBalance,,,,, ) = paymaster.getDrainDetectorState();
+        (uint128 trackedBalance,,,,,) = paymaster.getDrainDetectorState();
         assertEq(trackedBalance, 50 ether);
     }
 
@@ -251,7 +233,7 @@ contract TAGITPaymasterNistTest is Test {
         vm.prank(governor);
         paymaster.syncDrainBalance();
 
-        (uint128 trackedBalance,,,,, ) = paymaster.getDrainDetectorState();
+        (uint128 trackedBalance,,,,,) = paymaster.getDrainDetectorState();
         assertEq(trackedBalance, 100 ether);
     }
 
@@ -338,12 +320,7 @@ contract TAGITPaymasterNistTest is Test {
         vm.prank(governor);
         paymaster.setSponsorshipConfig(
             newSelector,
-            ITAGITPaymaster.SponsorshipConfig({
-                selector: newSelector,
-                maxGas: 100000,
-                dailyLimit: 50,
-                active: true
-            })
+            ITAGITPaymaster.SponsorshipConfig({selector: newSelector, maxGas: 100000, dailyLimit: 50, active: true})
         );
 
         assertTrue(paymaster.isSponsoredOperation(newSelector));
@@ -361,12 +338,7 @@ contract TAGITPaymasterNistTest is Test {
 
         vm.prank(address(entryPoint));
         uint256 gasBefore = gasleft();
-        paymaster.postOp(
-            IPaymaster.PostOpMode.opSucceeded,
-            context,
-            0.001 ether,
-            tx.gasprice
-        );
+        paymaster.postOp(IPaymaster.PostOpMode.opSucceeded, context, 0.001 ether, tx.gasprice);
         uint256 gasUsed = gasBefore - gasleft();
 
         // postOp should be reasonably cheap (< 50k gas overhead from security)
@@ -397,12 +369,7 @@ contract TAGITPaymasterNistTest is Test {
         bytes memory context = abi.encode(user, TEST_SELECTOR, bytes32(0), 2 ether);
 
         vm.prank(address(entryPoint));
-        paymaster.postOp(
-            IPaymaster.PostOpMode.opSucceeded,
-            context,
-            2 ether,
-            tx.gasprice
-        );
+        paymaster.postOp(IPaymaster.PostOpMode.opSucceeded, context, 2 ether, tx.gasprice);
 
         // Should be auto-paused
         assertTrue(paymaster.paused());
@@ -413,12 +380,7 @@ contract TAGITPaymasterNistTest is Test {
 
         vm.prank(attacker);
         vm.expectRevert();
-        paymaster.postOp(
-            IPaymaster.PostOpMode.opSucceeded,
-            context,
-            0.001 ether,
-            tx.gasprice
-        );
+        paymaster.postOp(IPaymaster.PostOpMode.opSucceeded, context, 0.001 ether, tx.gasprice);
     }
 
     function test_security_adminFunctionsProtected() public {
@@ -448,12 +410,7 @@ contract TAGITPaymasterNistTest is Test {
 
         vm.startPrank(address(entryPoint));
         for (uint256 i = 0; i < 10; i++) {
-            paymaster.postOp(
-                IPaymaster.PostOpMode.opSucceeded,
-                context,
-                0.05 ether,
-                tx.gasprice
-            );
+            paymaster.postOp(IPaymaster.PostOpMode.opSucceeded, context, 0.05 ether, tx.gasprice);
         }
         vm.stopPrank();
 
@@ -465,12 +422,7 @@ contract TAGITPaymasterNistTest is Test {
         // Trip the drain detector
         bytes memory context = abi.encode(user, TEST_SELECTOR, bytes32(0), 2 ether);
         vm.prank(address(entryPoint));
-        paymaster.postOp(
-            IPaymaster.PostOpMode.opSucceeded,
-            context,
-            2 ether,
-            tx.gasprice
-        );
+        paymaster.postOp(IPaymaster.PostOpMode.opSucceeded, context, 2 ether, tx.gasprice);
 
         assertTrue(paymaster.paused());
 
@@ -486,11 +438,6 @@ contract TAGITPaymasterNistTest is Test {
         // Normal operations resume after cooldown
         bytes memory smallContext = abi.encode(user, TEST_SELECTOR, bytes32(0), 0.01 ether);
         vm.prank(address(entryPoint));
-        paymaster.postOp(
-            IPaymaster.PostOpMode.opSucceeded,
-            smallContext,
-            0.01 ether,
-            tx.gasprice
-        );
+        paymaster.postOp(IPaymaster.PostOpMode.opSucceeded, smallContext, 0.01 ether, tx.gasprice);
     }
 }

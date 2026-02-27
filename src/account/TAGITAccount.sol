@@ -27,27 +27,13 @@ contract TAGITAccount is IAccount, ITAGITAccount, ReentrancyGuard {
     // ============================================
 
     /// @notice Emitted when a session key is used to sign a transaction
-    event SessionKeyUsed(
-        address indexed sessionKey,
-        bytes32 indexed userOpHash,
-        uint256 timestamp,
-        uint48 validUntil
-    );
+    event SessionKeyUsed(address indexed sessionKey, bytes32 indexed userOpHash, uint256 timestamp, uint48 validUntil);
 
     /// @notice Emitted when a session key validation fails
-    event SessionKeyValidationFailed(
-        address indexed sessionKey,
-        bytes32 indexed userOpHash,
-        string reason
-    );
+    event SessionKeyValidationFailed(address indexed sessionKey, bytes32 indexed userOpHash, string reason);
 
     /// @notice Emitted when session key spend is recorded
-    event SessionKeySpendRecorded(
-        address indexed sessionKey,
-        uint256 amount,
-        uint256 totalSpent,
-        uint256 spendLimit
-    );
+    event SessionKeySpendRecorded(address indexed sessionKey, uint256 amount, uint256 totalSpent, uint256 spendLimit);
 
     // ============================================
     // CONSTANTS
@@ -141,12 +127,9 @@ contract TAGITAccount is IAccount, ITAGITAccount, ReentrancyGuard {
      * @param protocolGuardianAddr Protocol guardian address
      * @param tagitCoreAddr TAGITCore contract address
      */
-    function initialize(
-        address ownerAddr,
-        bytes32 emailHashVal,
-        address protocolGuardianAddr,
-        address tagitCoreAddr
-    ) external {
+    function initialize(address ownerAddr, bytes32 emailHashVal, address protocolGuardianAddr, address tagitCoreAddr)
+        external
+    {
         if (_initialized) revert AlreadyInitialized();
         if (ownerAddr == address(0)) revert ZeroAddress();
 
@@ -199,11 +182,12 @@ contract TAGITAccount is IAccount, ITAGITAccount, ReentrancyGuard {
     // ============================================
 
     /// @inheritdoc IAccount
-    function validateUserOp(
-        PackedUserOperation calldata userOp,
-        bytes32 userOpHash,
-        uint256 missingAccountFunds
-    ) external override(IAccount, ITAGITAccount) onlyEntryPoint returns (uint256 validationData) {
+    function validateUserOp(PackedUserOperation calldata userOp, bytes32 userOpHash, uint256 missingAccountFunds)
+        external
+        override(IAccount, ITAGITAccount)
+        onlyEntryPoint
+        returns (uint256 validationData)
+    {
         address sessionKeyUsed;
         (validationData, sessionKeyUsed) = _validateSignatureWithTracking(userOp, userOpHash);
 
@@ -221,10 +205,10 @@ contract TAGITAccount is IAccount, ITAGITAccount, ReentrancyGuard {
      * @return validationData ERC-4337 validation data
      * @return sessionKeyUsed The session key address used (address(0) if owner or failed)
      */
-    function _validateSignatureWithTracking(
-        PackedUserOperation calldata userOp,
-        bytes32 userOpHash
-    ) internal returns (uint256 validationData, address sessionKeyUsed) {
+    function _validateSignatureWithTracking(PackedUserOperation calldata userOp, bytes32 userOpHash)
+        internal
+        returns (uint256 validationData, address sessionKeyUsed)
+    {
         bytes32 hash = userOpHash.toEthSignedMessageHash();
         address signer = hash.recover(userOp.signature);
 
@@ -286,11 +270,7 @@ contract TAGITAccount is IAccount, ITAGITAccount, ReentrancyGuard {
     /**
      * @dev Pack validation data according to ERC-4337
      */
-    function _packValidationData(
-        bool sigFailed,
-        uint48 validUntil,
-        uint48 validAfter
-    ) internal pure returns (uint256) {
+    function _packValidationData(bool sigFailed, uint48 validUntil, uint48 validAfter) internal pure returns (uint256) {
         return (sigFailed ? 1 : 0) | (uint256(validUntil) << 160) | (uint256(validAfter) << (160 + 48));
     }
 
@@ -309,11 +289,12 @@ contract TAGITAccount is IAccount, ITAGITAccount, ReentrancyGuard {
     // ============================================
 
     /// @inheritdoc ITAGITAccount
-    function execute(
-        address dest,
-        uint256 value,
-        bytes calldata func
-    ) external override onlyEntryPointOrOwner nonReentrant {
+    function execute(address dest, uint256 value, bytes calldata func)
+        external
+        override
+        onlyEntryPointOrOwner
+        nonReentrant
+    {
         _call(dest, value, func);
         emit Executed(dest, value, func);
     }
@@ -326,11 +307,12 @@ contract TAGITAccount is IAccount, ITAGITAccount, ReentrancyGuard {
     ///      smaller batch operations does NOT bypass the limit — the sum of all values
     ///      is compared to spendLimit. This is correct by design: one userOp = one
     ///      aggregate spend check, regardless of internal batch structure.
-    function executeBatch(
-        address[] calldata dest,
-        uint256[] calldata values,
-        bytes[] calldata func
-    ) external override onlyEntryPointOrOwner nonReentrant {
+    function executeBatch(address[] calldata dest, uint256[] calldata values, bytes[] calldata func)
+        external
+        override
+        onlyEntryPointOrOwner
+        nonReentrant
+    {
         if (dest.length != values.length || dest.length != func.length) {
             revert BatchLengthMismatch();
         }
@@ -494,10 +476,7 @@ contract TAGITAccount is IAccount, ITAGITAccount, ReentrancyGuard {
     function requestProtocolGuardianRemoval() external override onlyOwner {
         if (!_protocolGuardian) revert NoPendingRemoval();
 
-        _pendingRemoval = ProtocolGuardianRemoval({
-            requestedAt: uint48(block.timestamp),
-            executed: false
-        });
+        _pendingRemoval = ProtocolGuardianRemoval({requestedAt: uint48(block.timestamp), executed: false});
 
         uint48 readyAt = uint48(block.timestamp) + PROTOCOL_GUARDIAN_REMOVAL_DELAY;
         emit ProtocolGuardianRemovalRequested(uint48(block.timestamp), readyAt);

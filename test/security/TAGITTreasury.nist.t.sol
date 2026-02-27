@@ -18,12 +18,7 @@ contract TAGITTreasuryNistTest is Test {
     // EVENTS
     // ============================================
 
-    event DrainDetected(
-        uint256 indexed withdrawalId,
-        address indexed recipient,
-        uint256 amount,
-        uint8 reason
-    );
+    event DrainDetected(uint256 indexed withdrawalId, address indexed recipient, uint256 amount, uint8 reason);
     event DrainDetectorReset(address indexed admin);
 
     // ============================================
@@ -72,19 +67,13 @@ contract TAGITTreasuryNistTest is Test {
 
         // Deploy TAGITToken (upgradeable)
         TAGITToken tokenImpl = new TAGITToken();
-        bytes memory tokenData = abi.encodeCall(
-            TAGITToken.initialize,
-            (owner, tokenTreasury)
-        );
+        bytes memory tokenData = abi.encodeCall(TAGITToken.initialize, (owner, tokenTreasury));
         ERC1967Proxy tokenProxy = new ERC1967Proxy(address(tokenImpl), tokenData);
         token = TAGITToken(address(tokenProxy));
 
         // Deploy TAGITTreasury (upgradeable via TransparentProxy simulation)
         TAGITTreasury treasuryImpl = new TAGITTreasury();
-        bytes memory treasuryData = abi.encodeCall(
-            TAGITTreasury.initialize,
-            (governor, address(token), signers)
-        );
+        bytes memory treasuryData = abi.encodeCall(TAGITTreasury.initialize, (governor, address(token), signers));
         ERC1967Proxy treasuryProxy = new ERC1967Proxy(address(treasuryImpl), treasuryData);
         treasury = TAGITTreasury(payable(address(treasuryProxy)));
 
@@ -153,11 +142,7 @@ contract TAGITTreasuryNistTest is Test {
     }
 
     function test_drainDetector_checkCapacity() public view {
-        (
-            uint256 spikeCapacity,
-            uint256 velocityCapacity,
-            uint32 txCapacity
-        ) = treasury.getDrainDetectorCapacity();
+        (uint256 spikeCapacity, uint256 velocityCapacity, uint32 txCapacity) = treasury.getDrainDetectorCapacity();
 
         assertGt(spikeCapacity, 0);
         assertGt(velocityCapacity, 0);
@@ -178,12 +163,7 @@ contract TAGITTreasuryNistTest is Test {
     function test_allocation_normalFlow() public {
         // Governor creates allocation
         vm.prank(governor);
-        uint256 allocationId = treasury.createAllocation(
-            PROGRAM_ID,
-            ALLOCATION_AMOUNT,
-            recipient,
-            365 days
-        );
+        uint256 allocationId = treasury.createAllocation(PROGRAM_ID, ALLOCATION_AMOUNT, recipient, 365 days);
 
         ITAGITTreasury.Allocation memory alloc = treasury.getAllocation(allocationId);
         assertEq(alloc.amount, ALLOCATION_AMOUNT);
@@ -194,22 +174,12 @@ contract TAGITTreasuryNistTest is Test {
     function test_withdrawal_normalFlowSmall() public {
         // Create allocation
         vm.prank(governor);
-        uint256 allocationId = treasury.createAllocation(
-            PROGRAM_ID,
-            ALLOCATION_AMOUNT,
-            recipient,
-            365 days
-        );
+        uint256 allocationId = treasury.createAllocation(PROGRAM_ID, ALLOCATION_AMOUNT, recipient, 365 days);
 
         // Queue small withdrawal (under $50k threshold)
         uint256 withdrawAmount = 10_000 ether;
         vm.prank(recipient);
-        uint256 withdrawalId = treasury.queueWithdrawal(
-            allocationId,
-            address(token),
-            withdrawAmount,
-            recipient
-        );
+        uint256 withdrawalId = treasury.queueWithdrawal(allocationId, address(token), withdrawAmount, recipient);
 
         // Wait for timelock (48 hours for small)
         vm.warp(block.timestamp + 48 hours + 1);
@@ -237,12 +207,7 @@ contract TAGITTreasuryNistTest is Test {
         // Spike threshold is 30% of tracked balance
         uint256 spikeAmount = 4_000_000 ether;
         vm.prank(recipient);
-        uint256 withdrawalId = treasury.queueWithdrawal(
-            allocationId,
-            address(token),
-            spikeAmount,
-            recipient
-        );
+        uint256 withdrawalId = treasury.queueWithdrawal(allocationId, address(token), spikeAmount, recipient);
 
         // Wait for timelock
         vm.warp(block.timestamp + 72 hours + 1); // Medium timelock
@@ -283,12 +248,7 @@ contract TAGITTreasuryNistTest is Test {
 
     function test_security_nonRecipientCannotQueueWithdrawal() public {
         vm.prank(governor);
-        uint256 allocationId = treasury.createAllocation(
-            PROGRAM_ID,
-            ALLOCATION_AMOUNT,
-            recipient,
-            365 days
-        );
+        uint256 allocationId = treasury.createAllocation(PROGRAM_ID, ALLOCATION_AMOUNT, recipient, 365 days);
 
         vm.prank(attacker);
         vm.expectRevert();
@@ -340,12 +300,7 @@ contract TAGITTreasuryNistTest is Test {
 
     function test_pause_blocksWithdrawals() public {
         vm.prank(governor);
-        uint256 allocationId = treasury.createAllocation(
-            PROGRAM_ID,
-            ALLOCATION_AMOUNT,
-            recipient,
-            365 days
-        );
+        uint256 allocationId = treasury.createAllocation(PROGRAM_ID, ALLOCATION_AMOUNT, recipient, 365 days);
 
         vm.prank(governor);
         treasury.pause();
@@ -370,12 +325,7 @@ contract TAGITTreasuryNistTest is Test {
 
     function test_gas_queueWithdrawal() public {
         vm.prank(governor);
-        uint256 allocationId = treasury.createAllocation(
-            PROGRAM_ID,
-            ALLOCATION_AMOUNT,
-            recipient,
-            365 days
-        );
+        uint256 allocationId = treasury.createAllocation(PROGRAM_ID, ALLOCATION_AMOUNT, recipient, 365 days);
 
         vm.prank(recipient);
         uint256 gasBefore = gasleft();
@@ -400,12 +350,8 @@ contract TAGITTreasuryNistTest is Test {
     }
 
     function test_drainDetectorWindowStats() public view {
-        (
-            uint256 outflow,
-            uint32 txCount,
-            uint64 windowStart_,
-            uint256 windowRemaining
-        ) = treasury.getDrainDetectorWindowStats();
+        (uint256 outflow, uint32 txCount, uint64 windowStart_, uint256 windowRemaining) =
+            treasury.getDrainDetectorWindowStats();
 
         assertEq(outflow, 0);
         assertEq(txCount, 0);
@@ -436,7 +382,7 @@ contract TAGITTreasuryNistTest is Test {
         vm.prank(owner);
         treasury.deposit{value: 10 ether}();
 
-        (uint256 eth, ) = treasury.getBalance();
+        (uint256 eth,) = treasury.getBalance();
         assertEq(eth, 10 ether);
     }
 }

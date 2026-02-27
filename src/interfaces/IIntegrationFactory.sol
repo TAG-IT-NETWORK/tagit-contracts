@@ -14,9 +14,9 @@ interface IIntegrationFactory {
 
     /// @notice Integration lifecycle status
     enum IntegrationStatus {
-        ACTIVE,         // 0 - Fully operational
-        GRACE_PERIOD,   // 1 - Deactivation requested, 30-day grace
-        DEACTIVATED     // 2 - Permanently deactivated
+        ACTIVE, // 0 - Fully operational
+        GRACE_PERIOD, // 1 - Deactivation requested, 30-day grace
+        DEACTIVATED // 2 - Permanently deactivated
     }
 
     // ============================================
@@ -25,13 +25,13 @@ interface IIntegrationFactory {
 
     /// @notice Partner integration configuration
     struct Integration {
-        uint256 agentId;              // TAGITAgentIdentity token ID
-        address partnerWallet;        // Partner's receiving wallet
-        address paymentToken;         // ERC-20 for payments (address(0) = ETH)
-        uint96 feeRate;               // Basis points (e.g., 500 = 5%)
-        uint64 deployedAt;            // Deployment timestamp
+        uint256 agentId; // TAGITAgentIdentity token ID
+        address partnerWallet; // Partner's receiving wallet
+        address paymentToken; // ERC-20 for payments (address(0) = ETH)
+        uint96 feeRate; // Basis points (e.g., 500 = 5%)
+        uint64 deployedAt; // Deployment timestamp
         uint64 deactivateRequestedAt; // 0 = active, >0 = grace period
-        bool active;                  // Currently active
+        bool active; // Currently active
     }
 
     // ============================================
@@ -110,24 +110,14 @@ interface IIntegrationFactory {
 
     /// @notice Emitted when a payment is processed through an integration
     event PaymentProcessed(
-        uint256 indexed integrationId,
-        address indexed payer,
-        uint256 amount,
-        uint256 protocolFee,
-        uint256 toPartner
+        uint256 indexed integrationId, address indexed payer, uint256 amount, uint256 protocolFee, uint256 toPartner
     );
 
     /// @notice Emitted when deactivation is requested (starts grace period)
-    event IntegrationDeactivationRequested(
-        uint256 indexed integrationId,
-        uint256 gracePeriodEnds
-    );
+    event IntegrationDeactivationRequested(uint256 indexed integrationId, uint256 gracePeriodEnds);
 
     /// @notice Emitted when integration is fully deactivated after grace period
-    event IntegrationDeactivated(
-        uint256 indexed integrationId,
-        uint256 indexed agentId
-    );
+    event IntegrationDeactivated(uint256 indexed integrationId, uint256 indexed agentId);
 
     /// @notice Emitted when integration is reactivated during grace period
     event IntegrationReactivated(uint256 indexed integrationId);
@@ -159,12 +149,9 @@ interface IIntegrationFactory {
      * @param paymentToken ERC-20 token for payments
      * @return integrationId The created integration ID
      */
-    function deployIntegration(
-        uint256 agentId,
-        address partnerWallet,
-        uint96 feeRate,
-        address paymentToken
-    ) external returns (uint256 integrationId);
+    function deployIntegration(uint256 agentId, address partnerWallet, uint96 feeRate, address paymentToken)
+        external
+        returns (uint256 integrationId);
 
     /**
      * @notice Process a payment through a partner integration
@@ -191,10 +178,7 @@ interface IIntegrationFactory {
      * @param integrationId The integration to reactivate
      * @param signatures Multi-sig signatures from signers
      */
-    function reactivateIntegration(
-        uint256 integrationId,
-        bytes[] calldata signatures
-    ) external;
+    function reactivateIntegration(uint256 integrationId, bytes[] calldata signatures) external;
 
     // ============================================
     // ADMIN FUNCTIONS (MULTI-SIG)
@@ -230,32 +214,28 @@ interface IIntegrationFactory {
      * @param integrationId The integration ID
      * @return integration The integration data
      */
-    function getIntegration(uint256 integrationId)
-        external view returns (Integration memory integration);
+    function getIntegration(uint256 integrationId) external view returns (Integration memory integration);
 
     /**
      * @notice Get integration ID for an agent
      * @param agentId The agent's token ID
      * @return integrationId The integration ID (0 if none)
      */
-    function getIntegrationByAgent(uint256 agentId)
-        external view returns (uint256 integrationId);
+    function getIntegrationByAgent(uint256 agentId) external view returns (uint256 integrationId);
 
     /**
      * @notice Get integration status
      * @param integrationId The integration ID
      * @return status Current lifecycle status
      */
-    function getIntegrationStatus(uint256 integrationId)
-        external view returns (IntegrationStatus status);
+    function getIntegrationStatus(uint256 integrationId) external view returns (IntegrationStatus status);
 
     /**
      * @notice Check if integration is currently active
      * @param integrationId The integration ID
      * @return active True if active or in grace period
      */
-    function isIntegrationActive(uint256 integrationId)
-        external view returns (bool active);
+    function isIntegrationActive(uint256 integrationId) external view returns (bool active);
 
     /// @notice Total integrations created
     function totalIntegrations() external view returns (uint256);

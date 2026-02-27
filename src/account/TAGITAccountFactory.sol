@@ -15,12 +15,7 @@ import {TAGITAccount} from "./TAGITAccount.sol";
  * @notice Factory for creating ERC-4337 smart wallets
  * @dev Uses CREATE2 with Clones for deterministic minimal proxy deployment
  */
-contract TAGITAccountFactory is
-    ITAGITAccountFactory,
-    Initializable,
-    UUPSUpgradeable,
-    OwnableUpgradeable
-{
+contract TAGITAccountFactory is ITAGITAccountFactory, Initializable, UUPSUpgradeable, OwnableUpgradeable {
     using Clones for address;
 
     // ============================================
@@ -113,10 +108,7 @@ contract TAGITAccountFactory is
     // ============================================
 
     /// @inheritdoc ITAGITAccountFactory
-    function createAccount(
-        bytes32 emailHash,
-        uint256 salt
-    ) external override returns (address account) {
+    function createAccount(bytes32 emailHash, uint256 salt) external override returns (address account) {
         if (emailHash == bytes32(0)) revert InvalidEmailHash();
 
         // Compute deterministic address
@@ -141,22 +133,23 @@ contract TAGITAccountFactory is
         _totalAccounts++;
 
         // INTERACTIONS: Initialize account (external call last)
-        TAGITAccount(payable(account)).initialize(
-            msg.sender, // Initial owner is caller
-            emailHash,
-            _protocolGuardian,
-            _tagitCore
-        );
+        TAGITAccount(payable(account))
+            .initialize(
+                msg.sender, // Initial owner is caller
+                emailHash,
+                _protocolGuardian,
+                _tagitCore
+            );
 
         emit AccountCreated(account, emailHash, salt, msg.sender);
     }
 
     /// @inheritdoc ITAGITAccountFactory
-    function createAccountWithOwner(
-        bytes32 emailHash,
-        uint256 salt,
-        address initialOwner
-    ) external override returns (address account) {
+    function createAccountWithOwner(bytes32 emailHash, uint256 salt, address initialOwner)
+        external
+        override
+        returns (address account)
+    {
         if (emailHash == bytes32(0)) revert InvalidEmailHash();
         if (initialOwner == address(0)) revert ZeroAddress();
 
@@ -182,21 +175,13 @@ contract TAGITAccountFactory is
         _totalAccounts++;
 
         // INTERACTIONS: Initialize account (external call last)
-        TAGITAccount(payable(account)).initialize(
-            initialOwner,
-            emailHash,
-            _protocolGuardian,
-            _tagitCore
-        );
+        TAGITAccount(payable(account)).initialize(initialOwner, emailHash, _protocolGuardian, _tagitCore);
 
         emit AccountCreated(account, emailHash, salt, initialOwner);
     }
 
     /// @inheritdoc ITAGITAccountFactory
-    function getAddress(
-        bytes32 emailHash,
-        uint256 salt
-    ) external view override returns (address) {
+    function getAddress(bytes32 emailHash, uint256 salt) external view override returns (address) {
         bytes32 combinedSalt = keccak256(abi.encodePacked(emailHash, salt));
         return _accountImplementation.predictDeterministicAddress(combinedSalt);
     }

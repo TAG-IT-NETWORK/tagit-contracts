@@ -23,10 +23,10 @@ contract AgentIntegrationTest is Test {
     CapabilityBadge public capabilityBadge;
 
     address public owner;
-    address public operator1;  // Agent registrant
-    address public operator2;  // Second registrant
-    address public user1;      // Feedback reviewer
-    address public user2;      // Another reviewer
+    address public operator1; // Agent registrant
+    address public operator2; // Second registrant
+    address public user1; // Feedback reviewer
+    address public user2; // Another reviewer
     address public validator1;
     address public validator2;
     address public validator3;

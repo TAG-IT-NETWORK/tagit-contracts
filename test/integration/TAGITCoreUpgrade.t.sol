@@ -37,9 +37,7 @@ contract TAGITCoreUpgradeTest is Test {
     bytes32 public constant TAG_HASH = keccak256("NFC_TAG_001");
 
     event UpgradeScheduled(
-        address indexed oldImplementation,
-        address indexed newImplementation,
-        address indexed scheduledBy
+        address indexed oldImplementation, address indexed newImplementation, address indexed scheduledBy
     );
 
     function setUp() public {
@@ -53,12 +51,7 @@ contract TAGITCoreUpgradeTest is Test {
         address[] memory executors = new address[](1);
         proposers[0] = proposer;
         executors[0] = executor;
-        timelock = new TimelockController(
-            TIMELOCK_DELAY,
-            proposers,
-            executors,
-            address(0)
-        );
+        timelock = new TimelockController(TIMELOCK_DELAY, proposers, executors, address(0));
 
         // Deploy TAGITCore behind proxy
         implementation = new TAGITCore();
@@ -75,15 +68,11 @@ contract TAGITCoreUpgradeTest is Test {
 
         // Set access controller via timelock
         _timelockExecute(
-            abi.encodeCall(TAGITCore.setAccessController, (address(tagitAccess))),
-            keccak256("setup_access")
+            abi.encodeCall(TAGITCore.setAccessController, (address(tagitAccess))), keccak256("setup_access")
         );
 
         // Set trusted oracle for NFC verification via timelock
-        _timelockExecute(
-            abi.encodeCall(TAGITCore.setTrustedOracle, (vm.addr(ORACLE_PK))),
-            keccak256("setup_oracle")
-        );
+        _timelockExecute(abi.encodeCall(TAGITCore.setTrustedOracle, (vm.addr(ORACLE_PK))), keccak256("setup_oracle"));
 
         // Grant manufacturer capabilities
         capabilityBadge.grantCapability(manufacturer, uint256(proxy.MINTER_CAPABILITY()));
@@ -104,7 +93,10 @@ contract TAGITCoreUpgradeTest is Test {
         timelock.execute(address(proxy), 0, data, bytes32(0), salt);
     }
 
-    function _oracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory challengeResponse, bytes memory oracleSignature) {
+    function _oracleSign(uint256 tokenId, bytes32 tagHash)
+        internal
+        returns (bytes memory challengeResponse, bytes memory oracleSignature)
+    {
         challengeResponse = abi.encodePacked("challenge", tokenId);
         bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
         bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
@@ -119,10 +111,7 @@ contract TAGITCoreUpgradeTest is Test {
     function test_upgrade_authorizedViaTimelock() public {
         TAGITCore newImpl = new TAGITCore();
 
-        bytes memory upgradeData = abi.encodeCall(
-            proxy.upgradeToAndCall,
-            (address(newImpl), "")
-        );
+        bytes memory upgradeData = abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), ""));
 
         _timelockExecute(upgradeData, keccak256("upgrade_1"));
 
@@ -134,17 +123,11 @@ contract TAGITCoreUpgradeTest is Test {
         TAGITCore newImpl = new TAGITCore();
         address oldImpl = proxy.getImplementation();
 
-        bytes memory upgradeData = abi.encodeCall(
-            proxy.upgradeToAndCall,
-            (address(newImpl), "")
-        );
+        bytes memory upgradeData = abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), ""));
 
         // Schedule
         vm.prank(proposer);
-        timelock.schedule(
-            address(proxy), 0, upgradeData, bytes32(0),
-            keccak256("upgrade_event_1"), TIMELOCK_DELAY
-        );
+        timelock.schedule(address(proxy), 0, upgradeData, bytes32(0), keccak256("upgrade_event_1"), TIMELOCK_DELAY);
 
         vm.warp(block.timestamp + TIMELOCK_DELAY);
 
@@ -153,20 +136,14 @@ contract TAGITCoreUpgradeTest is Test {
         emit UpgradeScheduled(oldImpl, address(newImpl), address(timelock));
 
         vm.prank(executor);
-        timelock.execute(
-            address(proxy), 0, upgradeData, bytes32(0),
-            keccak256("upgrade_event_1")
-        );
+        timelock.execute(address(proxy), 0, upgradeData, bytes32(0), keccak256("upgrade_event_1"));
     }
 
     function test_upgrade_implementationAddressUpdated() public {
         address oldImpl = proxy.getImplementation();
         TAGITCore newImpl = new TAGITCore();
 
-        _timelockExecute(
-            abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")),
-            keccak256("upgrade_addr_1")
-        );
+        _timelockExecute(abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")), keccak256("upgrade_addr_1"));
 
         assertNotEq(proxy.getImplementation(), oldImpl);
         assertEq(proxy.getImplementation(), address(newImpl));
@@ -208,10 +185,7 @@ contract TAGITCoreUpgradeTest is Test {
         address ownerBefore = proxy.owner();
 
         TAGITCore newImpl = new TAGITCore();
-        _timelockExecute(
-            abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")),
-            keccak256("upgrade_owner_1")
-        );
+        _timelockExecute(abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")), keccak256("upgrade_owner_1"));
 
         assertEq(proxy.owner(), ownerBefore);
     }
@@ -221,10 +195,7 @@ contract TAGITCoreUpgradeTest is Test {
         string memory symbolBefore = proxy.symbol();
 
         TAGITCore newImpl = new TAGITCore();
-        _timelockExecute(
-            abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")),
-            keccak256("upgrade_meta_1")
-        );
+        _timelockExecute(abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")), keccak256("upgrade_meta_1"));
 
         assertEq(proxy.name(), nameBefore);
         assertEq(proxy.symbol(), symbolBefore);
@@ -240,10 +211,7 @@ contract TAGITCoreUpgradeTest is Test {
 
         // Upgrade
         TAGITCore newImpl = new TAGITCore();
-        _timelockExecute(
-            abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")),
-            keccak256("upgrade_mint_1")
-        );
+        _timelockExecute(abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")), keccak256("upgrade_mint_1"));
 
         // Verify state preserved
         assertEq(proxy.totalSupply(), 1);
@@ -265,10 +233,7 @@ contract TAGITCoreUpgradeTest is Test {
 
         // Upgrade
         TAGITCore newImpl = new TAGITCore();
-        _timelockExecute(
-            abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")),
-            keccak256("upgrade_tag_1")
-        );
+        _timelockExecute(abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")), keccak256("upgrade_tag_1"));
 
         // Verify bindings preserved
         assertEq(proxy.getTokenByTag(TAG_HASH), tokenId);
@@ -279,10 +244,7 @@ contract TAGITCoreUpgradeTest is Test {
         address controllerBefore = address(proxy.accessController());
 
         TAGITCore newImpl = new TAGITCore();
-        _timelockExecute(
-            abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")),
-            keccak256("upgrade_ac_1")
-        );
+        _timelockExecute(abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")), keccak256("upgrade_ac_1"));
 
         assertEq(address(proxy.accessController()), controllerBefore);
     }
@@ -297,10 +259,7 @@ contract TAGITCoreUpgradeTest is Test {
 
         // Upgrade
         TAGITCore newImpl = new TAGITCore();
-        _timelockExecute(
-            abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")),
-            keccak256("upgrade_counter_1")
-        );
+        _timelockExecute(abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")), keccak256("upgrade_counter_1"));
 
         // Next mint should continue from 4
         vm.prank(manufacturer);
@@ -313,10 +272,7 @@ contract TAGITCoreUpgradeTest is Test {
         uint256 capacityBefore = proxy.getFlagCircuitBreakerCapacity();
 
         TAGITCore newImpl = new TAGITCore();
-        _timelockExecute(
-            abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")),
-            keccak256("upgrade_cb_1")
-        );
+        _timelockExecute(abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")), keccak256("upgrade_cb_1"));
 
         assertEq(proxy.getFlagCircuitBreakerCapacity(), capacityBefore);
     }
@@ -329,8 +285,7 @@ contract TAGITCoreUpgradeTest is Test {
         // Upgrade first
         TAGITCore newImpl = new TAGITCore();
         _timelockExecute(
-            abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")),
-            keccak256("upgrade_lifecycle_1")
+            abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")), keccak256("upgrade_lifecycle_1")
         );
 
         // Full lifecycle through upgraded proxy
@@ -368,8 +323,7 @@ contract TAGITCoreUpgradeTest is Test {
         // Upgrade
         TAGITCore newImpl = new TAGITCore();
         _timelockExecute(
-            abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")),
-            keccak256("upgrade_continue_1")
+            abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")), keccak256("upgrade_continue_1")
         );
 
         // Continue lifecycle AFTER upgrade
@@ -391,10 +345,7 @@ contract TAGITCoreUpgradeTest is Test {
 
     function test_upgrade_cannotReinitializeAfterUpgrade() public {
         TAGITCore newImpl = new TAGITCore();
-        _timelockExecute(
-            abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")),
-            keccak256("upgrade_reinit_1")
-        );
+        _timelockExecute(abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")), keccak256("upgrade_reinit_1"));
 
         // Should not be able to re-initialize
         vm.expectRevert(Initializable.InvalidInitialization.selector);
@@ -406,8 +357,7 @@ contract TAGITCoreUpgradeTest is Test {
 
         TAGITCore newImpl = new TAGITCore();
         _timelockExecute(
-            abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")),
-            keccak256("upgrade_addr_stable_1")
+            abi.encodeCall(proxy.upgradeToAndCall, (address(newImpl), "")), keccak256("upgrade_addr_stable_1")
         );
 
         // Proxy address stays the same
@@ -421,17 +371,11 @@ contract TAGITCoreUpgradeTest is Test {
 
         // First upgrade
         TAGITCore impl2 = new TAGITCore();
-        _timelockExecute(
-            abi.encodeCall(proxy.upgradeToAndCall, (address(impl2), "")),
-            keccak256("multi_upgrade_1")
-        );
+        _timelockExecute(abi.encodeCall(proxy.upgradeToAndCall, (address(impl2), "")), keccak256("multi_upgrade_1"));
 
         // Second upgrade
         TAGITCore impl3 = new TAGITCore();
-        _timelockExecute(
-            abi.encodeCall(proxy.upgradeToAndCall, (address(impl3), "")),
-            keccak256("multi_upgrade_2")
-        );
+        _timelockExecute(abi.encodeCall(proxy.upgradeToAndCall, (address(impl3), "")), keccak256("multi_upgrade_2"));
 
         // State preserved through both upgrades
         assertEq(proxy.getImplementation(), address(impl3));

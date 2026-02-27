@@ -99,7 +99,10 @@ contract TAGITCoreCustodyTransferTest is Test {
     // ORACLE HELPER
     // ============================================
 
-    function _oracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory challengeResponse, bytes memory oracleSignature) {
+    function _oracleSign(uint256 tokenId, bytes32 tagHash)
+        internal
+        returns (bytes memory challengeResponse, bytes memory oracleSignature)
+    {
         challengeResponse = abi.encodePacked("challenge", tokenId);
         bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
         bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
@@ -118,13 +121,13 @@ contract TAGITCoreCustodyTransferTest is Test {
 
         vm.expectEmit(true, true, true, true);
         emit CustodyTransfer(
-            1,                              // assetId (first token)
-            uint8(TAGITCore.State.NONE),    // fromState
-            uint8(TAGITCore.State.MINTED),  // toState
-            address(0),                     // fromOwner (no previous owner)
-            consumer,                       // toOwner
-            block.timestamp,                // timestamp
-            expectedPrevHash                // prevStateHash
+            1, // assetId (first token)
+            uint8(TAGITCore.State.NONE), // fromState
+            uint8(TAGITCore.State.MINTED), // toState
+            address(0), // fromOwner (no previous owner)
+            consumer, // toOwner
+            block.timestamp, // timestamp
+            expectedPrevHash // prevStateHash
         );
 
         vm.prank(manufacturer);
@@ -140,14 +143,15 @@ contract TAGITCoreCustodyTransferTest is Test {
         uint256 tokenId = tagitCore.mint(consumer, keccak256("metadata"));
 
         bytes32 tagHash = keccak256("NFC_TAG_001");
-        bytes32 expectedPrevHash = keccak256(abi.encode(tokenId, uint8(TAGITCore.State.MINTED), consumer, block.number - 1));
+        bytes32 expectedPrevHash =
+            keccak256(abi.encode(tokenId, uint8(TAGITCore.State.MINTED), consumer, block.number - 1));
 
         vm.expectEmit(true, true, true, true);
         emit CustodyTransfer(
             tokenId,
             uint8(TAGITCore.State.MINTED),
             uint8(TAGITCore.State.BOUND),
-            consumer,   // owner stays same
+            consumer, // owner stays same
             consumer,
             block.timestamp,
             expectedPrevHash
@@ -171,7 +175,8 @@ contract TAGITCoreCustodyTransferTest is Test {
         vm.prank(manufacturer);
         tagitCore.bindTag(tokenId, tagHash, challengeResponse, oracleSignature);
 
-        bytes32 expectedPrevHash = keccak256(abi.encode(tokenId, uint8(TAGITCore.State.BOUND), consumer, block.number - 1));
+        bytes32 expectedPrevHash =
+            keccak256(abi.encode(tokenId, uint8(TAGITCore.State.BOUND), consumer, block.number - 1));
 
         vm.expectEmit(true, true, true, true);
         emit CustodyTransfer(
@@ -204,15 +209,16 @@ contract TAGITCoreCustodyTransferTest is Test {
         vm.prank(qaInspector);
         tagitCore.activate(tokenId);
 
-        bytes32 expectedPrevHash = keccak256(abi.encode(tokenId, uint8(TAGITCore.State.ACTIVATED), manufacturer, block.number - 1));
+        bytes32 expectedPrevHash =
+            keccak256(abi.encode(tokenId, uint8(TAGITCore.State.ACTIVATED), manufacturer, block.number - 1));
 
         vm.expectEmit(true, true, true, true);
         emit CustodyTransfer(
             tokenId,
             uint8(TAGITCore.State.ACTIVATED),
             uint8(TAGITCore.State.CLAIMED),
-            manufacturer,   // fromOwner
-            consumer,       // toOwner (new owner)
+            manufacturer, // fromOwner
+            consumer, // toOwner (new owner)
             block.timestamp,
             expectedPrevHash
         );
@@ -228,7 +234,8 @@ contract TAGITCoreCustodyTransferTest is Test {
     function test_custodyTransfer_flag_emitsEvent() public {
         uint256 tokenId = _mintClaimedAsset(consumer);
 
-        bytes32 expectedPrevHash = keccak256(abi.encode(tokenId, uint8(TAGITCore.State.CLAIMED), consumer, block.number - 1));
+        bytes32 expectedPrevHash =
+            keccak256(abi.encode(tokenId, uint8(TAGITCore.State.CLAIMED), consumer, block.number - 1));
 
         vm.expectEmit(true, true, true, true);
         emit CustodyTransfer(
@@ -263,15 +270,16 @@ contract TAGITCoreCustodyTransferTest is Test {
         vm.prank(lawEnforcement2);
         tagitCore.approveResolve(tokenId, newOwner);
 
-        bytes32 expectedPrevHash = keccak256(abi.encode(tokenId, uint8(TAGITCore.State.FLAGGED), consumer, block.number - 1));
+        bytes32 expectedPrevHash =
+            keccak256(abi.encode(tokenId, uint8(TAGITCore.State.FLAGGED), consumer, block.number - 1));
 
         vm.expectEmit(true, true, true, true);
         emit CustodyTransfer(
             tokenId,
             uint8(TAGITCore.State.FLAGGED),
             uint8(TAGITCore.State.CLAIMED),
-            consumer,    // fromOwner
-            newOwner,    // toOwner (resolved to new owner)
+            consumer, // fromOwner
+            newOwner, // toOwner (resolved to new owner)
             block.timestamp,
             expectedPrevHash
         );
@@ -287,7 +295,8 @@ contract TAGITCoreCustodyTransferTest is Test {
     function test_custodyTransfer_recycle_fromClaimed_emitsEvent() public {
         uint256 tokenId = _mintClaimedAsset(consumer);
 
-        bytes32 expectedPrevHash = keccak256(abi.encode(tokenId, uint8(TAGITCore.State.CLAIMED), consumer, block.number - 1));
+        bytes32 expectedPrevHash =
+            keccak256(abi.encode(tokenId, uint8(TAGITCore.State.CLAIMED), consumer, block.number - 1));
 
         vm.expectEmit(true, true, true, true);
         emit CustodyTransfer(
@@ -310,7 +319,8 @@ contract TAGITCoreCustodyTransferTest is Test {
         vm.prank(lawEnforcement);
         tagitCore.flag(tokenId);
 
-        bytes32 expectedPrevHash = keccak256(abi.encode(tokenId, uint8(TAGITCore.State.FLAGGED), consumer, block.number - 1));
+        bytes32 expectedPrevHash =
+            keccak256(abi.encode(tokenId, uint8(TAGITCore.State.FLAGGED), consumer, block.number - 1));
 
         vm.expectEmit(true, true, true, true);
         emit CustodyTransfer(
@@ -363,7 +373,7 @@ contract TAGITCoreCustodyTransferTest is Test {
         tagitCore.recycle(tokenId);
 
         // Verify final state is RECYCLED
-        (, , TAGITCore.State finalState, , ) = tagitCore.getAsset(tokenId);
+        (,, TAGITCore.State finalState,,) = tagitCore.getAsset(tokenId);
         assertEq(uint8(finalState), uint8(TAGITCore.State.RECYCLED), "Should be RECYCLED");
 
         // Note: Event linkability verified by the individual tests above.
@@ -416,7 +426,8 @@ contract TAGITCoreCustodyTransferTest is Test {
         tagitCore.flag(tokenId);
 
         // Recycle
-        bytes32 expectedPrevHash = keccak256(abi.encode(tokenId, uint8(TAGITCore.State.FLAGGED), consumer, block.number - 1));
+        bytes32 expectedPrevHash =
+            keccak256(abi.encode(tokenId, uint8(TAGITCore.State.FLAGGED), consumer, block.number - 1));
 
         vm.expectEmit(true, true, true, true);
         emit CustodyTransfer(

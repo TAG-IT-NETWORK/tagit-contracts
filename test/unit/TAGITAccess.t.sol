@@ -225,9 +225,7 @@ contract TAGITAccessTest is Test {
         tagitAccess.setCapabilityBadge(address(capabilityBadge));
 
         // Should revert with MissingCapability
-        vm.expectRevert(
-            abi.encodeWithSelector(ITAGITAccess.MissingCapability.selector, user1, CAP_MINT)
-        );
+        vm.expectRevert(abi.encodeWithSelector(ITAGITAccess.MissingCapability.selector, user1, CAP_MINT));
         tagitAccess.requireCapability(user1, CAP_MINT);
     }
 
@@ -236,9 +234,7 @@ contract TAGITAccessTest is Test {
      */
     function test_requireCapability_revert_badgeNotSet() public {
         // Badge contract not set
-        vm.expectRevert(
-            abi.encodeWithSelector(ITAGITAccess.MissingCapability.selector, user1, CAP_MINT)
-        );
+        vm.expectRevert(abi.encodeWithSelector(ITAGITAccess.MissingCapability.selector, user1, CAP_MINT));
         tagitAccess.requireCapability(user1, CAP_MINT);
     }
 
@@ -266,9 +262,7 @@ contract TAGITAccessTest is Test {
         tagitAccess.setIdentityBadge(address(identityBadge));
 
         // Should revert with MissingIdentity
-        vm.expectRevert(
-            abi.encodeWithSelector(ITAGITAccess.MissingIdentity.selector, user1, BADGE_KYC_L1)
-        );
+        vm.expectRevert(abi.encodeWithSelector(ITAGITAccess.MissingIdentity.selector, user1, BADGE_KYC_L1));
         tagitAccess.requireIdentity(user1, BADGE_KYC_L1);
     }
 
@@ -277,9 +271,7 @@ contract TAGITAccessTest is Test {
      */
     function test_requireIdentity_revert_badgeNotSet() public {
         // Badge contract not set
-        vm.expectRevert(
-            abi.encodeWithSelector(ITAGITAccess.MissingIdentity.selector, user1, BADGE_KYC_L1)
-        );
+        vm.expectRevert(abi.encodeWithSelector(ITAGITAccess.MissingIdentity.selector, user1, BADGE_KYC_L1));
         tagitAccess.requireIdentity(user1, BADGE_KYC_L1);
     }
 
@@ -342,11 +334,7 @@ contract TAGITAccessTest is Test {
     /**
      * @notice Fuzz test: access control with random accounts and IDs
      */
-    function testFuzz_accessControl(
-        address account,
-        uint256 identityId,
-        uint256 capabilityId
-    ) public {
+    function testFuzz_accessControl(address account, uint256 identityId, uint256 capabilityId) public {
         // Assume valid parameters
         vm.assume(account != address(0));
         vm.assume(account.code.length == 0);

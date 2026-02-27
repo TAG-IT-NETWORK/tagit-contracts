@@ -74,12 +74,12 @@ contract DeployNISTProxies is Script {
         bytes memory recoveryInit = abi.encodeCall(
             TAGITRecovery.initialize,
             (
-                TAGIT_CORE,     // _core
-                TAGIT_ACCESS,   // _access
-                deployer,       // _token (placeholder - update after TAGITToken deployed)
-                deployer,       // _governor
-                deployer,       // _treasury (placeholder)
-                deployer        // initialOwner
+                TAGIT_CORE, // _core
+                TAGIT_ACCESS, // _access
+                deployer, // _token (placeholder - update after TAGITToken deployed)
+                deployer, // _governor
+                deployer, // _treasury (placeholder)
+                deployer // initialOwner
             )
         );
         recoveryProxy = address(new ERC1967Proxy(RECOVERY_IMPL, recoveryInit));
@@ -91,9 +91,9 @@ contract DeployNISTProxies is Script {
         bytes memory paymasterInit = abi.encodeCall(
             TAGITPaymaster.initialize,
             (
-                ENTRY_POINT,    // entryPointAddr
-                deployer,       // governorAddr
-                deployer        // initialOwner
+                ENTRY_POINT, // entryPointAddr
+                deployer, // governorAddr
+                deployer // initialOwner
             )
         );
         paymasterProxy = address(new ERC1967Proxy(PAYMASTER_IMPL, paymasterInit));
@@ -107,9 +107,9 @@ contract DeployNISTProxies is Script {
         bytes memory treasuryInit = abi.encodeCall(
             TAGITTreasury.initialize,
             (
-                deployer,       // governorAddress
-                deployer,       // tokenAddress (use deployer as placeholder - will update later)
-                signers         // initialSigners
+                deployer, // governorAddress
+                deployer, // tokenAddress (use deployer as placeholder - will update later)
+                signers // initialSigners
             )
         );
         treasuryProxy = address(new ERC1967Proxy(TREASURY_IMPL, treasuryInit));
@@ -121,12 +121,12 @@ contract DeployNISTProxies is Script {
         bytes memory programsInit = abi.encodeCall(
             TAGITPrograms.initialize,
             (
-                deployer,       // governorAddress
-                TAGIT_CORE,     // coreAddress
-                deployer,       // tokenAddress (placeholder)
-                TAGIT_ACCESS,   // accessAddress
-                deployer,       // stakingAddress (placeholder)
-                deployer        // initialOwner
+                deployer, // governorAddress
+                TAGIT_CORE, // coreAddress
+                deployer, // tokenAddress (placeholder)
+                TAGIT_ACCESS, // accessAddress
+                deployer, // stakingAddress (placeholder)
+                deployer // initialOwner
             )
         );
         programsProxy = address(new ERC1967Proxy(PROGRAMS_IMPL, programsInit));
@@ -138,9 +138,9 @@ contract DeployNISTProxies is Script {
         bytes memory stakingInit = abi.encodeCall(
             TAGITStaking.initialize,
             (
-                deployer,       // _token (placeholder)
-                deployer,       // _governor
-                deployer        // initialOwner
+                deployer, // _token (placeholder)
+                deployer, // _governor
+                deployer // initialOwner
             )
         );
         stakingProxy = address(new ERC1967Proxy(STAKING_IMPL, stakingInit));
@@ -152,12 +152,12 @@ contract DeployNISTProxies is Script {
         bytes memory factoryInit = abi.encodeCall(
             TAGITAccountFactory.initialize,
             (
-                ENTRY_POINT,    // entryPointAddr
-                ACCOUNT_IMPL,   // accountImpl
-                deployer,       // protocolGuardianAddr
-                TAGIT_CORE,     // tagitCoreAddr
-                deployer,       // governorAddr
-                deployer        // initialOwner
+                ENTRY_POINT, // entryPointAddr
+                ACCOUNT_IMPL, // accountImpl
+                deployer, // protocolGuardianAddr
+                TAGIT_CORE, // tagitCoreAddr
+                deployer, // governorAddr
+                deployer // initialOwner
             )
         );
         accountFactoryProxy = address(new ERC1967Proxy(ACCOUNT_FACTORY_IMPL, factoryInit));
@@ -169,10 +169,10 @@ contract DeployNISTProxies is Script {
         bytes memory ccipInit = abi.encodeCall(
             CCIPAdapter.initialize,
             (
-                CCIP_ROUTER,    // routerAddr
-                deployer,       // governorAddr
-                TAGIT_CORE,     // tagitCoreAddr
-                deployer        // initialOwner
+                CCIP_ROUTER, // routerAddr
+                deployer, // governorAddr
+                TAGIT_CORE, // tagitCoreAddr
+                deployer // initialOwner
             )
         );
         ccipAdapterProxy = address(new ERC1967Proxy(CCIP_ADAPTER_IMPL, ccipInit));

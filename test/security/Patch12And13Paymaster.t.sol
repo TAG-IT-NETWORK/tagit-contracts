@@ -61,10 +61,7 @@ contract Patch12And13PaymasterTest is Test {
 
         // Deploy paymaster via proxy
         TAGITPaymaster paymasterImpl = new TAGITPaymaster();
-        bytes memory initData = abi.encodeCall(
-            TAGITPaymaster.initialize,
-            (address(entryPoint), governor, governor)
-        );
+        bytes memory initData = abi.encodeCall(TAGITPaymaster.initialize, (address(entryPoint), governor, governor));
         ERC1967Proxy proxy = new ERC1967Proxy(address(paymasterImpl), initData);
         paymaster = TAGITPaymaster(payable(address(proxy)));
 
@@ -88,9 +85,7 @@ contract Patch12And13PaymasterTest is Test {
     function test_registerBrand_requires_governor() public {
         bytes32 newBrand = keccak256("ADIDAS");
         vm.prank(attacker);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITPaymaster.NotGovernor.selector, attacker
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITPaymaster.NotGovernor.selector, attacker));
         paymaster.registerBrand(newBrand, attacker);
     }
 
@@ -98,9 +93,7 @@ contract Patch12And13PaymasterTest is Test {
         bytes32 unregistered = keccak256("UNREGISTERED");
         vm.deal(attacker, 1 ether);
         vm.prank(attacker);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITPaymaster.BrandNotRegistered.selector, unregistered
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITPaymaster.BrandNotRegistered.selector, unregistered));
         paymaster.depositForBrand{value: 1 ether}(unregistered);
     }
 
@@ -114,9 +107,7 @@ contract Patch12And13PaymasterTest is Test {
 
     function test_double_registration_reverts() public {
         vm.prank(governor);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITPaymaster.BrandAlreadyRegistered.selector, BRAND_ID
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITPaymaster.BrandAlreadyRegistered.selector, BRAND_ID));
         paymaster.registerBrand(BRAND_ID, brandOwnerAddr);
     }
 
@@ -133,9 +124,7 @@ contract Patch12And13PaymasterTest is Test {
 
     function test_withdraw_by_attacker_reverts() public {
         vm.prank(attacker);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITPaymaster.NotBrandOwner.selector, BRAND_ID, attacker
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITPaymaster.NotBrandOwner.selector, BRAND_ID, attacker));
         paymaster.withdrawBrandDeposit(BRAND_ID, 1 ether);
     }
 
@@ -149,9 +138,7 @@ contract Patch12And13PaymasterTest is Test {
 
         // New owner cannot withdraw yet
         vm.prank(newOwner);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITPaymaster.NotBrandOwner.selector, BRAND_ID, newOwner
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITPaymaster.NotBrandOwner.selector, BRAND_ID, newOwner));
         paymaster.withdrawBrandDeposit(BRAND_ID, 1 ether);
 
         // Accept ownership
@@ -166,17 +153,13 @@ contract Patch12And13PaymasterTest is Test {
 
     function test_accept_ownership_requires_pending() public {
         vm.prank(attacker);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITPaymaster.NoPendingTransfer.selector, BRAND_ID
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITPaymaster.NoPendingTransfer.selector, BRAND_ID));
         paymaster.acceptBrandOwnership(BRAND_ID);
     }
 
     function test_transfer_ownership_requires_owner() public {
         vm.prank(attacker);
-        vm.expectRevert(abi.encodeWithSelector(
-            ITAGITPaymaster.NotBrandOwner.selector, BRAND_ID, attacker
-        ));
+        vm.expectRevert(abi.encodeWithSelector(ITAGITPaymaster.NotBrandOwner.selector, BRAND_ID, attacker));
         paymaster.transferBrandOwnership(BRAND_ID, attacker);
     }
 

@@ -145,10 +145,7 @@ contract TAGITCore_Reentrancy is Test {
     }
 
     /// @dev Advance an asset through MINTED -> BOUND -> ACTIVATED
-    function _mintAndActivate(address to, bytes32 tagHash)
-        internal
-        returns (uint256 tokenId)
-    {
+    function _mintAndActivate(address to, bytes32 tagHash) internal returns (uint256 tokenId) {
         vm.prank(manufacturer);
         tokenId = tagitCore.mint(to, METADATA);
 
@@ -329,12 +326,7 @@ contract TAGITCore_Reentrancy is Test {
         vm.prank(manufacturer);
         tagitCore.claim(tokenId, consumer);
 
-        (
-            address assetOwner,
-            uint64 timestamp,
-            TAGITCore.State state,
-            ,
-        ) = tagitCore.getAsset(tokenId);
+        (address assetOwner, uint64 timestamp, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
 
         assertEq(uint8(state), uint8(TAGITCore.State.CLAIMED), "State must be CLAIMED after claim()");
         assertEq(assetOwner, consumer, "Asset struct owner must be consumer");
@@ -493,12 +485,7 @@ contract TAGITCore_Reentrancy is Test {
         tagitCore.resolve(tokenId, resolvedOwner);
 
         // Verify asset state
-        (
-            address assetOwner,
-            uint64 timestamp,
-            TAGITCore.State state,
-            ,
-        ) = tagitCore.getAsset(tokenId);
+        (address assetOwner, uint64 timestamp, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
 
         assertEq(uint8(state), uint8(TAGITCore.State.CLAIMED), "State must be CLAIMED after resolve()");
         assertEq(assetOwner, resolvedOwner, "Asset struct owner must be resolvedOwner");
@@ -532,10 +519,7 @@ contract TAGITCore_Reentrancy is Test {
         vm.prank(manufacturer);
         vm.expectRevert(
             abi.encodeWithSelector(
-                TAGITCore.InvalidState.selector,
-                tokenId,
-                TAGITCore.State.CLAIMED,
-                TAGITCore.State.ACTIVATED
+                TAGITCore.InvalidState.selector, tokenId, TAGITCore.State.CLAIMED, TAGITCore.State.ACTIVATED
             )
         );
         tagitCore.claim(tokenId, attacker);
@@ -662,14 +646,7 @@ contract TAGITCore_Reentrancy is Test {
         tagitCore.approveResolve(tokenId, consumer);
 
         vm.prank(manufacturer);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                TAGITCore.QuorumNotReached.selector,
-                tokenId,
-                1,
-                2
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(TAGITCore.QuorumNotReached.selector, tokenId, 1, 2));
         tagitCore.resolve(tokenId, consumer);
     }
 

@@ -33,13 +33,8 @@ contract CCIPForkTest is ForkBase {
         // Deploy adapter with real CCIP router
         vm.startPrank(deployer);
         CCIPAdapter impl = new CCIPAdapter();
-        bytes memory initData = abi.encodeWithSelector(
-            CCIPAdapter.initialize.selector,
-            CCIP_ROUTER,
-            governor,
-            mockCore,
-            deployer
-        );
+        bytes memory initData =
+            abi.encodeWithSelector(CCIPAdapter.initialize.selector, CCIP_ROUTER, governor, mockCore, deployer);
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
         adapter = CCIPAdapter(payable(address(proxy)));
         vm.stopPrank();
@@ -86,22 +81,10 @@ contract CCIPForkTest is ForkBase {
         IRouterClient router = IRouterClient(CCIP_ROUTER);
 
         // Query known chain selectors
-        assertTrue(
-            router.isChainSupported(ETH_MAINNET_SELECTOR) || true,
-            "Should query ETH Mainnet without reverting"
-        );
-        assertTrue(
-            router.isChainSupported(ARBITRUM_SELECTOR) || true,
-            "Should query Arbitrum without reverting"
-        );
-        assertTrue(
-            router.isChainSupported(BASE_SELECTOR) || true,
-            "Should query Base without reverting"
-        );
-        assertTrue(
-            router.isChainSupported(POLYGON_SELECTOR) || true,
-            "Should query Polygon without reverting"
-        );
+        assertTrue(router.isChainSupported(ETH_MAINNET_SELECTOR) || true, "Should query ETH Mainnet without reverting");
+        assertTrue(router.isChainSupported(ARBITRUM_SELECTOR) || true, "Should query Arbitrum without reverting");
+        assertTrue(router.isChainSupported(BASE_SELECTOR) || true, "Should query Base without reverting");
+        assertTrue(router.isChainSupported(POLYGON_SELECTOR) || true, "Should query Polygon without reverting");
     }
 
     /**
@@ -112,10 +95,7 @@ contract CCIPForkTest is ForkBase {
 
         // Random invalid selector
         uint64 invalidSelector = 12345678901234567890;
-        assertFalse(
-            router.isChainSupported(invalidSelector),
-            "Invalid selector should not be supported"
-        );
+        assertFalse(router.isChainSupported(invalidSelector), "Invalid selector should not be supported");
     }
 
     // ============================================
@@ -161,10 +141,7 @@ contract CCIPForkTest is ForkBase {
         address remoteAdapter = makeAddr("remoteAdapter");
 
         ICCIPAdapter.ChainConfig memory config = ICCIPAdapter.ChainConfig({
-            chainSelector: ETH_MAINNET_SELECTOR,
-            adapter: remoteAdapter,
-            active: true,
-            gasLimit: 200_000
+            chainSelector: ETH_MAINNET_SELECTOR, adapter: remoteAdapter, active: true, gasLimit: 200_000
         });
 
         vm.prank(governor);
@@ -184,10 +161,7 @@ contract CCIPForkTest is ForkBase {
         address remoteAdapter = makeAddr("remoteAdapter");
 
         ICCIPAdapter.ChainConfig memory config = ICCIPAdapter.ChainConfig({
-            chainSelector: ETH_MAINNET_SELECTOR,
-            adapter: remoteAdapter,
-            active: true,
-            gasLimit: 200_000
+            chainSelector: ETH_MAINNET_SELECTOR, adapter: remoteAdapter, active: true, gasLimit: 200_000
         });
 
         vm.prank(governor);
@@ -206,10 +180,7 @@ contract CCIPForkTest is ForkBase {
         address remoteAdapter = makeAddr("remoteAdapter");
 
         ICCIPAdapter.ChainConfig memory config = ICCIPAdapter.ChainConfig({
-            chainSelector: ETH_MAINNET_SELECTOR,
-            adapter: remoteAdapter,
-            active: true,
-            gasLimit: 200_000
+            chainSelector: ETH_MAINNET_SELECTOR, adapter: remoteAdapter, active: true, gasLimit: 200_000
         });
 
         vm.prank(governor);
@@ -235,10 +206,7 @@ contract CCIPForkTest is ForkBase {
         address remoteAdapter = makeAddr("remoteAdapter");
 
         ICCIPAdapter.ChainConfig memory config = ICCIPAdapter.ChainConfig({
-            chainSelector: ETH_MAINNET_SELECTOR,
-            adapter: remoteAdapter,
-            active: true,
-            gasLimit: 200_000
+            chainSelector: ETH_MAINNET_SELECTOR, adapter: remoteAdapter, active: true, gasLimit: 200_000
         });
 
         vm.prank(governor);
@@ -322,10 +290,7 @@ contract CCIPForkTest is ForkBase {
         // First add a supported chain
         address remoteAdapter = makeAddr("remoteAdapter");
         ICCIPAdapter.ChainConfig memory config = ICCIPAdapter.ChainConfig({
-            chainSelector: ETH_MAINNET_SELECTOR,
-            adapter: remoteAdapter,
-            active: true,
-            gasLimit: 200_000
+            chainSelector: ETH_MAINNET_SELECTOR, adapter: remoteAdapter, active: true, gasLimit: 200_000
         });
 
         vm.prank(governor);
