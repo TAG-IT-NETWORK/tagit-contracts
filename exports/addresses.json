@@ -53,6 +53,44 @@
         "AU-3": "Session events in TAGITAccount"
       }
     },
+    "arbitrum-sepolia": {
+      "chainId": 421614,
+      "name": "Arbitrum Sepolia",
+      "rpcUrl": "https://sepolia-rollup.arbitrum.io/rpc",
+      "blockExplorer": "https://sepolia.arbiscan.io",
+      "contracts": {
+        "TAGITCore": null,
+        "TAGITCoreProxy": null,
+        "TAGITCoreImplementation": null,
+        "TimelockController": null
+      },
+      "proxyArchitecture": {
+        "TAGITCore": {
+          "pattern": "UUPS (EIP-1822)",
+          "proxy": null,
+          "implementation": null,
+          "admin": "TimelockController",
+          "upgradeDelay": "1 minute (hackathon)"
+        },
+        "TAGITPaymaster": {
+          "pattern": "UUPS (EIP-1822)",
+          "proxy": "0xBbB9f7dB1C38Af7998b511d8026042755Eb4F4C4",
+          "implementation": "0x4c9aACfcb64169E3BC187c227c4C0e0a5CFDA1cF",
+          "admin": "deployer (hackathon)",
+          "upgradeDelay": "N/A"
+        }
+      },
+      "erc4337": {
+        "EntryPoint": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+        "TAGITPaymasterImplementation": "0x4c9aACfcb64169E3BC187c227c4C0e0a5CFDA1cF",
+        "TAGITPaymasterProxy": "0xBbB9f7dB1C38Af7998b511d8026042755Eb4F4C4"
+      },
+      "deployedAt": "2026-03-02T00:00:00Z",
+      "nistControls": {
+        "IR-4": "CircuitBreaker in Paymaster (500 ops/hr)",
+        "SI-4": "DrainDetector in Paymaster"
+      }
+    },
     "op-mainnet": {
       "chainId": 10,
       "name": "OP Mainnet",
