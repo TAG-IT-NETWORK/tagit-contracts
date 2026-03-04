@@ -59,18 +59,21 @@
       "rpcUrl": "https://sepolia-rollup.arbitrum.io/rpc",
       "blockExplorer": "https://sepolia.arbiscan.io",
       "contracts": {
-        "TAGITCore": null,
-        "TAGITCoreProxy": null,
-        "TAGITCoreImplementation": null,
-        "TimelockController": null
+        "TAGITCore": "0x2cb1E0ecE274217F214057c0a829582834Aeaf7f",
+        "TAGITCoreProxy": "0x2cb1E0ecE274217F214057c0a829582834Aeaf7f",
+        "TAGITCoreImplementation": "0xe06e058e1ff18a17a0940C5a0202971bB0feB02a",
+        "TimelockController": "0x6D7F3242DAFB07b8E873Cf1e0a635536ba241fbA",
+        "TAGITAccess": "0x676f593c451E4dF2345026af891Acc92c4344455",
+        "IdentityBadge": "0xEd6a36beB559A8047121B6300fF0060b0E64b5C7",
+        "CapabilityBadge": "0xa8BbC7f95f5D979e8E9208bc627194384b257c24"
       },
       "proxyArchitecture": {
         "TAGITCore": {
           "pattern": "UUPS (EIP-1822)",
-          "proxy": null,
-          "implementation": null,
+          "proxy": "0x2cb1E0ecE274217F214057c0a829582834Aeaf7f",
+          "implementation": "0xe06e058e1ff18a17a0940C5a0202971bB0feB02a",
           "admin": "TimelockController",
-          "upgradeDelay": "1 minute (hackathon)"
+          "upgradeDelay": "60 seconds (hackathon)"
         },
         "TAGITPaymaster": {
           "pattern": "UUPS (EIP-1822)",
