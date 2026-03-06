@@ -92,6 +92,16 @@
       "nistControls": {
         "IR-4": "CircuitBreaker in Paymaster (500 ops/hr)",
         "SI-4": "DrainDetector in Paymaster"
+      },
+      "demo": {
+        "TAGITCoreDemo": "0x62A81066Cc868cDe6115b87F1d585c891BFfCcC3",
+        "deployedAt": "2026-03-06",
+        "preMinted": [
+          {"tokenId": 1, "name": "Nasal Drops"},
+          {"tokenId": 2, "name": "Di0r Eye Cream"},
+          {"tokenId": 3, "name": "Sunbiz Certificate"}
+        ],
+        "arbiscan": "https://sepolia.arbiscan.io/address/0x62A81066Cc868cDe6115b87F1d585c891BFfCcC3"
       }
     },
     "op-mainnet": {
