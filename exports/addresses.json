@@ -13,7 +13,9 @@
         "TAGITAccess": "0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9",
         "IdentityBadge": "0x26F2EBb84664EF1eF8554e15777EBEc6611256A6",
         "CapabilityBadge": "0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505",
-        "TAGITCore_deprecated": "0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe"
+        "TAGITCore_deprecated": "0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe",
+        "RoboticAuthorizer": "0x36DB6d989f0597CF7b243c4Ef1362CC9B9cbB8AE",
+        "RoboticAuthorizerImplementation": "0x26dE81F182313b94825C66C1F555F038C91687eD"
       },
       "proxyArchitecture": {
         "TAGITCore": {
@@ -23,6 +25,13 @@
           "admin": "TimelockController",
           "upgradeDelay": "5 minutes (testnet)",
           "notes": "Deployed via DeployTAGITCoreProxy.s.sol. Use getImplementation() on the proxy to read the current logic contract. Old non-proxy TAGITCore at 0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe is deprecated."
+        },
+        "RoboticAuthorizer": {
+          "pattern": "UUPS (EIP-1822)",
+          "proxy": "0x36DB6d989f0597CF7b243c4Ef1362CC9B9cbB8AE",
+          "implementation": "0x26dE81F182313b94825C66C1F555F038C91687eD",
+          "admin": "TimelockController",
+          "upgradeDelay": "5 minutes (testnet)"
         }
       },
       "nistImplementations": {
@@ -65,13 +74,22 @@
         "TimelockController": "0x6D7F3242DAFB07b8E873Cf1e0a635536ba241fbA",
         "TAGITAccess": "0x676f593c451E4dF2345026af891Acc92c4344455",
         "IdentityBadge": "0xEd6a36beB559A8047121B6300fF0060b0E64b5C7",
-        "CapabilityBadge": "0xa8BbC7f95f5D979e8E9208bc627194384b257c24"
+        "CapabilityBadge": "0xa8BbC7f95f5D979e8E9208bc627194384b257c24",
+        "RoboticAuthorizer": "0x73E84b5A82164C6c0301A9c4689D60aE9B9050a8",
+        "RoboticAuthorizerImplementation": "0xCfD09BE958119328085cE37CF047e0E14DD5e7a4"
       },
       "proxyArchitecture": {
         "TAGITCore": {
           "pattern": "UUPS (EIP-1822)",
           "proxy": "0x2cb1E0ecE274217F214057c0a829582834Aeaf7f",
           "implementation": "0xe06e058e1ff18a17a0940C5a0202971bB0feB02a",
+          "admin": "TimelockController",
+          "upgradeDelay": "60 seconds (hackathon)"
+        },
+        "RoboticAuthorizer": {
+          "pattern": "UUPS (EIP-1822)",
+          "proxy": "0x73E84b5A82164C6c0301A9c4689D60aE9B9050a8",
+          "implementation": "0xCfD09BE958119328085cE37CF047e0E14DD5e7a4",
           "admin": "TimelockController",
           "upgradeDelay": "60 seconds (hackathon)"
         },
