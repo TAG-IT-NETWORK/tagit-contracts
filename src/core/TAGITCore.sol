@@ -382,7 +382,7 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
     address public trustedOracle;
 
     /// @notice Storage gap for future upgrades (ERC-7201 compatible)
-    /// @dev Reserve 34 slots (reduced from 35 after adding trustedOracle)
+    /// @dev Reserve 34 slots for future storage variables
     uint256[34] private __gap;
 
     // ============================================
