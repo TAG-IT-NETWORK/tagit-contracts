@@ -27,16 +27,17 @@ import {TimelockController} from "@openzeppelin/contracts/governance/TimelockCon
  *     --rpc-url arbitrum_sepolia --broadcast --verify
  */
 contract DeployArbitrumFull is Script {
-    // Badge / capability IDs (must match exports/addresses.json)
+    // Badge / capability IDs
     uint256 constant ADMIN_BADGE = 1;
 
-    uint256 constant CAP_MINTER    = 100;
-    uint256 constant CAP_BINDER    = 101;
-    uint256 constant CAP_ACTIVATOR = 102;
-    uint256 constant CAP_CLAIMER   = 103;
-    uint256 constant CAP_FLAGGER   = 104;
-    uint256 constant CAP_RESOLVER  = 105;
-    uint256 constant CAP_RECYCLER  = 106;
+    // TAGITCore checks capabilities via keccak256 hashes cast to uint256
+    uint256 constant CAP_MINTER = uint256(keccak256("MINTER"));
+    uint256 constant CAP_BINDER = uint256(keccak256("BINDER"));
+    uint256 constant CAP_ACTIVATOR = uint256(keccak256("ACTIVATOR"));
+    uint256 constant CAP_CLAIMER = uint256(keccak256("CLAIMER"));
+    uint256 constant CAP_FLAGGER = uint256(keccak256("FLAGGER"));
+    uint256 constant CAP_RESOLVER = uint256(keccak256("RESOLVER"));
+    uint256 constant CAP_RECYCLER = uint256(keccak256("RECYCLER"));
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
