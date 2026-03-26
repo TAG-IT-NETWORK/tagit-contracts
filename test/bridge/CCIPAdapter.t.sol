@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import {Test, console} from "forge-std/Test.sol";
 import {CCIPAdapter} from "../../src/bridge/CCIPAdapter.sol";
 import {ICCIPAdapter} from "../../src/interfaces/ICCIPAdapter.sol";
+import {ReplayProtection} from "../../src/libraries/ReplayProtection.sol";
 import {Client} from "@chainlink/ccip/libraries/Client.sol";
 import {IRouterClient} from "@chainlink/ccip/interfaces/IRouterClient.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
@@ -309,10 +310,12 @@ contract CCIPAdapterTest is Test {
         vm.prank(router);
         adapter.ccipReceive(message);
 
-        // Second call with same requestId should revert
-        message.messageId = keccak256("msgId2"); // Different message ID
+        // Second call with different CCIP messageId but same requestId should revert
+        message.messageId = keccak256("msgId2"); // Different CCIP message ID
         vm.prank(router);
-        vm.expectRevert(abi.encodeWithSelector(ICCIPAdapter.RequestIdAlreadyUsed.selector, requestId));
+        vm.expectRevert(
+            abi.encodeWithSelector(ReplayProtection.MessageAlreadyProcessed.selector, requestId, OP_MAINNET_SELECTOR)
+        );
         adapter.ccipReceive(message);
     }
 
@@ -360,7 +363,7 @@ contract CCIPAdapterTest is Test {
     // ============================================
 
     function test_version_returns100() public view {
-        assertEq(adapter.version(), "1.0.0");
+        assertEq(adapter.version(), "1.1.0");
     }
 
     function test_getRequest_returnsEmptyForUnknown() public view {
