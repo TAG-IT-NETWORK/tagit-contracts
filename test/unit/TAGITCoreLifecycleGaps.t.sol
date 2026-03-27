@@ -265,22 +265,21 @@ contract TAGITCoreLifecycleGapsTest is Test {
     // GAP 11: RESOLVE_QUORUM constant verification
     // ========================================================================
 
-    function test_resolveQuorum_isOne_forTestnet() public view {
-        assertEq(tagitCore.RESOLVE_QUORUM(), 1, "Testnet quorum should be 1");
+    function test_resolveQuorum_isTwo() public view {
+        assertEq(tagitCore.RESOLVE_QUORUM(), 2, "Quorum should be 2 (2-of-3 multisig)");
     }
 
-    function test_resolve_succeedsWithOneApproval() public {
+    function test_resolve_requiresTwoApprovals() public {
         uint256 tokenId = _mintToFlagged();
 
-        // Single approval should suffice with RESOLVE_QUORUM = 1
+        // First approval — not enough to resolve
         vm.prank(manufacturer);
         tagitCore.approveResolve(tokenId, user1);
 
+        // Should revert with only one approval
         vm.prank(manufacturer);
+        vm.expectRevert();
         tagitCore.resolve(tokenId, user1);
-
-        (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
-        assertEq(uint8(state), uint8(TAGITCore.State.CLAIMED), "Should be CLAIMED after resolve");
     }
 
     // ========================================================================

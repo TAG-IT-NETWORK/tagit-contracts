@@ -105,7 +105,7 @@ contract TAGITTreasuryTest is Test {
     // ============================================
 
     function test_initialization() public view {
-        assertEq(treasury.version(), "1.0.0");
+        assertEq(treasury.version(), "1.1.0");
         assertEq(treasury.governor(), governor);
         assertEq(treasury.tagitToken(), address(token));
         assertEq(treasury.requiredSigners(), 6);

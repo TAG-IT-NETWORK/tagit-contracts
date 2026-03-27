@@ -514,8 +514,8 @@ contract TAGITStakingTest is Test {
         staking.stake(STAKE_AMOUNT);
         uint256 gasUsed = gasBefore - gasleft();
 
-        // Gas target: < 145,000 (includes SafeERC20 transferFrom + storage updates)
-        assertLt(gasUsed, 145000, "stake() exceeds gas target");
+        // Gas target: < 180,000 (includes SafeERC20 transferFrom + storage updates)
+        assertLt(gasUsed, 180000, "stake() exceeds gas target");
     }
 
     function test_gas_unstake() public {

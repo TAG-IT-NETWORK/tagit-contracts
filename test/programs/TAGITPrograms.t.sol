@@ -81,6 +81,11 @@ contract TAGITProgramsTest is Test {
         // Fund programs contract with tokens
         token.mint(address(programs), 1_000_000e18);
 
+        // Sync drain detector balance so it reflects the actual token balance,
+        // preventing false-positive spike detection on small test claims
+        vm.prank(governor);
+        programs.syncDrainBalance();
+
         // PATCH-14: set governor as action verifier for test convenience
         vm.prank(governor);
         programs.setActionVerifier(governor);
@@ -558,7 +563,7 @@ contract TAGITProgramsTest is Test {
         programs.claimReward(SCAN_REWARDS, keccak256("action1"));
         uint256 gasUsed = gasBefore - gasleft();
 
-        // Target: < 150k gas (includes storage reads/writes, token transfer, events)
-        assertLt(gasUsed, 150_000, "claimReward() gas too high");
+        // Target: < 185k gas (includes storage reads/writes, token transfer, drain detector, events)
+        assertLt(gasUsed, 185_000, "claimReward() gas too high");
     }
 }
