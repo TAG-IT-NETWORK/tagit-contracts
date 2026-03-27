@@ -63,10 +63,7 @@ contract DeployPaymasterArbitrum is Script {
         console2.log("1. TAGITPaymaster impl:  ", address(impl));
 
         // Step 2: Deploy ERC1967Proxy → initialize(entryPoint, deployer, deployer)
-        bytes memory initData = abi.encodeCall(
-            TAGITPaymaster.initialize,
-            (ENTRY_POINT, deployer, deployer)
-        );
+        bytes memory initData = abi.encodeCall(TAGITPaymaster.initialize, (ENTRY_POINT, deployer, deployer));
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
         TAGITPaymaster paymaster = TAGITPaymaster(payable(address(proxy)));
         console2.log("2. TAGITPaymaster proxy: ", address(proxy));
@@ -122,10 +119,7 @@ contract DeployPaymasterArbitrum is Script {
 
     function _whitelistSelector(TAGITPaymaster paymaster, bytes4 selector, string memory name) internal {
         ITAGITPaymaster.SponsorshipConfig memory config = ITAGITPaymaster.SponsorshipConfig({
-            selector: selector,
-            maxGas: MAX_GAS,
-            dailyLimit: DAILY_LIMIT,
-            active: true
+            selector: selector, maxGas: MAX_GAS, dailyLimit: DAILY_LIMIT, active: true
         });
         paymaster.setSponsorshipConfig(selector, config);
         console2.log("   Whitelisted:", name);

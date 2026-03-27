@@ -50,10 +50,7 @@ contract DeployPaymasterArbitrumTest is Test {
         TAGITPaymaster impl = new TAGITPaymaster();
 
         // Step 2: Deploy proxy + initialize
-        bytes memory initData = abi.encodeCall(
-            TAGITPaymaster.initialize,
-            (ENTRY_POINT, deployer, deployer)
-        );
+        bytes memory initData = abi.encodeCall(TAGITPaymaster.initialize, (ENTRY_POINT, deployer, deployer));
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
         paymaster = TAGITPaymaster(payable(address(proxy)));
 
@@ -163,7 +160,7 @@ contract DeployPaymasterArbitrumTest is Test {
     }
 
     function test_drainDetector_initialized() public view {
-        (,uint16 spikeThreshold, uint16 velocityThreshold, uint32 maxTxPerWindow, bool tripped,) =
+        (, uint16 spikeThreshold, uint16 velocityThreshold, uint32 maxTxPerWindow, bool tripped,) =
             paymaster.getDrainDetectorState();
         assertFalse(tripped, "Drain detector must not be tripped");
         assertGt(spikeThreshold, 0, "Spike threshold must be set");
@@ -216,10 +213,7 @@ contract DeployPaymasterArbitrumTest is Test {
 
     function _whitelist(bytes4 selector) internal {
         ITAGITPaymaster.SponsorshipConfig memory config = ITAGITPaymaster.SponsorshipConfig({
-            selector: selector,
-            maxGas: MAX_GAS,
-            dailyLimit: DAILY_LIMIT,
-            active: true
+            selector: selector, maxGas: MAX_GAS, dailyLimit: DAILY_LIMIT, active: true
         });
         paymaster.setSponsorshipConfig(selector, config);
     }

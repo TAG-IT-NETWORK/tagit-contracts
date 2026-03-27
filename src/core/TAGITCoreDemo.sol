@@ -5,7 +5,15 @@ pragma solidity ^0.8.20;
 /// @notice Simplified demo contract for Arbitrum Open House NYC hackathon
 /// @dev Stripped-down lifecycle contract with onlyAdmin access control
 contract TAGITCoreDemo {
-    enum State { NONE, MINTED, BOUND, ACTIVATED, CLAIMED, FLAGGED, RECYCLED }
+    enum State {
+        NONE,
+        MINTED,
+        BOUND,
+        ACTIVATED,
+        CLAIMED,
+        FLAGGED,
+        RECYCLED
+    }
 
     struct Asset {
         string name;
