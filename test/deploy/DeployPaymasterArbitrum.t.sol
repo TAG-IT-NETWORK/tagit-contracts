@@ -35,11 +35,14 @@ contract DeployPaymasterArbitrumTest is Test {
     address public deployer;
 
     function setUp() public {
-        // Fork Arbitrum Sepolia if RPC is available, otherwise use local
+        // This is a fork test — requires a live Arbitrum Sepolia RPC.
+        // Skip gracefully in CI environments where the RPC is not configured.
         string memory rpcUrl = vm.envOr("ARBITRUM_SEPOLIA_RPC_URL", string(""));
-        if (bytes(rpcUrl).length > 0) {
-            vm.createSelectFork(rpcUrl);
+        if (bytes(rpcUrl).length == 0) {
+            vm.skip(true);
+            return;
         }
+        vm.createSelectFork(rpcUrl);
 
         deployer = makeAddr("deployer");
         vm.deal(deployer, 10 ether);
