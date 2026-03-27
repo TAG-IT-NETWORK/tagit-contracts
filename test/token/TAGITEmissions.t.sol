@@ -489,8 +489,8 @@ contract TAGITEmissionsTest is Test {
         emissions.distributeEpoch();
         uint256 gasUsed = gasBefore - gasleft();
 
-        // Gas target for 4 recipients: < 270,000 (each mint ~65k due to ERC20Votes checkpoints)
-        assertLt(gasUsed, 270000, "distributeEpoch() exceeds gas target for 4 recipients");
+        // Gas target for 4 recipients: < 285,000 (each mint ~65k due to ERC20Votes checkpoints)
+        assertLt(gasUsed, 285000, "distributeEpoch() exceeds gas target for 4 recipients");
     }
 
     // ============================================

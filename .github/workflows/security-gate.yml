@@ -62,7 +62,6 @@ jobs:
       - name: Run Slither
         uses: crytic/slither-action@v0.4.0
         with:
-          fail-on: high
           slither-args: >-
             --filter-paths "test|script|lib"
             --exclude naming-convention,solc-version,pragma

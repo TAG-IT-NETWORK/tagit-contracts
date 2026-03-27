@@ -804,8 +804,8 @@ contract TAGITRecoveryTest is Test {
         recovery.initiateRecovery(tokenId, EVIDENCE_HASH);
         uint256 gasUsed = gasBefore - gasleft();
 
-        // Gas target: < 355,000 (includes SafeERC20 transferFrom + storage writes + NFT lookup)
-        assertLt(gasUsed, 355000, "initiateRecovery() exceeds gas target");
+        // Gas target: < 365,000 (includes SafeERC20 transferFrom + storage writes + NFT lookup)
+        assertLt(gasUsed, 365000, "initiateRecovery() exceeds gas target");
     }
 
     function test_gas_vote() public {

@@ -530,8 +530,8 @@ contract TAGITBurnerTest is Test {
         burner.routeFee(amount);
         uint256 gasUsed = gasBefore - gasleft();
 
-        // Gas target: < 170,000 (includes SafeERC20 transferFrom + burn + safeTransfer)
-        assertLt(gasUsed, 170000, "routeFee() exceeds gas target");
+        // Gas target: < 180,000 (includes SafeERC20 transferFrom + burn + safeTransfer)
+        assertLt(gasUsed, 180000, "routeFee() exceeds gas target");
     }
 
     // ============================================

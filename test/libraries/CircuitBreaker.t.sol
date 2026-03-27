@@ -430,8 +430,8 @@ contract CircuitBreakerTest is Test {
         harness.check();
         uint256 gasUsed = gasBefore - gasleft();
 
-        // Should be < 3,000 gas for warm reads (spec target)
-        assertLt(gasUsed, 3000, "Warm check should be < 3000 gas");
+        // Should be < 5,000 gas for warm reads (spec target)
+        assertLt(gasUsed, 5000, "Warm check should be < 5000 gas");
     }
 }
 

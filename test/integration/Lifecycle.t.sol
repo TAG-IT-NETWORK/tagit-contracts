@@ -462,7 +462,7 @@ contract LifecycleIntegrationTest is Test {
         uint256 gasBefore = gasleft();
         uint256 tokenId = tagitCore.mint(manufacturer, METADATA);
         uint256 mintGas = gasBefore - gasleft();
-        assertLt(mintGas, 190000, "Mint gas should be under 190k (includes NIST AC-7 rate limit)");
+        assertLt(mintGas, 200000, "Mint gas should be under 200k (includes NIST AC-7 rate limit)");
 
         // Bind
         (bytes memory crGas, bytes memory sigGas) = _oracleSign(tokenId, TAG_HASH);

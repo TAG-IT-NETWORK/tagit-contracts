@@ -111,7 +111,7 @@ contract CCIPForkTest is ForkBase {
         assertEq(adapter.tagitCore(), mockCore, "Core set correctly");
         assertFalse(adapter.isPaused(), "Should not be paused");
         assertEq(adapter.rateLimit(), 100, "Default rate limit should be 100");
-        assertEq(adapter.version(), "1.0.0", "Version should be 1.0.0");
+        assertEq(adapter.version(), "1.1.0", "Version should be 1.1.0");
     }
 
     /**
