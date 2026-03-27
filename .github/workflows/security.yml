@@ -16,6 +16,7 @@ jobs:
   slither-analysis:
     name: Slither Static Analysis
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

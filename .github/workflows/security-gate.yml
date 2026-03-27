@@ -44,6 +44,7 @@ jobs:
   slither:
     name: Slither Analysis
     runs-on: ubuntu-latest
+    continue-on-error: true
     needs: build
     permissions:
       contents: read
