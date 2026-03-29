@@ -31,6 +31,7 @@ contract wTAGTest is Test {
     event MinterMinted(address indexed to, uint256 amount, address indexed minter);
     event MinterGranted(address indexed minter, address indexed grantedBy);
     event MinterRevoked(address indexed minter, address indexed revokedBy);
+    event GovernanceCapUpdated(uint256 oldCap, uint256 newCap);
 
     function setUp() public {
         owner = makeAddr("owner");
@@ -297,5 +298,154 @@ contract wTAGTest is Test {
         wtag.unwrap(amount);
         assertEq(wtag.balanceOf(alice), 0);
         vm.stopPrank();
+    }
+
+    // ============================================
+    // GOVERNANCE CAP TESTS
+    // ============================================
+
+    function test_governanceCap_defaultsToZero() public view {
+        assertEq(wtag.governanceCap(), 0);
+    }
+
+    function test_setGovernanceCap_success() public {
+        uint256 newCap = 1_000_000e18;
+
+        vm.prank(owner);
+        vm.expectEmit(false, false, false, true);
+        emit GovernanceCapUpdated(0, newCap);
+        wtag.setGovernanceCap(newCap);
+
+        assertEq(wtag.governanceCap(), newCap);
+    }
+
+    function test_setGovernanceCap_updateEmitsOldAndNew() public {
+        uint256 firstCap = 500_000e18;
+        uint256 secondCap = 1_000_000e18;
+
+        vm.startPrank(owner);
+        wtag.setGovernanceCap(firstCap);
+
+        vm.expectEmit(false, false, false, true);
+        emit GovernanceCapUpdated(firstCap, secondCap);
+        wtag.setGovernanceCap(secondCap);
+        vm.stopPrank();
+
+        assertEq(wtag.governanceCap(), secondCap);
+    }
+
+    function test_setGovernanceCap_reverts_notOwner() public {
+        vm.prank(unauthorized);
+        vm.expectRevert();
+        wtag.setGovernanceCap(1_000_000e18);
+    }
+
+    function test_wrap_succeedsBelowCap() public {
+        uint256 cap = 5000e18;
+        vm.prank(owner);
+        wtag.setGovernanceCap(cap);
+
+        vm.startPrank(alice);
+        tagitToken.approve(address(wtag), WRAP_AMOUNT);
+        wtag.wrap(WRAP_AMOUNT); // 1000e18 < 5000e18
+        vm.stopPrank();
+
+        assertEq(wtag.balanceOf(alice), WRAP_AMOUNT);
+    }
+
+    function test_wrap_revertsAboveCap() public {
+        uint256 cap = 500e18;
+        vm.prank(owner);
+        wtag.setGovernanceCap(cap);
+
+        vm.startPrank(alice);
+        tagitToken.approve(address(wtag), WRAP_AMOUNT);
+
+        vm.expectRevert(abi.encodeWithSelector(IwTAG.GovernanceCapExceeded.selector, WRAP_AMOUNT, cap));
+        wtag.wrap(WRAP_AMOUNT); // 1000e18 > 500e18
+        vm.stopPrank();
+    }
+
+    function test_wrap_revertsAtExactCapPlusOne() public {
+        uint256 cap = WRAP_AMOUNT;
+        vm.prank(owner);
+        wtag.setGovernanceCap(cap);
+
+        vm.startPrank(alice);
+        tagitToken.approve(address(wtag), WRAP_AMOUNT + 1);
+
+        // First wrap at exact cap succeeds
+        wtag.wrap(WRAP_AMOUNT);
+
+        // One more wei reverts
+        vm.expectRevert(abi.encodeWithSelector(IwTAG.GovernanceCapExceeded.selector, 1, 0));
+        wtag.wrap(1);
+        vm.stopPrank();
+    }
+
+    function test_mint_revertsAboveCap() public {
+        uint256 cap = 500e18;
+        vm.prank(owner);
+        wtag.setGovernanceCap(cap);
+
+        vm.prank(coreContract);
+        vm.expectRevert(abi.encodeWithSelector(IwTAG.GovernanceCapExceeded.selector, WRAP_AMOUNT, cap));
+        wtag.mint(alice, WRAP_AMOUNT);
+    }
+
+    function test_mint_succeedsBelowCap() public {
+        uint256 cap = 5000e18;
+        vm.prank(owner);
+        wtag.setGovernanceCap(cap);
+
+        vm.prank(coreContract);
+        wtag.mint(alice, WRAP_AMOUNT);
+
+        assertEq(wtag.balanceOf(alice), WRAP_AMOUNT);
+    }
+
+    function test_wrap_succeedsWhenCapIsZero_uncapped() public {
+        // Cap = 0 means no limit
+        assertEq(wtag.governanceCap(), 0);
+
+        vm.startPrank(alice);
+        tagitToken.approve(address(wtag), WRAP_AMOUNT);
+        wtag.wrap(WRAP_AMOUNT);
+        vm.stopPrank();
+
+        assertEq(wtag.balanceOf(alice), WRAP_AMOUNT);
+    }
+
+    function test_setGovernanceCap_canDisableBySettingZero() public {
+        vm.startPrank(owner);
+        wtag.setGovernanceCap(500e18);
+        wtag.setGovernanceCap(0); // disable cap
+        vm.stopPrank();
+
+        // Now wrapping any amount should succeed
+        vm.startPrank(alice);
+        tagitToken.approve(address(wtag), WRAP_AMOUNT);
+        wtag.wrap(WRAP_AMOUNT);
+        vm.stopPrank();
+
+        assertEq(wtag.balanceOf(alice), WRAP_AMOUNT);
+    }
+
+    function testFuzz_governanceCap_enforcement(uint256 cap, uint256 amount) public {
+        cap = bound(cap, 1, type(uint208).max);
+        amount = bound(amount, 1, type(uint208).max);
+
+        vm.prank(owner);
+        wtag.setGovernanceCap(cap);
+
+        if (amount <= cap) {
+            vm.prank(coreContract);
+            wtag.mint(alice, amount);
+            assertEq(wtag.balanceOf(alice), amount);
+        } else {
+            vm.prank(coreContract);
+            vm.expectRevert(abi.encodeWithSelector(IwTAG.GovernanceCapExceeded.selector, amount, cap));
+            wtag.mint(alice, amount);
+        }
     }
 }
