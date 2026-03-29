@@ -1,0 +1,86 @@
+# ═══════════════════════════════════════════════════════════════
+# SUDO AI — CI Failure Feedback Loop
+# When any workflow fails, create a Notion task for SUDO AI to fix
+#
+# DEPLOY: Copy this file to each repo's .github/workflows/
+# REQUIRES: NOTION_API_KEY secret set in GitHub repo/org settings
+# ═══════════════════════════════════════════════════════════════
+
+name: CI Failure → SUDO AI
+
+on:
+  workflow_run:
+    workflows: ["*"]
+    types: [completed]
+
+jobs:
+  create-fix-task:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get failure details
+        id: details
+        run: |
+          echo "repo=${{ github.repository }}" >> $GITHUB_OUTPUT
+          echo "repo_name=${{ github.event.repository.name }}" >> $GITHUB_OUTPUT
+          echo "workflow=${{ github.event.workflow_run.name }}" >> $GITHUB_OUTPUT
+          echo "branch=${{ github.event.workflow_run.head_branch }}" >> $GITHUB_OUTPUT
+          echo "sha=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_OUTPUT
+          echo "run_url=${{ github.event.workflow_run.html_url }}" >> $GITHUB_OUTPUT
+          echo "actor=${{ github.event.workflow_run.actor.login }}" >> $GITHUB_OUTPUT
+          echo "timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
+
+      - name: Create Notion task for SUDO AI
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          TASKS_DB: "8020faaf-b79a-4825-95e6-100313bba423"
+        run: |
+          # Skip if no Notion key configured
+          if [ -z "$NOTION_API_KEY" ]; then
+            echo "⚠️ NOTION_API_KEY not set — skipping task creation"
+            exit 0
+          fi
+
+          # Skip if failure is on a sudo/ branch (avoid infinite loops)
+          if [[ "${{ steps.details.outputs.branch }}" == sudo/* ]]; then
+            echo "⚠️ Failure on sudo/ branch — skipping to avoid loop"
+            exit 0
+          fi
+
+          # Create the task
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "https://api.notion.com/v1/pages" \
+            -H "Authorization: Bearer $NOTION_API_KEY" \
+            -H "Notion-Version: 2022-06-28" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "parent": {"database_id": "'"$TASKS_DB"'"},
+              "properties": {
+                "Task": {
+                  "title": [{"text": {"content": "CI-FIX: ${{ steps.details.outputs.workflow }} failed in ${{ steps.details.outputs.repo_name }} (${{ steps.details.outputs.branch }})"}}]
+                },
+                "Status": {
+                  "status": {"name": "Sent to SUDO"}
+                },
+                "Owner Type": {
+                  "select": {"name": "🦾 SUDO AI"}
+                },
+                "Priority": {
+                  "select": {"name": "🟠 High"}
+                },
+                "Notes": {
+                  "rich_text": [{"text": {"content": "Auto-created by CI Failure Feedback Loop.\n\nWorkflow: ${{ steps.details.outputs.workflow }}\nRepo: ${{ steps.details.outputs.repo }}\nBranch: ${{ steps.details.outputs.branch }}\nCommit: ${{ steps.details.outputs.sha }}\nRun: ${{ steps.details.outputs.run_url }}\nTriggered by: ${{ steps.details.outputs.actor }}\nTime: ${{ steps.details.outputs.timestamp }}\n\nFix the CI failure and ensure tests pass."}}]
+                }
+              }
+            }')
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          if [ "$HTTP_CODE" = "200" ]; then
+            PAGE_ID=$(echo "$BODY" | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])" 2>/dev/null || echo "unknown")
+            echo "✅ Created Notion task: $PAGE_ID"
+          else
+            echo "❌ Failed to create Notion task (HTTP $HTTP_CODE)"
+            echo "$BODY"
+            exit 1
+          fi
