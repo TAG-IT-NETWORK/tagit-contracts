@@ -30,6 +30,9 @@ interface IwTAG {
     /// @notice Insufficient TAGIT balance for wrapping
     error InsufficientBalance(address account, uint256 required, uint256 available);
 
+    /// @notice Minting or wrapping would exceed the governance cap
+    error GovernanceCapExceeded(uint256 requested, uint256 available);
+
     // ============================================
     // EVENTS
     // ============================================
@@ -48,6 +51,9 @@ interface IwTAG {
 
     /// @notice Emitted when a minter role is revoked
     event MinterRevoked(address indexed minter, address indexed revokedBy);
+
+    /// @notice Emitted when the governance cap is updated
+    event GovernanceCapUpdated(uint256 oldCap, uint256 newCap);
 
     // ============================================
     // CORE FUNCTIONS
@@ -79,6 +85,13 @@ interface IwTAG {
     // ============================================
 
     /**
+     * @notice Set the maximum total supply allowed (governance cap)
+     * @dev Only callable by owner. Set to 0 to disable the cap.
+     * @param newCap The new governance cap
+     */
+    function setGovernanceCap(uint256 newCap) external;
+
+    /**
      * @notice Grant MINTER_ROLE to an address (e.g., TAGITCore)
      * @param minter Address to grant minting rights
      */
@@ -106,6 +119,12 @@ interface IwTAG {
      * @return Address of the TAGIT token contract
      */
     function underlyingToken() external view returns (address);
+
+    /**
+     * @notice Get the current governance cap (max total supply)
+     * @return The governance cap (0 means no cap)
+     */
+    function governanceCap() external view returns (uint256);
 
     /**
      * @notice Get contract version

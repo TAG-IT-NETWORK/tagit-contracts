@@ -62,8 +62,11 @@ contract wTAG is
     /// @notice Authorized minters (TAGITCore, Voucher contract)
     mapping(address => bool) private _minters;
 
+    /// @notice Maximum allowed total supply (0 = uncapped)
+    uint256 public override governanceCap;
+
     /// @dev Storage gap for future upgrades
-    uint256[48] private __gap;
+    uint256[47] private __gap;
 
     // ============================================
     // CONSTRUCTOR (disabled for upgradeable)
@@ -116,9 +119,11 @@ contract wTAG is
      * @dev Transfers TAGIT from caller, mints equal wTAG. Requires prior approval.
      * @custom:security SafeERC20 prevents silent transfer failures
      * @custom:security ReentrancyGuard prevents reentrancy via token callbacks
+     * @custom:security Enforces governance cap on total supply
      */
     function wrap(uint256 amount) external override nonReentrant {
         if (amount == 0) revert ZeroAmount();
+        _enforceGovernanceCap(amount);
 
         // Transfer TAGIT from caller to this contract
         tagitToken.safeTransferFrom(msg.sender, address(this), amount);
@@ -164,6 +169,7 @@ contract wTAG is
     function mint(address to, uint256 amount) external override onlyMinter nonReentrant {
         if (to == address(0)) revert ZeroAddress();
         if (amount == 0) revert ZeroAmount();
+        _enforceGovernanceCap(amount);
 
         _mint(to, amount);
 
@@ -173,6 +179,17 @@ contract wTAG is
     // ============================================
     // ADMIN FUNCTIONS
     // ============================================
+
+    /**
+     * @inheritdoc IwTAG
+     * @dev Set to 0 to disable the governance cap.
+     * @custom:security Only owner (TimelockController) can update the cap
+     */
+    function setGovernanceCap(uint256 newCap) external override onlyOwner {
+        uint256 oldCap = governanceCap;
+        governanceCap = newCap;
+        emit GovernanceCapUpdated(oldCap, newCap);
+    }
 
     /**
      * @inheritdoc IwTAG
@@ -215,6 +232,25 @@ contract wTAG is
     /// @inheritdoc IwTAG
     function version() external pure override returns (string memory) {
         return "1.0.0";
+    }
+
+    // ============================================
+    // INTERNAL HELPERS
+    // ============================================
+
+    /**
+     * @dev Reverts if minting `amount` would exceed the governance cap.
+     *      A cap of 0 means uncapped (no limit enforced).
+     * @param amount The amount about to be minted
+     */
+    function _enforceGovernanceCap(uint256 amount) internal view {
+        uint256 cap = governanceCap;
+        if (cap != 0) {
+            uint256 supply = totalSupply();
+            if (supply + amount > cap) {
+                revert GovernanceCapExceeded(amount, cap - supply);
+            }
+        }
     }
 
     // ============================================
