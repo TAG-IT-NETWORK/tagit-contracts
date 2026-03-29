@@ -1,0 +1,47 @@
+{
+  "network": "Base Sepolia",
+  "chainId": 84532,
+  "deployedAt": "2026-03-29T00:00:00Z",
+  "deployer": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D",
+  "deployScript": "script/deploy/DeployAgentSuite.s.sol",
+  "contracts": {
+    "TAGITAgentIdentity": {
+      "address": "0xBbB9f7dB1C38Af7998b511d8026042755Eb4F4C4",
+      "type": "ERC-721 Soulbound (ERC-8004)",
+      "description": "Agent identity registry — soulbound NFTs for AI agent registration",
+      "txHash": "0xf8d52e34e58c90ee4c0d4ea536cb6f526e928ad1904d374622d3e9179efc0187",
+      "blockNumber": 39514005
+    },
+    "TAGITAgentReputation": {
+      "address": "0x3DE2718FA22d831c09F358c5B28e06D51dDE3A28",
+      "type": "ERC-8004 Reputation",
+      "description": "Agent reputation and feedback scoring with time-weighted decay",
+      "txHash": "0xd70036eb029f57aabfe6a4c74c2fa48e05d205045268c741fed6ae8b501b9643",
+      "blockNumber": 39514005
+    },
+    "TAGITAgentValidation": {
+      "address": "0x0162D48c6c4C2b51868E6f62dB83B29C696AD911",
+      "type": "ERC-8004 Validation",
+      "description": "Multi-party proof verification with 3-of-5 consensus",
+      "txHash": "0xcc23fe525cf0ca7287a61aec20b7265f16e7387a00c4458ff52426f36c563919",
+      "blockNumber": 39514005
+    }
+  },
+  "configuration": {
+    "TAGITAgentIdentity.accessController": "0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9",
+    "TAGITAgentReputation.accessController": "0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9",
+    "TAGITAgentReputation.identityRegistry": "0xBbB9f7dB1C38Af7998b511d8026042755Eb4F4C4",
+    "TAGITAgentValidation.accessController": "0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9",
+    "TAGITAgentValidation.identityRegistry": "0xBbB9f7dB1C38Af7998b511d8026042755Eb4F4C4"
+  },
+  "blockExplorer": {
+    "url": "https://sepolia.basescan.org",
+    "links": {
+      "TAGITAgentIdentity": "https://sepolia.basescan.org/address/0xBbB9f7dB1C38Af7998b511d8026042755Eb4F4C4",
+      "TAGITAgentReputation": "https://sepolia.basescan.org/address/0x3DE2718FA22d831c09F358c5B28e06D51dDE3A28",
+      "TAGITAgentValidation": "https://sepolia.basescan.org/address/0x0162D48c6c4C2b51868E6f62dB83B29C696AD911"
+    },
+    "verified": true,
+    "verifiedAt": "2026-03-29T00:00:00Z"
+  }
+}
