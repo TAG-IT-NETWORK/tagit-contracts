@@ -5,26 +5,37 @@ import {Script, console2} from "@forge-std/Script.sol";
 import {TAGITAgentIdentity} from "../../src/agent/TAGITAgentIdentity.sol";
 import {TAGITAgentReputation} from "../../src/agent/TAGITAgentReputation.sol";
 import {TAGITAgentValidation} from "../../src/agent/TAGITAgentValidation.sol";
-import {TAGITAccess} from "../../src/access/TAGITAccess.sol";
 
 /**
  * @title DeployAgentSuite
  * @author TAG IT Network <dev@tagit.network>
- * @notice Deployment script for ERC-8004 Agent Infrastructure
- * @dev Run with: forge script script/deploy/DeployAgentSuite.s.sol --rpc-url <RPC_URL> --private-key <KEY> --broadcast --verify
+ * @notice Orchestrated deployment script for ERC-8004 Agent Infrastructure
+ * @dev Deploys all three agent contracts in dependency order within a single broadcast,
+ *      capturing and passing addresses inline. No pre-deployed addresses needed.
  *
- * Prerequisites:
- * - TAGITAccess must already be deployed (pass address via TAGIT_ACCESS env var)
+ * Run with:
+ *   forge script script/deploy/DeployAgentSuite.s.sol \
+ *     --rpc-url $OP_SEPOLIA_RPC_URL --broadcast --verify
  *
- * Deployment Order:
- * 1. TAGITAgentIdentity (ERC-721 soulbound agent registry)
- * 2. TAGITAgentReputation (feedback & scoring)
- * 3. TAGITAgentValidation (proof verification)
+ * Dry-run (no broadcast):
+ *   forge script script/deploy/DeployAgentSuite.s.sol \
+ *     --rpc-url $OP_SEPOLIA_RPC_URL
  *
- * Post-deployment configuration:
- * - Identity.setAccessController(access)
- * - Reputation.setAccessController(access) + setIdentityRegistry(identity)
- * - Validation.setAccessController(access) + setIdentityRegistry(identity)
+ * Environment variables:
+ *   PRIVATE_KEY      - Deployer private key
+ *   TAGIT_ACCESS     - TAGITAccess controller address (must be pre-deployed)
+ *
+ * Deployment Order (dependency graph):
+ *   1. TAGITAgentIdentity  - ERC-721 soulbound agent registry (no deps)
+ *   2. TAGITAgentReputation - Feedback & scoring (depends on Identity)
+ *   3. TAGITAgentValidation - Proof verification (depends on Identity)
+ *
+ * Post-deployment configuration (all done inline):
+ *   - Identity.setAccessController(access)
+ *   - Reputation.setAccessController(access) + setIdentityRegistry(identity)
+ *   - Validation.setAccessController(access) + setIdentityRegistry(identity)
+ *
+ * @custom:security Owner is deployer (msg.sender). Transfer ownership to multisig post-deploy.
  */
 contract DeployAgentSuite is Script {
     TAGITAgentIdentity public agentIdentity;
@@ -40,29 +51,29 @@ contract DeployAgentSuite is Script {
         console2.log("TAG IT Network - Agent Suite Deployment");
         console2.log("ERC-8004 Trustless Agent Infrastructure");
         console2.log("===========================================");
-        console2.log("Deployer:", deployer);
-        console2.log("Chain ID:", block.chainid);
-        console2.log("Access Controller:", accessController);
+        console2.log("Deployer:          ", deployer);
+        console2.log("Chain ID:          ", block.chainid);
+        console2.log("Access Controller: ", accessController);
         console2.log("");
 
         vm.startBroadcast(deployerPrivateKey);
 
         // ============================================
-        // 1. Deploy TAGITAgentIdentity
+        // 1. Deploy TAGITAgentIdentity (no dependencies)
         // ============================================
         console2.log("1. Deploying TAGITAgentIdentity...");
         agentIdentity = new TAGITAgentIdentity();
         console2.log("   TAGITAgentIdentity deployed at:", address(agentIdentity));
 
         // ============================================
-        // 2. Deploy TAGITAgentReputation
+        // 2. Deploy TAGITAgentReputation (depends on Identity)
         // ============================================
         console2.log("2. Deploying TAGITAgentReputation...");
         agentReputation = new TAGITAgentReputation();
         console2.log("   TAGITAgentReputation deployed at:", address(agentReputation));
 
         // ============================================
-        // 3. Deploy TAGITAgentValidation
+        // 3. Deploy TAGITAgentValidation (depends on Identity)
         // ============================================
         console2.log("3. Deploying TAGITAgentValidation...");
         agentValidation = new TAGITAgentValidation();
@@ -75,20 +86,20 @@ contract DeployAgentSuite is Script {
         agentIdentity.setAccessController(accessController);
         agentReputation.setAccessController(accessController);
         agentValidation.setAccessController(accessController);
-        console2.log("   Access controllers set");
+        console2.log("   Access controllers set on all three contracts");
 
         // ============================================
-        // 5. Wire Identity Registry
+        // 5. Wire Identity Registry (inline address passing)
         // ============================================
         console2.log("5. Wiring identity registry...");
         agentReputation.setIdentityRegistry(address(agentIdentity));
         agentValidation.setIdentityRegistry(address(agentIdentity));
-        console2.log("   Identity registry wired");
+        console2.log("   Reputation + Validation wired to Identity at:", address(agentIdentity));
 
         vm.stopBroadcast();
 
         // ============================================
-        // SUMMARY
+        // DEPLOYMENT SUMMARY
         // ============================================
         console2.log("");
         console2.log("===========================================");
@@ -98,9 +109,15 @@ contract DeployAgentSuite is Script {
         console2.log("TAGITAgentReputation: ", address(agentReputation));
         console2.log("TAGITAgentValidation: ", address(agentValidation));
         console2.log("");
+        console2.log("Environment variables for downstream scripts:");
+        console2.log("  AGENT_IDENTITY_ADDRESS=", address(agentIdentity));
+        console2.log("  AGENT_REPUTATION_ADDRESS=", address(agentReputation));
+        console2.log("  AGENT_VALIDATION_ADDRESS=", address(agentValidation));
+        console2.log("");
         console2.log("Next steps:");
         console2.log("  1. Verify contracts on block explorer");
         console2.log("  2. Run RegisterSageAgent.s.sol to register Agent #1");
-        console2.log("  3. Grant AGENT_VALIDATOR capability to validators");
+        console2.log("  3. Grant AGENT_VALIDATOR capability to validators via BIDGES");
+        console2.log("  4. Transfer ownership to multisig");
     }
 }
