@@ -55,7 +55,7 @@ contract AgentSecurityTest is Test {
 
         // Deploy agent contracts
         vm.startPrank(owner);
-        identity = new TAGITAgentIdentity();
+        identity = new TAGITAgentIdentity(owner);
         identity.setAccessController(address(access));
 
         reputation = new TAGITAgentReputation();

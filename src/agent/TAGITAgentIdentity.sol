@@ -190,9 +190,17 @@ contract TAGITAgentIdentity is ERC721, ERC721URIStorage, Ownable, Pausable, Reen
 
     /**
      * @notice Initialize TAGITAgentIdentity contract
-     * @dev Sets ERC721 name/symbol, EIP-712 domain, initializes counters
+     * @dev Sets ERC721 name/symbol, EIP-712 domain, initializes counters.
+     *      Owner should be a multi-sig (Gnosis Safe) for production deployments.
+     * @param initialOwner Address that will own this contract (multi-sig Safe recommended)
      */
-    constructor() ERC721("TAGIT Agent Identity", "TAGIT-AGENT") Ownable(msg.sender) EIP712("TAGITAgentIdentity", "1") {
+    constructor(address initialOwner)
+        ERC721("TAGIT Agent Identity", "TAGIT-AGENT")
+        Ownable(initialOwner)
+        EIP712("TAGITAgentIdentity", "1")
+    {
+        // Note: Ownable(initialOwner) already reverts with OwnableInvalidOwner(address(0))
+        // if initialOwner is zero address — no additional check needed
         _nextAgentId = 1; // Start at 1 (0 reserved for "none")
     }
 

@@ -36,11 +36,15 @@ contract DeployAgentSuite is Script {
         address deployer = vm.addr(deployerPrivateKey);
         address accessController = vm.envAddress("TAGIT_ACCESS");
 
+        // Multi-sig Safe address for final ownership (optional, defaults to deployer)
+        address safeOwner = vm.envOr("AGENT_IDENTITY_OWNER", deployer);
+
         console2.log("===========================================");
         console2.log("TAG IT Network - Agent Suite Deployment");
         console2.log("ERC-8004 Trustless Agent Infrastructure");
         console2.log("===========================================");
         console2.log("Deployer:", deployer);
+        console2.log("Final Owner (Safe):", safeOwner);
         console2.log("Chain ID:", block.chainid);
         console2.log("Access Controller:", accessController);
         console2.log("");
@@ -48,10 +52,10 @@ contract DeployAgentSuite is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // ============================================
-        // 1. Deploy TAGITAgentIdentity
+        // 1. Deploy TAGITAgentIdentity (deployer owns initially for setup)
         // ============================================
         console2.log("1. Deploying TAGITAgentIdentity...");
-        agentIdentity = new TAGITAgentIdentity();
+        agentIdentity = new TAGITAgentIdentity(deployer);
         console2.log("   TAGITAgentIdentity deployed at:", address(agentIdentity));
 
         // ============================================
@@ -85,6 +89,18 @@ contract DeployAgentSuite is Script {
         agentValidation.setIdentityRegistry(address(agentIdentity));
         console2.log("   Identity registry wired");
 
+        // ============================================
+        // 6. Transfer Ownership to Multi-Sig Safe
+        // ============================================
+        if (safeOwner != deployer) {
+            console2.log("6. Transferring ownership to Safe...");
+            agentIdentity.transferOwnership(safeOwner);
+            console2.log("   AgentIdentity owner transferred to:", safeOwner);
+        } else {
+            console2.log("6. Skipping ownership transfer (owner == deployer)");
+            console2.log("   Set AGENT_IDENTITY_OWNER env to transfer to Safe");
+        }
+
         vm.stopBroadcast();
 
         // ============================================
@@ -98,9 +114,14 @@ contract DeployAgentSuite is Script {
         console2.log("TAGITAgentReputation: ", address(agentReputation));
         console2.log("TAGITAgentValidation: ", address(agentValidation));
         console2.log("");
+        console2.log("Owner:                ", safeOwner);
+        console2.log("");
         console2.log("Next steps:");
         console2.log("  1. Verify contracts on block explorer");
         console2.log("  2. Run RegisterSageAgent.s.sol to register Agent #1");
         console2.log("  3. Grant AGENT_VALIDATOR capability to validators");
+        if (safeOwner != deployer) {
+            console2.log("  4. Verify Safe ownership via owner() call");
+        }
     }
 }

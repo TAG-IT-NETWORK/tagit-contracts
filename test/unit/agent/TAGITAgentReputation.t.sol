@@ -59,7 +59,7 @@ contract TAGITAgentReputationTest is Test {
 
         // Deploy AgentIdentity + register an agent
         vm.prank(owner);
-        agentIdentity = new TAGITAgentIdentity();
+        agentIdentity = new TAGITAgentIdentity(owner);
         vm.prank(owner);
         agentIdentity.setAccessController(address(tagitAccess));
 

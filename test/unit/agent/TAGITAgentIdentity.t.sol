@@ -58,9 +58,9 @@ contract TAGITAgentIdentityTest is Test {
         tagitAccess.setIdentityBadge(address(identityBadge));
         tagitAccess.setCapabilityBadge(address(capabilityBadge));
 
-        // Deploy AgentIdentity
+        // Deploy AgentIdentity with explicit owner
         vm.prank(owner);
-        agentIdentity = new TAGITAgentIdentity();
+        agentIdentity = new TAGITAgentIdentity(owner);
         vm.prank(owner);
         agentIdentity.setAccessController(address(tagitAccess));
 
@@ -428,11 +428,134 @@ contract TAGITAgentIdentityTest is Test {
 
     function test_register_revertNoAccessController() public {
         vm.prank(owner);
-        TAGITAgentIdentity freshIdentity = new TAGITAgentIdentity();
+        TAGITAgentIdentity freshIdentity = new TAGITAgentIdentity(owner);
 
         vm.prank(registrant1);
         vm.expectRevert(TAGITAgentIdentity.AccessControllerNotSet.selector);
         freshIdentity.register(agentWallet1, "ipfs://QmAgent1");
+    }
+
+    // ============================================
+    // HELPERS
+    // ============================================
+
+    // ============================================
+    // MULTI-SIG OWNERSHIP TESTS
+    // ============================================
+
+    function test_constructor_setsOwner() public view {
+        assertEq(agentIdentity.owner(), owner, "Owner should be set via constructor param");
+    }
+
+    function test_constructor_customOwner() public {
+        address safeAddr = makeAddr("safe");
+        TAGITAgentIdentity customOwned = new TAGITAgentIdentity(safeAddr);
+        assertEq(customOwned.owner(), safeAddr, "Owner should be the Safe address");
+    }
+
+    function test_constructor_revertZeroOwner() public {
+        vm.expectRevert(abi.encodeWithSignature("OwnableInvalidOwner(address)", address(0)));
+        new TAGITAgentIdentity(address(0));
+    }
+
+    function test_onlyOwner_setAccessController_revertNonOwner() public {
+        address nonOwner = makeAddr("nonOwner");
+        vm.prank(nonOwner);
+        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", nonOwner));
+        agentIdentity.setAccessController(address(tagitAccess));
+    }
+
+    function test_onlyOwner_setRegistrationFee_revertNonOwner() public {
+        address nonOwner = makeAddr("nonOwner");
+        vm.prank(nonOwner);
+        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", nonOwner));
+        agentIdentity.setRegistrationFee(0.01 ether);
+    }
+
+    function test_onlyOwner_suspendAgent_revertNonOwner() public {
+        vm.prank(registrant1);
+        uint256 agentId = agentIdentity.register(agentWallet1, "ipfs://QmAgent1");
+
+        address nonOwner = makeAddr("nonOwner");
+        vm.prank(nonOwner);
+        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", nonOwner));
+        agentIdentity.suspendAgent(agentId);
+    }
+
+    function test_onlyOwner_reactivateAgent_revertNonOwner() public {
+        vm.prank(registrant1);
+        uint256 agentId = agentIdentity.register(agentWallet1, "ipfs://QmAgent1");
+
+        vm.prank(owner);
+        agentIdentity.suspendAgent(agentId);
+
+        address nonOwner = makeAddr("nonOwner");
+        vm.prank(nonOwner);
+        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", nonOwner));
+        agentIdentity.reactivateAgent(agentId);
+    }
+
+    function test_onlyOwner_pause_revertNonOwner() public {
+        address nonOwner = makeAddr("nonOwner");
+        vm.prank(nonOwner);
+        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", nonOwner));
+        agentIdentity.pause();
+    }
+
+    function test_onlyOwner_unpause_revertNonOwner() public {
+        vm.prank(owner);
+        agentIdentity.pause();
+
+        address nonOwner = makeAddr("nonOwner");
+        vm.prank(nonOwner);
+        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", nonOwner));
+        agentIdentity.unpause();
+    }
+
+    function test_onlyOwner_withdrawFees_revertNonOwner() public {
+        address nonOwner = makeAddr("nonOwner");
+        vm.prank(nonOwner);
+        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", nonOwner));
+        agentIdentity.withdrawFees(nonOwner);
+    }
+
+    function test_transferOwnership_toSafe() public {
+        address safeAddr = makeAddr("safe");
+
+        vm.prank(owner);
+        agentIdentity.transferOwnership(safeAddr);
+        assertEq(agentIdentity.owner(), safeAddr, "Ownership should transfer to Safe");
+
+        // Old owner can no longer call onlyOwner functions
+        vm.prank(owner);
+        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", owner));
+        agentIdentity.pause();
+
+        // New owner (Safe) can call onlyOwner functions
+        vm.prank(safeAddr);
+        agentIdentity.pause();
+        assertTrue(agentIdentity.paused(), "Safe should be able to pause");
+    }
+
+    function test_transferOwnership_thenManageAgents() public {
+        address safeAddr = makeAddr("safe");
+
+        // Register agent before transfer
+        vm.prank(registrant1);
+        uint256 agentId = agentIdentity.register(agentWallet1, "ipfs://QmAgent1");
+
+        // Transfer ownership
+        vm.prank(owner);
+        agentIdentity.transferOwnership(safeAddr);
+
+        // Safe can suspend/reactivate
+        vm.prank(safeAddr);
+        agentIdentity.suspendAgent(agentId);
+        assertFalse(agentIdentity.isActiveAgent(agentId), "Agent should be suspended");
+
+        vm.prank(safeAddr);
+        agentIdentity.reactivateAgent(agentId);
+        assertTrue(agentIdentity.isActiveAgent(agentId), "Agent should be reactivated");
     }
 
     // ============================================
