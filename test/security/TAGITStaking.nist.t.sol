@@ -293,8 +293,8 @@ contract TAGITStakingNistTest is Test {
         staking.stake(STAKE_AMOUNT);
         uint256 gasUsed = gasBefore - gasleft();
 
-        // Rate limiter overhead should be minimal (< 10k gas)
-        assertLt(gasUsed, 200000, "stake() too expensive");
+        // Rate limiter + effective balance tracking overhead (< 30k gas above base)
+        assertLt(gasUsed, 230000, "stake() too expensive");
     }
 
     function test_gas_unstakeWithRateLimiting() public {
