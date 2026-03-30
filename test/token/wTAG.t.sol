@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import {Test, console2} from "forge-std/Test.sol";
 import {wTAG} from "../../src/token/wTAG.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 import {GENESIS_SUPPLY, BASIS_POINTS} from "../../src/libraries/Constants.sol";
 
 /**
@@ -459,6 +460,183 @@ contract wTAGTest is Test {
         assertEq(wtag.balanceOf(alice), 0);
         vm.stopPrank();
     }
+
+    // ============================================
+    // SUPPORTS INTERFACE TESTS
+    // ============================================
+
+    function test_supportsInterface_accessControl() public view {
+        // AccessControl interface ID = 0x7965db0b
+        bytes4 accessControlId = type(IAccessControl).interfaceId;
+        assertTrue(wtag.supportsInterface(accessControlId), "Should support AccessControl interface");
+    }
+
+    function test_supportsInterface_erc165() public view {
+        // ERC-165 interface ID = 0x01ffc9a7
+        assertTrue(wtag.supportsInterface(0x01ffc9a7), "Should support ERC-165 interface");
+    }
+
+    function test_supportsInterface_invalidInterface() public view {
+        assertFalse(wtag.supportsInterface(0xdeadbeef), "Should not support random interface");
+    }
+
+    // ============================================
+    // ADDITIONAL EDGE CASE TESTS
+    // ============================================
+
+    function test_wrap_revert_insufficientAllowance() public {
+        vm.warp(tgeTime + 7 days + 1);
+
+        // Alice has tokens but hasn't approved
+        vm.prank(alice);
+        vm.expectRevert();
+        wtag.wrap(100 ether);
+    }
+
+    function test_unwrap_revert_insufficientBalance() public {
+        vm.warp(tgeTime + 7 days + 1);
+
+        // Alice has no wTAG but tries to unwrap
+        vm.prank(alice);
+        vm.expectRevert();
+        wtag.unwrap(100 ether);
+    }
+
+    function test_wrapThenImmediateUnwrap_roundTrip() public {
+        vm.warp(tgeTime + 7 days + 1);
+
+        uint256 amount = 777 ether;
+        uint256 aliceTagBefore = tagToken.balanceOf(alice);
+
+        vm.startPrank(alice);
+        tagToken.approve(address(wtag), amount);
+        wtag.wrap(amount);
+        wtag.unwrap(amount);
+        vm.stopPrank();
+
+        assertEq(tagToken.balanceOf(alice), aliceTagBefore, "Round-trip should restore exact balance");
+        assertEq(wtag.balanceOf(alice), 0, "wTAG should be zero after round-trip");
+        assertEq(wtag.totalSupply(), 0, "Total supply should be zero after round-trip");
+    }
+
+    function test_multipleUsersWrapUnwrap() public {
+        vm.warp(tgeTime + 7 days + 1);
+
+        // Fund bob with TAGIT
+        tagToken.transfer(bob, 500 ether);
+
+        // Alice wraps 200
+        vm.startPrank(alice);
+        tagToken.approve(address(wtag), 200 ether);
+        wtag.wrap(200 ether);
+        vm.stopPrank();
+
+        // Bob wraps 300
+        vm.startPrank(bob);
+        tagToken.approve(address(wtag), 300 ether);
+        wtag.wrap(300 ether);
+        vm.stopPrank();
+
+        assertEq(wtag.totalSupply(), 500 ether);
+        assertEq(wtag.balanceOf(alice), 200 ether);
+        assertEq(wtag.balanceOf(bob), 300 ether);
+
+        // Both unwrap
+        vm.prank(alice);
+        wtag.unwrap(200 ether);
+        vm.prank(bob);
+        wtag.unwrap(300 ether);
+
+        assertEq(wtag.totalSupply(), 0);
+    }
+
+    function test_transferFrom_postLockout() public {
+        vm.prank(minter);
+        wtag.mint(alice, 1000 ether);
+
+        vm.warp(tgeTime + 7 days + 1);
+
+        vm.prank(alice);
+        wtag.approve(bob, 500 ether);
+
+        vm.prank(bob);
+        wtag.transferFrom(alice, bob, 500 ether);
+
+        assertEq(wtag.balanceOf(bob), 500 ether);
+        assertEq(wtag.balanceOf(alice), 500 ether);
+    }
+
+    function test_setTGE_revert_currentTimestamp() public {
+        wTAG freshWtag = new wTAG(address(tagToken), admin, minter);
+
+        // block.timestamp exactly should revert (must be > not >=)
+        vm.prank(admin);
+        vm.expectRevert(abi.encodeWithSelector(wTAG.TGETimestampInPast.selector, block.timestamp, block.timestamp));
+        freshWtag.setTGE(block.timestamp);
+    }
+
+    function test_burnFrom_duringLockout() public {
+        // Mint tokens to alice
+        vm.prank(minter);
+        wtag.mint(alice, 1000 ether);
+
+        vm.warp(tgeTime + 1);
+        assertTrue(wtag.isLocked());
+
+        // burnFrom uses _update with from=alice, to=address(0) — should work during lockout
+        vm.prank(alice);
+        wtag.approve(bob, 500 ether);
+
+        vm.prank(bob);
+        wtag.burnFrom(alice, 500 ether);
+
+        assertEq(wtag.balanceOf(alice), 500 ether);
+    }
+
+    function test_wrap_duringLockout_succeeds() public {
+        // Wrap involves mint (from=0) + safeTransferFrom — should work during lockout
+        // because _update is called with from=address(0)
+        vm.warp(tgeTime + 1);
+        assertTrue(wtag.isLocked());
+
+        vm.startPrank(alice);
+        tagToken.approve(address(wtag), 100 ether);
+        wtag.wrap(100 ether);
+        vm.stopPrank();
+
+        assertEq(wtag.balanceOf(alice), 100 ether);
+    }
+
+    function test_unwrap_duringLockout_succeeds() public {
+        // First wrap during lockout
+        vm.warp(tgeTime + 1);
+
+        vm.startPrank(alice);
+        tagToken.approve(address(wtag), 100 ether);
+        wtag.wrap(100 ether);
+
+        // Unwrap involves burn (to=0) + safeTransfer — should work during lockout
+        wtag.unwrap(100 ether);
+        vm.stopPrank();
+
+        assertEq(wtag.balanceOf(alice), 0);
+    }
+
+    function test_MINTER_ROLE_constant() public view {
+        assertEq(wtag.MINTER_ROLE(), keccak256("MINTER_ROLE"));
+    }
+
+    function test_CAP_BPS_constant() public view {
+        assertEq(wtag.CAP_BPS(), 333);
+    }
+
+    function test_LOCKOUT_PERIOD_constant() public view {
+        assertEq(wtag.LOCKOUT_PERIOD(), 7 days);
+    }
+
+    // ============================================
+    // FUZZ TESTS
+    // ============================================
 
     function testFuzz_mintCapped(uint256 amount) public {
         amount = bound(amount, 1, type(uint128).max);
