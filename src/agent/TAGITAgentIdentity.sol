@@ -9,6 +9,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ITAGITAccess} from "../interfaces/ITAGITAccess.sol";
+import {IReputationStaking} from "../interfaces/IReputationStaking.sol";
 
 /**
  * @title TAGITAgentIdentity
@@ -119,6 +120,9 @@ contract TAGITAgentIdentity is ERC721, ERC721URIStorage, Ownable, Pausable, Reen
     /// @notice Access controller not set
     error AccessControllerNotSet();
 
+    /// @notice Agent does not meet minimum credibility bond
+    error InsufficientCredibilityBond(uint256 agentId);
+
     /// @notice Agent is not active
     error AgentNotActive(uint256 agentId);
 
@@ -146,6 +150,9 @@ contract TAGITAgentIdentity is ERC721, ERC721URIStorage, Ownable, Pausable, Reen
 
     /// @notice Emitted when access controller is updated
     event AccessControllerUpdated(address indexed previousController, address indexed newController);
+
+    /// @notice Emitted when reputation staking contract is updated
+    event ReputationStakingUpdated(address indexed previousStaking, address indexed newStaking);
 
     /// @notice Emitted when registration fee is updated
     event RegistrationFeeUpdated(uint256 oldFee, uint256 newFee);
@@ -184,6 +191,9 @@ contract TAGITAgentIdentity is ERC721, ERC721URIStorage, Ownable, Pausable, Reen
     /// @notice Registration fee in wei (can be 0)
     uint256 public registrationFee;
 
+    /// @notice Optional reputation staking contract for credibility bond enforcement
+    IReputationStaking public reputationStaking;
+
     // ============================================
     // CONSTRUCTOR
     // ============================================
@@ -210,6 +220,18 @@ contract TAGITAgentIdentity is ERC721, ERC721URIStorage, Ownable, Pausable, Reen
         address previousController = address(accessController);
         accessController = ITAGITAccess(controller);
         emit AccessControllerUpdated(previousController, controller);
+    }
+
+    /**
+     * @notice Set the ReputationStaking contract for credibility bond enforcement
+     * @param stakingContract Address of the ReputationStaking contract (address(0) to disable)
+     * @custom:security Only owner can call
+     * @custom:emits ReputationStakingUpdated
+     */
+    function setReputationStaking(address stakingContract) external onlyOwner {
+        address previousStaking = address(reputationStaking);
+        reputationStaking = IReputationStaking(stakingContract);
+        emit ReputationStakingUpdated(previousStaking, stakingContract);
     }
 
     /**
@@ -305,6 +327,16 @@ contract TAGITAgentIdentity is ERC721, ERC721URIStorage, Ownable, Pausable, Reen
         // Mint soulbound ERC-721 token to registrant
         _mint(msg.sender, agentId);
         _setTokenURI(agentId, uri);
+
+        // ============================================
+        // CREDIBILITY BOND CHECK
+        // ============================================
+        // If reputation staking is configured, require minimum bond
+        if (address(reputationStaking) != address(0)) {
+            if (!reputationStaking.hasMinBond(agentId)) {
+                revert InsufficientCredibilityBond(agentId);
+            }
+        }
 
         // ============================================
         // INTERACTIONS
