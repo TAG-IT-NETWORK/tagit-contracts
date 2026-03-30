@@ -1,0 +1,2562 @@
+Warning: optimizer settings and `viaIR` have been disabled for accurate coverage reports.
+If you encounter "stack too deep" errors, consider using `--ir-minimum` which enables `viaIR` with minimum optimization resolving most of the errors
+Compiling 255 files with Solc 0.8.28
+Solc 0.8.28 finished in 4.60s
+Compiler run successful with warnings:
+Warning (2519): This declaration shadows an existing declaration.
+   --> test/libraries/CircuitBreaker.t.sol:103:13:
+    |
+103 |             bool tripped = harness.check();
+    |             ^^^^^^^^^^^^
+Note: The shadowed declaration is here:
+   --> test/libraries/CircuitBreaker.t.sol:108:9:
+    |
+108 |         bool tripped = harness.check();
+    |         ^^^^^^^^^^^^
+
+Warning (2519): This declaration shadows an existing declaration.
+   --> test/unit/TAGITCore.t.sol:496:10:
+    |
+496 |         (address owner, uint64 timestamp, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
+    |          ^^^^^^^^^^^^^
+Note: The shadowed declaration is here:
+  --> test/unit/TAGITCore.t.sol:25:5:
+   |
+25 |     address public owner;
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+Warning (5159): "selfdestruct" has been deprecated. Note that, starting from the Cancun hard fork, the underlying opcode no longer deletes the code and data associated with an account and only transfers its Ether to the beneficiary, unless executed in the same transaction in which the contract was created (see EIP-6780). Any use in newly deployed contracts is strongly discouraged even if the new behavior is taken into account. Future changes to the EVM might further reduce the functionality of the opcode.
+   --> test/unit/TAGITCoreProxyComprehensive.t.sol:640:9:
+    |
+640 |         selfdestruct(payable(msg.sender));
+    |         ^^^^^^^^^^^^
+
+Warning (2072): Unused local variable.
+   --> src/account/TAGITAccount.sol:552:9:
+    |
+552 |         uint256 balance = IERC721(_tagitCore).balanceOf(address(this));
+    |         ^^^^^^^^^^^^^^^
+
+Warning (5667): Unused function parameter. Remove or comment out the variable name to silence this warning.
+  --> test/account/TAGITAccount.t.sol:35:39:
+   |
+35 |     function getNonce(address sender, uint192 key) external view returns (uint256) {
+   |                                       ^^^^^^^^^^^
+
+Warning (2072): Unused local variable.
+   --> test/integration/AgentIntegration.t.sol:105:9:
+    |
+105 |         uint256 fb1 = reputation.giveFeedback(agentId, 5, "Excellent analysis capabilities!");
+    |         ^^^^^^^^^^^
+
+Warning (2072): Unused local variable.
+   --> test/invariant/TAGITCore.invariant.t.sol:412:35:
+    |
+412 |             (address assetOwner,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
+    |                                   ^^^^^^^^^^^^^^^^^^^^^
+
+Warning (2072): Unused local variable.
+   --> test/libraries/DrainDetector.t.sol:619:13:
+    |
+619 |             uint256 velocityThreshold = (INITIAL_BALANCE * VELOCITY_THRESHOLD_BPS) / 10000;
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Warning (2072): Unused local variable.
+   --> test/recovery/TAGITRecovery.t.sol:599:9:
+    |
+599 |         uint256 balanceBefore = token.balanceOf(claimant);
+    |         ^^^^^^^^^^^^^^^^^^^^^
+
+Warning (5667): Unused function parameter. Remove or comment out the variable name to silence this warning.
+   --> test/security/TAGITAccount.nist.t.sol:113:28:
+    |
+113 |     function _createUserOp(address signer, uint256 signerPrivateKey, bytes memory callData)
+    |                            ^^^^^^^^^^^^^^
+
+Warning (2072): Unused local variable.
+   --> test/security/TAGITPaymaster.nist.t.sol:142:24:
+    |
+142 |         (uint64 count, uint64 windowStart, bool tripped, uint64 cooldownEnds) = paymaster.getCircuitBreakerState();
+    |                        ^^^^^^^^^^^^^^^^^^
+
+Warning (2072): Unused local variable.
+   --> test/security/TAGITPaymaster.nist.t.sol:151:24:
+    |
+151 |         (uint64 count, uint64 windowStart, bool tripped, uint64 cooldownEnds) = paymaster.getCircuitBreakerState();
+    |                        ^^^^^^^^^^^^^^^^^^
+
+Warning (2072): Unused local variable.
+   --> test/security/TAGITPrograms.nist.t.sol:327:9:
+    |
+327 |         uint256 balanceBefore = token.balanceOf(user);
+    |         ^^^^^^^^^^^^^^^^^^^^^
+
+Warning (2072): Unused local variable.
+   --> test/security/TAGITStaking.nist.t.sol:176:24:
+    |
+176 |         (uint64 count, uint64 windowStart, uint64 lockedUntil) = staking.getRateLimitState(user);
+    |                        ^^^^^^^^^^^^^^^^^^
+
+Warning (2072): Unused local variable.
+   --> test/security/TAGITStaking.nist.t.sol:280:30:
+    |
+280 |         (uint64 globalCount, uint64 globalWindowStart, uint256 globalRemaining) = staking.getGlobalRateLimitState();
+    |                              ^^^^^^^^^^^^^^^^^^^^^^^^
+
+Warning (2072): Unused local variable.
+   --> test/unit/TAGITCoreOracleVerification.t.sol:122:10:
+    |
+122 |         (bytes memory cr2, bytes memory sig2) = _oracleSign(tokenId, tagHash);
+    |          ^^^^^^^^^^^^^^^^
+
+Warning (2072): Unused local variable.
+   --> test/unit/TAGITCoreOracleVerification.t.sol:191:10:
+    |
+191 |         (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, tagHash);
+    |          ^^^^^^^^^^^^^^^
+
+Warning (2018): Function state mutability can be restricted to pure
+   --> src/access/IdentityBadge.sol:216:5:
+    |
+216 |     function approve(address to, uint256 tokenId) public override {
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+   --> src/access/IdentityBadge.sol:230:5:
+    |
+230 |     function setApprovalForAll(address operator, bool approved) public override {
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to view
+   --> src/account/TAGITAccount.sol:559:5:
+    |
+559 |     function requestKeyExport() external override onlyOwner returns (bytes memory) {
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to view
+   --> test/account/TAGITAccount.t.sol:454:5:
+    |
+454 |     function test_paymaster_rejectUnwhitelisted() public {
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> test/fuzz/TAGITCore.fuzz.t.sol:86:5:
+   |
+86 |     function _oracleSign(uint256 tokenId, bytes32 tagHash)
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to view
+   --> test/fuzz/TAGITTreasury.fuzz.t.sol:236:5:
+    |
+236 |     function testFuzz_withdrawal_timelockTiers(uint256 amount) public {
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+   --> test/integration/IntegrationBase.t.sol:325:5:
+    |
+325 |     function _oracleSign(uint256 tokenId, bytes32 tagHash)
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+   --> test/integration/Lifecycle.t.sol:500:5:
+    |
+500 |     function _oracleSign(uint256 tokenId, bytes32 tagHash)
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> test/integration/TAGITCoreUpgrade.t.sol:96:5:
+   |
+96 |     function _oracleSign(uint256 tokenId, bytes32 tagHash)
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> test/invariant/StateInvariants.t.sol:75:5:
+   |
+75 |     function _oracleSign(uint256 tokenId, bytes32 tagHash)
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> test/invariant/TAGITCore.invariant.t.sol:68:5:
+   |
+68 |     function _oracleSign(uint256 tokenId, bytes32 tagHash)
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+   --> test/invariant/TAGITCore.invariant.t.sol:384:5:
+    |
+384 |     function invariant_stateTransitionsValid() public view {
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+   --> test/recovery/TAGITRecovery.t.sol:166:5:
+    |
+166 |     function _oracleSign(uint256 tokenId, bytes32 tagHash)
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to view
+   --> test/security/CCIPAdapter.nist.t.sol:187:5:
+    |
+187 |     function test_replayProtection_chainStateTracked() public {
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+   --> test/security/STRIDEAttackVectors.t.sol:191:5:
+    |
+191 |     function _oracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory cr, bytes memory sig) {
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+   --> test/security/STRIDEAttackVectors.t.sol:199:5:
+    |
+199 |     function _fakeOracleSign(uint256 tokenId, bytes32 tagHash) internal returns (bytes memory cr, bytes memory sig) {
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to view
+   --> test/security/TAGITPaymaster.nist.t.sol:140:5:
+    |
+140 |     function test_circuitBreaker_initialState() public {
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to view
+   --> test/security/TAGITPaymaster.nist.t.sol:150:5:
+    |
+150 |     function test_circuitBreaker_viewState() public {
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to view
+   --> test/security/TAGITPaymaster.nist.t.sol:176:5:
+    |
+176 |     function test_drainDetector_viewState() public {
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to view
+   --> test/security/TAGITPrograms.nist.t.sol:169:5:
+    |
+169 |     function test_drainDetector_initialState() public {
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+   --> test/security/TAGITRecovery.nist.t.sol:129:5:
+    |
+129 |     function _oracleSign(uint256 tokenId, bytes32 tagHash)
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to view
+   --> test/security/TAGITStaking.nist.t.sol:279:5:
+    |
+279 |     function test_rateLimiter_globalLimitTracked() public {
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to view
+   --> test/unit/TAGITAccess.t.sol:170:5:
+    |
+170 |     function test_hasCapability_returnsFalseWhenNotSet() public {
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to view
+   --> test/unit/TAGITAccess.t.sol:199:5:
+    |
+199 |     function test_hasIdentity_returnsFalseWhenNotSet() public {
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+    --> test/unit/TAGITCore.t.sol:1285:5:
+     |
+1285 |     function _oracleSign(uint256 tokenId, bytes32 tagHash)
+     |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+   --> test/unit/TAGITCoreCustodyTransfer.t.sol:102:5:
+    |
+102 |     function _oracleSign(uint256 tokenId, bytes32 tagHash)
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to view
+   --> test/unit/TAGITCoreCustodyTransfer.t.sol:388:5:
+    |
+388 |     function test_custodyTransfer_prevHashDeterministic() public {
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> test/unit/TAGITCoreLifecycleGaps.t.sol:81:5:
+   |
+81 |     function _oracleSign(uint256 tokenId, bytes32 tagHash)
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> test/unit/TAGITCoreOracleVerification.t.sol:71:5:
+   |
+71 |     function _oracleSign(uint256 tokenId, bytes32 tagHash)
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> test/unit/TAGITCoreOracleVerification.t.sol:82:5:
+   |
+82 |     function _wrongOracleSign(uint256 tokenId, bytes32 tagHash)
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> test/unit/TAGITCoreProxy.t.sol:85:5:
+   |
+85 |     function _oracleSign(uint256 tokenId, bytes32 tagHash)
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+   --> test/unit/TAGITCoreProxyComprehensive.t.sol:117:5:
+    |
+117 |     function _oracleSign(uint256 tokenId, bytes32 tagHash)
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> test/unit/TAGITCoreResolveQuorum.t.sol:93:5:
+   |
+93 |     function _oracleSign(uint256 tokenId, bytes32 tagHash)
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> test/unit/TAGITCoreTokenURI.t.sol:84:5:
+   |
+84 |     function _oracleSign(uint256 tokenId, bytes32 tagHash)
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Analysing contracts...
+Running tests...
+
+Ran 21 tests for test/unit/TAGITCoreTimelock.t.sol:TAGITCoreTimelockTest
+[PASS] test_timelock_accessControllerSet() (gas: 15557)
+[PASS] test_timelock_attackerCannotCallDirectly() (gas: 18990)
+[PASS] test_timelock_attackerCannotCancel() (gas: 60951)
+[PASS] test_timelock_canExecuteAfterDelay() (gas: 83005)
+[PASS] test_timelock_canExecuteExactlyAtDelay() (gas: 82886)
+[PASS] test_timelock_cannotExecuteBeforeDelay() (gas: 63295)
+[PASS] test_timelock_cannotScheduleBelowMinDelay() (gas: 24448)
+[PASS] test_timelock_directResetCircuitBreakerReverts() (gas: 18554)
+[PASS] test_timelock_directSetAccessControllerReverts() (gas: 18967)
+[PASS] test_timelock_directSetRateLimitReverts() (gas: 18997)
+[PASS] test_timelock_directSetThresholdReverts() (gas: 19076)
+[PASS] test_timelock_directUnlockMinterReverts() (gas: 21105)
+[PASS] test_timelock_minimumDelayIs48Hours() (gas: 8003)
+[PASS] test_timelock_onlyExecutorCanExecute() (gas: 61439)
+[PASS] test_timelock_onlyProposerCanSchedule() (gas: 18525)
+[PASS] test_timelock_ownerIsTimelock() (gas: 15311)
+[PASS] test_timelock_proposerCanCancel() (gas: 47008)
+[PASS] test_timelock_scheduleAndExecuteResetCircuitBreaker() (gas: 86575)
+[PASS] test_timelock_scheduleAndExecuteSetRateLimit() (gas: 82689)
+[PASS] test_timelock_scheduleAndExecuteSetThreshold() (gas: 93411)
+[PASS] test_timelock_scheduleAndExecuteUnlockMinter() (gas: 104271)
+Suite result: ok. 21 passed; 0 failed; 0 skipped; finished in 9.75ms (4.06ms CPU time)
+
+Ran 5 tests for test/security/CCIPAdapter_Replay.t.sol:CCIPAdapterReplayTest
+[PASS] test_different_sourceChain_treated_as_different() (gas: 475678)
+[PASS] test_isCcipMessageProcessed_returns_correct_state() (gas: 247659)
+[PASS] test_isMessageProcessed_returns_correct_state() (gas: 260598)
+[PASS] test_processMessage_succeeds() (gas: 246790)
+[PASS] test_replay_same_messageId_reverts() (gas: 279298)
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 11.30ms (6.03ms CPU time)
+
+Ran 10 tests for test/integration/AgentIntegration.t.sol:AgentIntegrationTest
+[PASS] test_crossContract_feedbackOnDecommissionedAgent() (gas: 305102)
+[PASS] test_crossContract_feedbackRequiresActiveAgent() (gas: 326724)
+[PASS] test_crossContract_validationRequiresActiveAgent() (gas: 322166)
+[PASS] test_e2e_defenseValidation_3of5() (gas: 1082189)
+[PASS] test_e2e_fullAgentLifecycle() (gas: 1393751)
+[PASS] test_e2e_multipleAgentsFromDifferentOperators() (gas: 1673808)
+[PASS] test_emergencyPause_allContracts() (gas: 328363)
+[PASS] test_gas_agentRegistration() (gas: 288584)
+[PASS] test_gas_giveFeedback() (gas: 511680)
+[PASS] test_gas_validationResponse() (gas: 703244)
+Suite result: ok. 10 passed; 0 failed; 0 skipped; finished in 13.43ms (7.99ms CPU time)
+
+Ran 12 tests for test/unit/TAGITCoreTokenURI.t.sol:TAGITCoreTokenURITest
+[PASS] test_auditorCapabilityConstant() (gas: 10912)
+[PASS] test_setRedactedURI_byOwner() (gas: 65929)
+[PASS] test_setRedactedURI_revert_byNonOwner() (gas: 19045)
+[PASS] test_tokenURI_auditorGetsFullURI() (gas: 51539)
+[PASS] test_tokenURI_emptyRedactedURI() (gas: 59219)
+[PASS] test_tokenURI_manufacturerWithoutViewerGetsRedacted() (gas: 55319)
+[PASS] test_tokenURI_noAccessControllerBypasses() (gas: 42356)
+[PASS] test_tokenURI_ownerGetsFullURI() (gas: 22895)
+[PASS] test_tokenURI_revert_nonExistentToken() (gas: 21411)
+[PASS] test_tokenURI_unauthorizedGetsRedactedURI() (gas: 55384)
+[PASS] test_tokenURI_viewerGetsFullURI() (gas: 39378)
+[PASS] test_viewerCapabilityConstant() (gas: 10933)
+Suite result: ok. 12 passed; 0 failed; 0 skipped; finished in 7.25ms (4.36ms CPU time)
+
+Ran 21 tests for test/unit/agent/TAGITAgentValidation.t.sol:TAGITAgentValidationTest
+[PASS] test_getAgentRequests() (gas: 259381)
+[PASS] test_getResponses() (gas: 511821)
+[PASS] test_getValidationStatus() (gas: 448782)
+[PASS] test_hasValidatorResponded() (gas: 359781)
+[PASS] test_pause_blocksRequests() (gas: 29506)
+[PASS] test_pause_blocksResponses() (gas: 186948)
+[PASS] test_validationRequest_defense() (gas: 176054)
+[PASS] test_validationRequest_revertAgentNotFound() (gas: 47601)
+[PASS] test_validationRequest_revertNoKYC() (gas: 37544)
+[PASS] test_validationRequest_standard() (gas: 180019)
+[PASS] test_validationResponse_defense_3of5_fail() (gas: 787293)
+[PASS] test_validationResponse_defense_3of5_pass() (gas: 813294)
+[PASS] test_validationResponse_revertAlreadyResponded() (gas: 362115)
+[PASS] test_validationResponse_revertExpired() (gas: 191937)
+[PASS] test_validationResponse_revertInvalidScore() (gas: 191265)
+[PASS] test_validationResponse_revertNotValidator() (gas: 190380)
+[PASS] test_validationResponse_revertRequestNotFound() (gas: 38110)
+[PASS] test_validationResponse_standard_fail() (gas: 435598)
+[PASS] test_validationResponse_standard_pass() (gas: 462584)
+[PASS] test_validatorStats_accuracyTracking() (gas: 781296)
+[PASS] test_validatorStats_tracking() (gas: 446983)
+Suite result: ok. 21 passed; 0 failed; 0 skipped; finished in 18.26ms (12.04ms CPU time)
+
+Ran 17 tests for test/unit/TAGITCoreOracleVerification.t.sol:TAGITCoreOracleVerificationTest
+[PASS] test_bindTag_messageHashDeterministic() (gas: 283263)
+[PASS] test_bindTag_revert_invalidSignature() (gas: 217203)
+[PASS] test_bindTag_revert_nonExistentToken_beforeOracleCheck() (gas: 62662)
+[PASS] test_bindTag_revert_oracleNotSet() (gas: 8692257)
+[PASS] test_bindTag_revert_signatureForDifferentTag() (gas: 223800)
+[PASS] test_bindTag_revert_signatureForDifferentToken() (gas: 296252)
+[PASS] test_bindTag_revert_tagAlreadyBound_beforeOracleCheck() (gas: 362036)
+[PASS] test_bindTag_revert_tampered_challengeResponse() (gas: 224050)
+[PASS] test_bindTag_revert_wrongOracleSignature() (gas: 223811)
+[PASS] test_bindTag_revert_wrongState_beforeOracleCheck() (gas: 290432)
+[PASS] test_bindTag_revert_zeroTagHash_beforeOracleCheck() (gas: 214094)
+[PASS] test_bindTag_withValidOracleSignature() (gas: 284456)
+[PASS] test_fullFlow_oracleSignBindActivateClaim() (gas: 282164)
+[PASS] test_setTrustedOracle_bindWorksWithNewOracle() (gas: 316938)
+[PASS] test_setTrustedOracle_revert_nonOwner() (gas: 21116)
+[PASS] test_setTrustedOracle_revert_zeroAddress() (gas: 19024)
+[PASS] test_setTrustedOracle_success() (gas: 33824)
+Suite result: ok. 17 passed; 0 failed; 0 skipped; finished in 22.12ms (16.97ms CPU time)
+
+Ran 12 tests for test/integration/CoreFlows.t.sol:CoreFlowsTest
+[PASS] test_accessControlEnforced() (gas: 338062)
+[PASS] test_assetLifecycleTriggersRewards() (gas: 351214)
+[PASS] test_badgeRevocationRemovesAccess() (gas: 220873)
+[PASS] test_batchMinting() (gas: 880153)
+[PASS] test_flagAsset() (gas: 386032)
+[PASS] test_fullAssetLifecycle() (gas: 344477)
+[PASS] test_initiateRecoveryClaim() (gas: 721968)
+[PASS] test_multipleManufacturers() (gas: 396805)
+[PASS] test_recycleAsset() (gas: 371799)
+[PASS] test_resolveAsset() (gas: 507077)
+[PASS] test_tagBindingUnique() (gas: 359511)
+[PASS] test_voteOnRecoveryCase() (gas: 884899)
+Suite result: ok. 12 passed; 0 failed; 0 skipped; finished in 23.03ms (15.32ms CPU time)
+
+Ran 10 tests for test/integration/Lifecycle.t.sol:LifecycleIntegrationTest
+[PASS] test_scenario_batchProcessing() (gas: 1803277)
+[PASS] test_scenario_capabilityRevocation() (gas: 232298)
+[PASS] test_scenario_crossContractConsistency() (gas: 218044)
+[PASS] test_scenario_disputePath() (gas: 497650)
+[PASS] test_scenario_flagThenRecycle() (gas: 386036)
+[PASS] test_scenario_gasEfficiency() (gas: 332560)
+[PASS] test_scenario_happyPath() (gas: 382836)
+[PASS] test_scenario_multipleFlagResolveCycles() (gas: 741472)
+[PASS] test_scenario_roleEnforcement() (gas: 381449)
+[PASS] test_scenario_timestampProgression() (gas: 345949)
+Suite result: ok. 10 passed; 0 failed; 0 skipped; finished in 14.48ms (11.63ms CPU time)
+
+Ran 29 tests for test/governance/TAGITGovernor.t.sol:TAGITGovernorTest
+[PASS] test_castVoteWithReason() (gas: 212462)
+[PASS] test_castVote_allHouses() (gas: 578122)
+[PASS] test_castVote_revert_alreadyVoted() (gas: 216697)
+[PASS] test_castVote_revert_invalidVoteType() (gas: 136192)
+[PASS] test_castVote_revert_noVotingPower() (gas: 158822)
+[PASS] test_castVote_revert_whenPaused() (gas: 142430)
+[PASS] test_castVote_success() (gas: 215369)
+[PASS] test_countingMode() (gas: 15409)
+[PASS] test_emergencyPause() (gas: 46758)
+[PASS] test_emergencyPause_revert_notGuardian() (gas: 19248)
+[PASS] test_gas_castVote() (gas: 207194)
+[PASS] test_gas_propose() (gas: 105597)
+[PASS] test_getVotingPower_dev() (gas: 49045)
+[PASS] test_getVotingPower_enterprise() (gas: 42995)
+[PASS] test_getVotingPower_govMil() (gas: 30701)
+[PASS] test_getVotingPower_noVotingPower() (gas: 63434)
+[PASS] test_getVotingPower_public() (gas: 63414)
+[PASS] test_getVotingPower_regulatory() (gas: 36881)
+[PASS] test_houseWeights() (gas: 17374)
+[PASS] test_initialization() (gas: 43146)
+[PASS] test_initialization_revert_zeroAddress() (gas: 7727478)
+[PASS] test_proposalVotes() (gas: 415162)
+[PASS] test_propose_revert_insufficientStake() (gas: 43444)
+[PASS] test_propose_revert_whenPaused() (gas: 57252)
+[PASS] test_propose_success() (gas: 110527)
+[PASS] test_quorum() (gas: 36704)
+[PASS] test_unpause() (gas: 37284)
+[PASS] test_unpause_revert_notGuardian() (gas: 48348)
+[PASS] test_weightedVotes() (gas: 321018)
+Suite result: ok. 29 passed; 0 failed; 0 skipped; finished in 25.44ms (18.80ms CPU time)
+
+Ran 26 tests for test/unit/TAGITCoreProxy.t.sol:TAGITCoreProxyTest
+[PASS] test_admin_ownerCanResetCircuitBreaker() (gas: 22915)
+[PASS] test_admin_ownerCanSetAccessController() (gas: 22410)
+[PASS] test_admin_ownerCanSetRateLimitEnabled() (gas: 23499)
+[PASS] test_admin_ownerCanSetThreshold() (gas: 23652)
+[PASS] test_admin_resetCircuitBreaker_onlyOwner() (gas: 18459)
+[PASS] test_admin_setAccessController_onlyOwner() (gas: 18980)
+[PASS] test_admin_setRateLimitEnabled_onlyOwner() (gas: 18989)
+[PASS] test_admin_setThreshold_onlyOwner() (gas: 19070)
+[PASS] test_admin_unlockMinter_onlyOwner() (gas: 21097)
+[PASS] test_initialize_cannotReinitialize() (gas: 18704)
+[PASS] test_initialize_implementationCannotBeInitialized() (gas: 13732)
+[PASS] test_initialize_revertsOnZeroAddress() (gas: 8239755)
+[PASS] test_initialize_setsERC721Name() (gas: 18121)
+[PASS] test_initialize_setsERC721Symbol() (gas: 18053)
+[PASS] test_initialize_setsOwner() (gas: 15238)
+[PASS] test_initialize_startsTokenIdAt1() (gas: 196344)
+[PASS] test_initialize_totalSupplyStartsAtZero() (gas: 12911)
+[PASS] test_proxy_fullLifecycleThroughProxy() (gas: 502348)
+[PASS] test_proxy_getImplementation() (gas: 13305)
+[PASS] test_proxy_mintWorksThroughProxy() (gas: 199179)
+[PASS] test_proxy_multipleMintsThroughProxy() (gas: 342048)
+[PASS] test_proxy_tagBindingPersistsThroughProxy() (gas: 277319)
+[PASS] test_storage_accessControllerPreserved() (gas: 15419)
+[PASS] test_storage_capacityCorrect() (gas: 16266)
+[PASS] test_storage_circuitBreakerInitialized() (gas: 13356)
+[PASS] test_storage_rateLimiterInitialized() (gas: 20209)
+Suite result: ok. 26 passed; 0 failed; 0 skipped; finished in 6.24ms (5.08ms CPU time)
+
+Ran 26 tests for test/security/TAGITPaymaster.nist.t.sol:TAGITPaymasterNistTest
+[PASS] test_circuitBreaker_governorCanReset() (gas: 26073)
+[PASS] test_circuitBreaker_initialState() (gas: 14595)
+[PASS] test_circuitBreaker_nonGovernorCannotReset() (gas: 18384)
+[PASS] test_circuitBreaker_viewState() (gas: 14614)
+[PASS] test_drainDetector_governorCanSyncBalance() (gas: 53712)
+[PASS] test_drainDetector_governorCanUpdateBalance() (gas: 33572)
+[PASS] test_drainDetector_tracksDeposits() (gas: 84496)
+[PASS] test_drainDetector_tripsOnSpike() (gas: 98418)
+[PASS] test_drainDetector_viewState() (gas: 19829)
+[PASS] test_gas_postOpOverhead() (gas: 67916)
+[PASS] test_gas_viewFunctions() (gas: 31954)
+[PASS] test_integration_normalUsageDoesntTrip() (gas: 205934)
+[PASS] test_integration_recoveryAfterTrip() (gas: 108513)
+[PASS] test_normalOps_depositForBrandWorks() (gas: 84430)
+[PASS] test_normalOps_protocolDepositWorks() (gas: 59340)
+[PASS] test_normalOps_sponsorshipConfigWorks() (gas: 118937)
+[PASS] test_pause_emitsEvent() (gas: 45038)
+[PASS] test_pause_governorCanPause() (gas: 43890)
+[PASS] test_pause_governorCanUnpause() (gas: 33607)
+[PASS] test_pause_nonGovernorCannotPause() (gas: 18384)
+[PASS] test_pause_nonGovernorCannotUnpause() (gas: 46798)
+[PASS] test_security_adminFunctionsProtected() (gas: 38412)
+[PASS] test_security_drainDetectorAutosPauses() (gas: 98419)
+[PASS] test_security_nonEntryPointCannotCallPostOp() (gas: 23023)
+[PASS] test_security_pausedBlocksOperations() (gas: 42132)
+[PASS] test_unpause_emitsEvent() (gas: 33840)
+Suite result: ok. 26 passed; 0 failed; 0 skipped; finished in 5.41ms (4.74ms CPU time)
+
+Ran 18 tests for test/integration/TAGITCoreUpgrade.t.sol:TAGITCoreUpgradeTest
+[PASS] test_upgrade_assetsCreatedBeforeUpgradeCanContinueLifecycle() (gas: 8557522)
+[PASS] test_upgrade_attackerCannotUpgrade() (gas: 8174537)
+[PASS] test_upgrade_authorizedViaTimelock() (gas: 8244116)
+[PASS] test_upgrade_cannotReinitializeAfterUpgrade() (gas: 8249185)
+[PASS] test_upgrade_emitsUpgradeScheduledEvent() (gas: 8246930)
+[PASS] test_upgrade_executorCannotUpgradeDirectly() (gas: 8174472)
+[PASS] test_upgrade_implementationAddressUpdated() (gas: 8247891)
+[PASS] test_upgrade_lifecycleWorksAfterUpgrade() (gas: 8557352)
+[PASS] test_upgrade_multipleUpgradesPreserveState() (gas: 16638535)
+[PASS] test_upgrade_preservesAccessController() (gas: 8248336)
+[PASS] test_upgrade_preservesCircuitBreakerConfig() (gas: 8251792)
+[PASS] test_upgrade_preservesERC721Metadata() (gas: 8261223)
+[PASS] test_upgrade_preservesMintedAssets() (gas: 8441845)
+[PASS] test_upgrade_preservesOwner() (gas: 8245999)
+[PASS] test_upgrade_preservesTagBindings() (gas: 8509108)
+[PASS] test_upgrade_preservesTokenIdCounter() (gas: 8647238)
+[PASS] test_upgrade_proposerCannotUpgradeDirectly() (gas: 8174448)
+[PASS] test_upgrade_proxyAddressUnchanged() (gas: 8242626)
+Suite result: ok. 18 passed; 0 failed; 0 skipped; finished in 16.66ms (15.23ms CPU time)
+
+Ran 25 tests for test/unit/TAGITCoreProxyComprehensive.t.sol:TAGITCoreProxyComprehensiveTest
+[PASS] test_erc1967_adminSlotEmpty() (gas: 5824)
+[PASS] test_erc1967_beaconSlotEmpty() (gas: 5826)
+[PASS] test_erc1967_implementationSlotCorrect() (gas: 12508)
+[PASS] test_erc1967_implementationSlotUpdatesOnUpgrade() (gas: 8239651)
+[PASS] test_events_timelockCallExecuted() (gas: 91662)
+[PASS] test_events_timelockCallScheduled() (gas: 59504)
+[PASS] test_events_upgradeScheduledParams() (gas: 8246737)
+[PASS] test_multisig_belowThresholdReverts() (gas: 11778420)
+[PASS] test_multisig_safeAsProposerAndExecutor() (gas: 12019476)
+[PASS] test_multisig_safeCanCancelPending() (gas: 11988402)
+[PASS] test_multisig_singleSignerCannotAct() (gas: 11749949)
+[PASS] test_multisig_upgradeViaSafeTimelock() (gas: 20171724)
+[PASS] test_security_cannotUpgradeToEOA() (gas: 82628)
+[PASS] test_security_cannotUpgradeToZeroAddress() (gas: 78021)
+[PASS] test_security_concurrentUpgradeSchedules() (gas: 16447152)
+[PASS] test_security_reentrancyInUpgrade() (gas: 241111)
+[PASS] test_security_selfDestructImplBlocked() (gas: 136841)
+[PASS] test_storageGap_sizeIs34Slots() (gas: 8292277)
+[PASS] test_storageGap_v2PreservesExistingStorage() (gas: 8667212)
+[PASS] test_storageGap_v2ReducesGapTo33() (gas: 8444949)
+[PASS] test_upgradeV2_cannotReinitializeV1() (gas: 8373767)
+[PASS] test_upgradeV2_lifecycleContinues() (gas: 8681798)
+[PASS] test_upgradeV2_newFunctionAvailable() (gas: 8370656)
+[PASS] test_upgradeV2_newStorageWritable() (gas: 8437909)
+[PASS] test_upgradeV2_reinitializerWorks() (gas: 8444927)
+Suite result: ok. 25 passed; 0 failed; 0 skipped; finished in 20.82ms (19.09ms CPU time)
+
+Ran 23 tests for test/security/TAGITCore_Reentrancy.t.sol:TAGITCore_Reentrancy
+[PASS] test_approvedTransfer_reverts_TransferDisabled() (gas: 352796)
+[PASS] test_claim_nonReentrant_reverts_when_guard_entered() (gas: 334806)
+[PASS] test_claim_reverts_withoutCapability() (gas: 309776)
+[PASS] test_claim_state_integrity() (gas: 329127)
+[PASS] test_crossFunction_reentrancy_blocked() (gas: 309501)
+[PASS] test_doubleClaim_reverts() (gas: 337147)
+[PASS] test_flag_nonReentrant_reverts_when_guard_entered() (gas: 361036)
+[PASS] test_mint_nonReentrant_reverts_when_guard_entered() (gas: 187266)
+[PASS] test_ownershipSync_afterClaim() (gas: 349982)
+[PASS] test_ownershipSync_afterResolve() (gas: 493950)
+[PASS] test_reentrancyGuard_resets_after_claim() (gas: 325256)
+[PASS] test_reentrancyGuard_resets_after_resolve() (gas: 479347)
+[PASS] test_resolve_nonReentrant_reverts_when_guard_entered() (gas: 487854)
+[PASS] test_resolve_reverts_withoutCapability() (gas: 490427)
+[PASS] test_resolve_reverts_withoutQuorum() (gas: 444123)
+[PASS] test_resolve_state_integrity() (gas: 490084)
+[PASS] test_safeTransferFromWithData_reverts_TransferDisabled() (gas: 327953)
+[PASS] test_safeTransferFrom_reverts_TransferDisabled() (gas: 327161)
+[PASS] test_transferBlocked_inActivatedState() (gas: 297675)
+[PASS] test_transferBlocked_inBoundState() (gas: 279116)
+[PASS] test_transferBlocked_inFlaggedState() (gas: 355265)
+[PASS] test_transferBlocked_inMintedState() (gas: 202385)
+[PASS] test_transferFrom_reverts_TransferDisabled() (gas: 327077)
+Suite result: ok. 23 passed; 0 failed; 0 skipped; finished in 17.73ms (14.99ms CPU time)
+
+Ran 19 tests for test/unit/TAGITCoreResolveQuorum.t.sol:TAGITCoreResolveQuorumTest
+[PASS] test_approveResolve_emitsEvent() (gas: 436724)
+[PASS] test_approveResolve_firstApproval() (gas: 437264)
+[PASS] test_approveResolve_revertsDuplicateApproval() (gas: 445297)
+[PASS] test_approveResolve_revertsNonFlagged() (gas: 335915)
+[PASS] test_approveResolve_revertsRecipientMismatch() (gas: 454168)
+[PASS] test_approveResolve_revertsTokenNotFound() (gas: 60655)
+[PASS] test_approveResolve_revertsUnauthorized() (gas: 361389)
+[PASS] test_approveResolve_secondApproval_reachesQuorum() (gas: 476875)
+[PASS] test_approveResolve_threeApprovals() (gas: 523876)
+[PASS] test_getResolveApprovalStatus_afterApprovals() (gas: 480493)
+[PASS] test_getResolveApprovalStatus_noApprovals() (gas: 16752)
+[PASS] test_resolveQuorum_isTwo() (gas: 10956)
+[PASS] test_resolve_approverCanAlsoExecute() (gas: 481183)
+[PASS] test_resolve_clearsApprovalState() (gas: 479541)
+[PASS] test_resolve_quorumWorksAcrossMultipleFlagResolveCycles() (gas: 606217)
+[PASS] test_resolve_revertsRecipientMismatch() (gas: 490970)
+[PASS] test_resolve_revertsWithNoApprovals() (gas: 365638)
+[PASS] test_resolve_revertsWithSingleApproval() (gas: 449150)
+[PASS] test_resolve_succeedsWithQuorum() (gas: 488021)
+Suite result: ok. 19 passed; 0 failed; 0 skipped; finished in 21.37ms (20.05ms CPU time)
+
+Ran 10 tests for test/security/IntegrationFactory_FeeBypass.t.sol:IntegrationFactory_FeeBypassTest
+[PASS] testFuzz_fee_amounts(uint256) (runs: 256, μ: 174496, ~: 176558)
+[PASS] test_authorized_can_processPayment() (gas: 160576)
+[PASS] test_grant_emits_event() (gas: 41505)
+[PASS] test_nonOwner_cannot_grant() (gas: 16970)
+[PASS] test_nonOwner_cannot_revoke() (gas: 16909)
+[PASS] test_owner_can_grant_integrator() (gas: 42950)
+[PASS] test_owner_can_revoke_integrator() (gas: 33219)
+[PASS] test_revoke_emits_event() (gas: 32027)
+[PASS] test_revoked_integrator_cannot_processPayment() (gas: 155541)
+[PASS] test_unauthorized_cannot_processPayment() (gas: 87097)
+Suite result: ok. 10 passed; 0 failed; 0 skipped; finished in 81.97ms (78.62ms CPU time)
+
+Ran 24 tests for test/unit/CapabilityBadge.t.sol:CapabilityBadgeTest
+[PASS] testFuzz_grantCapability(address,uint256) (runs: 256, μ: 53650, ~: 53855)
+[PASS] testFuzz_grantRevokeCapability(address,uint256) (runs: 256, μ: 45266, ~: 45399)
+[PASS] test_batchGrantCapabilities_emitsEvents() (gas: 79468)
+[PASS] test_batchGrantCapabilities_revert_notOwner() (gas: 17175)
+[PASS] test_batchGrantCapabilities_revert_zeroAddress() (gas: 12347)
+[PASS] test_batchGrantCapabilities_success() (gas: 104401)
+[PASS] test_batchRevokeCapabilities_emitsEvents() (gas: 71638)
+[PASS] test_batchRevokeCapabilities_revert_notOwner() (gas: 50616)
+[PASS] test_batchRevokeCapabilities_success() (gas: 95092)
+[PASS] test_batchTransfer_success() (gas: 116352)
+[PASS] test_grantCapability_emitsEvent() (gas: 47719)
+[PASS] test_grantCapability_multipleCapabilities() (gas: 111236)
+[PASS] test_grantCapability_revert_invalidCapabilityId() (gas: 14008)
+[PASS] test_grantCapability_revert_notOwner() (gas: 16532)
+[PASS] test_grantCapability_revert_zeroAddress() (gas: 11725)
+[PASS] test_grantCapability_success() (gas: 47085)
+[PASS] test_grantCapability_twice() (gas: 56006)
+[PASS] test_hasCapability_returnsCorrectly() (gas: 42073)
+[PASS] test_revokeCapability_emitsEvent() (gas: 40792)
+[PASS] test_revokeCapability_multipleBalance() (gas: 64453)
+[PASS] test_revokeCapability_revert_notFound() (gas: 17126)
+[PASS] test_revokeCapability_revert_notOwner() (gas: 49829)
+[PASS] test_revokeCapability_success() (gas: 40119)
+[PASS] test_transfer_success() (gas: 70142)
+Suite result: ok. 24 passed; 0 failed; 0 skipped; finished in 82.30ms (118.24ms CPU time)
+
+Ran 11 tests for test/unit/TAGITCoreCustodyTransfer.t.sol:TAGITCoreCustodyTransferTest
+[PASS] test_custodyTransfer_activate_emitsEvent() (gas: 301251)
+[PASS] test_custodyTransfer_bindTag_emitsEvent() (gas: 280669)
+[PASS] test_custodyTransfer_claim_emitsEvent() (gas: 330545)
+[PASS] test_custodyTransfer_flagResolveReFlag() (gas: 547908)
+[PASS] test_custodyTransfer_flag_emitsEvent() (gas: 381970)
+[PASS] test_custodyTransfer_fullLifecycleChainLinkable() (gas: 380672)
+[PASS] test_custodyTransfer_mint_emitsEvent() (gas: 203608)
+[PASS] test_custodyTransfer_prevHashDeterministic() (gas: 4757)
+[PASS] test_custodyTransfer_recycle_fromClaimed_emitsEvent() (gas: 372535)
+[PASS] test_custodyTransfer_recycle_fromFlagged_emitsEvent() (gas: 402737)
+[PASS] test_custodyTransfer_resolve_emitsEvent() (gas: 511519)
+Suite result: ok. 11 passed; 0 failed; 0 skipped; finished in 9.63ms (8.42ms CPU time)
+
+Ran 10 tests for test/security/Patch12And13Paymaster.t.sol:Patch12And13PaymasterTest
+[PASS] testFuzz_withdraw_random_caller(address) (runs: 256, μ: 25199, ~: 25199)
+[PASS] test_accept_ownership_requires_pending() (gas: 19404)
+[PASS] test_brand_ownership_two_step_transfer() (gas: 103763)
+[PASS] test_depositForBrand_requires_registration() (gas: 32062)
+[PASS] test_double_registration_reverts() (gas: 24180)
+[PASS] test_registerBrand_requires_governor() (gas: 20116)
+[PASS] test_squatting_blocked() (gas: 31340)
+[PASS] test_transfer_ownership_requires_owner() (gas: 20395)
+[PASS] test_withdraw_by_attacker_reverts() (gas: 25369)
+[PASS] test_withdraw_by_owner_succeeds() (gas: 50362)
+Suite result: ok. 10 passed; 0 failed; 0 skipped; finished in 16.49ms (15.05ms CPU time)
+
+Ran 4 tests for test/security/Patch11TreasuryAsset.t.sol:Patch11TreasuryAssetTest
+[PASS] testFuzz_queueWithdrawal_asset_mismatch(address) (runs: 256, μ: 187126, ~: 187126)
+[PASS] test_queueWithdrawal_correct_asset_succeeds() (gas: 306312)
+[PASS] test_queueWithdrawal_random_token_reverts() (gas: 1012441)
+[PASS] test_queueWithdrawal_wrong_asset_reverts() (gas: 186200)
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 35.96ms (34.74ms CPU time)
+
+Ran 10 tests for test/security/Patch15EmailHash.t.sol:Patch15EmailHashTest
+[PASS] test_deployAccountWithOwner_reverts_without_verification() (gas: 25579)
+[PASS] test_deployAccount_reverts_without_verification() (gas: 25067)
+[PASS] test_deployAccount_succeeds_after_governor_verification() (gas: 241173)
+[PASS] test_deployAccount_succeeds_after_verifier_verification() (gas: 243506)
+[PASS] test_emailHash_consumed_after_deploy() (gas: 250113)
+[PASS] test_emailVerified_event_emitted() (gas: 44419)
+[PASS] test_frontrun_blocked() (gas: 262721)
+[PASS] test_isEmailVerified_returns_correct_state() (gas: 245519)
+[PASS] test_setEmailVerifier_onlyGovernor() (gas: 41266)
+[PASS] test_verifyEmail_requires_authorization() (gas: 21781)
+Suite result: ok. 10 passed; 0 failed; 0 skipped; finished in 1.89ms (1.24ms CPU time)
+
+Ran 12 tests for test/unit/TAGITCoreBatchMint.t.sol:TAGITCoreBatchMintTest
+[PASS] test_batchMint_emptyBatch() (gas: 61038)
+[PASS] test_batchMint_exactlyMaxSize() (gas: 6864469)
+[PASS] test_batchMint_gasBounded() (gas: 6862779)
+[PASS] test_batchMint_multipleItems() (gas: 513129)
+[PASS] test_batchMint_multipleRecipients() (gas: 392466)
+[PASS] test_batchMint_revert_arrayLengthMismatch() (gas: 64087)
+[PASS] test_batchMint_revert_batchTooLarge() (gas: 202955)
+[PASS] test_batchMint_revert_unauthorized() (gas: 59592)
+[PASS] test_batchMint_revert_zeroAddressInBatch() (gas: 206384)
+[PASS] test_batchMint_singleItem() (gas: 207978)
+[PASS] test_batchMint_tokenIdsAreSequential() (gas: 338561)
+[PASS] test_maxBatchSizeConstant() (gas: 10912)
+Suite result: ok. 12 passed; 0 failed; 0 skipped; finished in 14.87ms (13.87ms CPU time)
+
+Ran 43 tests for test/token/TAGITBurner.t.sol:TAGITBurnerTest
+[PASS] testFuzz_burnPlusTreasury_equalsInput(uint256,uint256) (runs: 256, μ: 214957, ~: 216512)
+[PASS] testFuzz_routeFee_anyAmount(uint256) (runs: 256, μ: 203590, ~: 205875)
+[PASS] testFuzz_setBurnRate_belowFloor_reverts(uint256) (runs: 256, μ: 25010, ~: 25166)
+[PASS] testFuzz_setBurnRate_validRange(uint256) (runs: 256, μ: 31547, ~: 31801)
+[PASS] test_burnFloor_returnsConstant() (gas: 10745)
+[PASS] test_gas_routeFee() (gas: 199787)
+[PASS] test_initialize_revert_zeroGovernor() (gas: 2052257)
+[PASS] test_initialize_revert_zeroOwner() (gas: 2052270)
+[PASS] test_initialize_revert_zeroToken() (gas: 2052162)
+[PASS] test_initialize_revert_zeroTreasury() (gas: 2052180)
+[PASS] test_initialize_setsDefaultBurnRate() (gas: 12866)
+[PASS] test_initialize_setsGovernor() (gas: 15116)
+[PASS] test_initialize_setsToken() (gas: 15469)
+[PASS] test_initialize_setsTreasury() (gas: 15143)
+[PASS] test_initialize_startsWithZeroTotals() (gas: 16538)
+[PASS] test_invariant_burnRate_neverBelowFloor() (gas: 51143)
+[PASS] test_routeFee_burnsTokens() (gas: 202841)
+[PASS] test_routeFee_emitsEvent() (gas: 202183)
+[PASS] test_routeFee_multipleCalls() (gas: 373580)
+[PASS] test_routeFee_revert_insufficientAllowance() (gas: 95606)
+[PASS] test_routeFee_revert_insufficientBalance() (gas: 84314)
+[PASS] test_routeFee_revert_zeroAmount() (gas: 38772)
+[PASS] test_routeFee_sendsTreasury() (gas: 204251)
+[PASS] test_routeFee_splitsCorrectly() (gas: 202680)
+[PASS] test_setBurnRate_affectsRouteFee() (gas: 211428)
+[PASS] test_setBurnRate_at100Percent() (gas: 26423)
+[PASS] test_setBurnRate_atFloor() (gas: 26359)
+[PASS] test_setBurnRate_revert_above100Percent() (gas: 19573)
+[PASS] test_setBurnRate_revert_belowFloor() (gas: 19738)
+[PASS] test_setBurnRate_revert_notGovernor() (gas: 18738)
+[PASS] test_setBurnRate_revert_zeroRate() (gas: 19775)
+[PASS] test_setBurnRate_success() (gas: 28758)
+[PASS] test_setGovernor_newGovernorCanSetBurnRate() (gas: 42968)
+[PASS] test_setGovernor_revert_notOwner() (gas: 21133)
+[PASS] test_setGovernor_revert_zeroAddress() (gas: 18975)
+[PASS] test_setGovernor_success() (gas: 33562)
+[PASS] test_setTreasury_affectsRouteFee() (gas: 235193)
+[PASS] test_setTreasury_revert_notGovernor() (gas: 20877)
+[PASS] test_setTreasury_revert_zeroAddress() (gas: 18740)
+[PASS] test_setTreasury_success() (gas: 33401)
+[PASS] test_upgrade_preservesState() (gas: 2192079)
+[PASS] test_upgrade_revert_notOwner() (gas: 1979142)
+[PASS] test_version_returnsConstant() (gas: 15246)
+Suite result: ok. 43 passed; 0 failed; 0 skipped; finished in 154.65ms (189.86ms CPU time)
+
+Ran 7 tests for test/security/Patch16SessionKeySpend.t.sol:Patch16SessionKeySpendTest
+[PASS] testFuzz_sessionKey_spend(uint256) (runs: 256, μ: 52603, ~: 52707)
+[PASS] test_owner_bypasses_spend_limit() (gas: 30714)
+[PASS] test_sessionKey_cumulative_tracking() (gas: 116584)
+[PASS] test_sessionKey_reset_on_re_add() (gas: 115370)
+[PASS] test_sessionKey_spend_over_limit_fails() (gas: 47349)
+[PASS] test_sessionKey_spend_within_limit_succeeds() (gas: 70215)
+[PASS] test_sessionKey_zero_value_not_tracked() (gas: 91776)
+Suite result: ok. 7 passed; 0 failed; 0 skipped; finished in 57.62ms (56.94ms CPU time)
+
+Ran 16 tests for test/security/AgentSecurity.t.sol:AgentSecurityTest
+[PASS] test_fuzz_feedbackRating(uint8) (runs: 256, μ: 361346, ~: 318967)
+[PASS] test_fuzz_registrationURI(string) (runs: 256, μ: 303508, ~: 290399)
+[PASS] test_fuzz_validationScore(uint8) (runs: 256, μ: 659348, ~: 720296)
+[PASS] test_security_agentWalletCannotSelfReview() (gas: 403521)
+[PASS] test_security_cannotDuplicateFeedback() (gas: 529263)
+[PASS] test_security_cannotRespondToExpiredRequest() (gas: 483387)
+[PASS] test_security_cannotReuseBoundWallet() (gas: 306981)
+[PASS] test_security_cannotSafeTransferAgentToken() (gas: 290906)
+[PASS] test_security_cannotTransferAgentToken() (gas: 290776)
+[PASS] test_security_govMilCannotRegister() (gas: 48421)
+[PASS] test_security_noKycCannotGiveFeedback() (gas: 311106)
+[PASS] test_security_noKycCannotRegister() (gas: 37706)
+[PASS] test_security_noKycCannotRequestValidation() (gas: 310576)
+[PASS] test_security_nonValidatorCannotRespond() (gas: 446551)
+[PASS] test_security_registrantCannotSelfReview() (gas: 318827)
+[PASS] test_security_validatorCannotDoubleRespond() (gas: 653661)
+Suite result: ok. 16 passed; 0 failed; 0 skipped; finished in 203.76ms (243.54ms CPU time)
+
+Ran 33 tests for test/token/TAGITToken.t.sol:TAGITTokenTest
+[PASS] testFuzz_burn(uint256) (runs: 256, μ: 74228, ~: 73699)
+[PASS] testFuzz_mint(address,uint256) (runs: 256, μ: 126787, ~: 126433)
+[PASS] test_burnFrom_revert_insufficientAllowance() (gas: 84135)
+[PASS] test_burnFrom_success() (gas: 107267)
+[PASS] test_burn_revert_insufficientBalance() (gas: 41652)
+[PASS] test_burn_success() (gas: 88376)
+[PASS] test_decimals() (gas: 10813)
+[PASS] test_delegate_success() (gas: 130291)
+[PASS] test_delegate_toOther() (gas: 136915)
+[PASS] test_gas_burn() (gas: 81611)
+[PASS] test_gas_mint() (gas: 119458)
+[PASS] test_gas_transfer() (gas: 54075)
+[PASS] test_initialize_mintsGenesisSupplyToTreasury() (gas: 19502)
+[PASS] test_initialize_revert_cannotReinitialize() (gas: 21054)
+[PASS] test_initialize_revert_zeroOwner() (gas: 4602623)
+[PASS] test_initialize_revert_zeroTreasury() (gas: 4602567)
+[PASS] test_initialize_setsNameAndSymbol() (gas: 24478)
+[PASS] test_initialize_setsOwner() (gas: 15246)
+[PASS] test_mint_revert_emissionsNotSet() (gas: 22739)
+[PASS] test_mint_revert_notEmissions() (gas: 53888)
+[PASS] test_mint_revert_zeroAddress() (gas: 70495)
+[PASS] test_mint_revert_zeroAmount() (gas: 72719)
+[PASS] test_mint_success() (gas: 126279)
+[PASS] test_setEmissionsAddress_revert_alreadySet() (gas: 50091)
+[PASS] test_setEmissionsAddress_revert_notOwner() (gas: 21147)
+[PASS] test_setEmissionsAddress_revert_zeroAddress() (gas: 18957)
+[PASS] test_setEmissionsAddress_success() (gas: 52925)
+[PASS] test_transferFrom_success() (gas: 67388)
+[PASS] test_transfer_success() (gas: 58823)
+[PASS] test_upgrade_preservesState() (gas: 4621553)
+[PASS] test_upgrade_revert_notOwner() (gas: 4534750)
+[PASS] test_upgrade_success() (gas: 4545366)
+[PASS] test_version() (gas: 15295)
+Suite result: ok. 33 passed; 0 failed; 0 skipped; finished in 48.39ms (47.72ms CPU time)
+
+Ran 19 tests for test/unit/TAGITStateAnchor.t.sol:TAGITStateAnchorTest
+[PASS] testFuzz_postAndVerify(uint256,address,uint256) (runs: 256, μ: 68320, ~: 68320)
+[PASS] test_constructor_revertsZeroAddress() (gas: 63561)
+[PASS] test_constructor_setsAnchor() (gas: 15703)
+[PASS] test_postHeartbeat_revertsNotAnchor() (gas: 13261)
+[PASS] test_postHeartbeat_updatesTimestamp() (gas: 22823)
+[PASS] test_postStateRoot_emitsEvent() (gas: 67641)
+[PASS] test_postStateRoot_revertsInvalidRoot() (gas: 14032)
+[PASS] test_postStateRoot_revertsNotAnchor() (gas: 16923)
+[PASS] test_postStateRoot_storesRoot() (gas: 68319)
+[PASS] test_postStateRoot_updatesHeartbeat() (gas: 69709)
+[PASS] test_rotateAnchor_revertsNotOwner() (gas: 16131)
+[PASS] test_rotateAnchor_revertsZeroAddress() (gas: 13952)
+[PASS] test_rotateAnchor_success() (gas: 28210)
+[PASS] test_syncAge_neverUpdated() (gas: 8470)
+[PASS] test_syncAge_returnsElapsed() (gas: 67533)
+[PASS] test_systemSyncAge_returnsElapsed() (gas: 11353)
+[PASS] test_verifyState_invalid() (gas: 77815)
+[PASS] test_verifyState_noRootStored() (gas: 12266)
+[PASS] test_verifyState_valid() (gas: 68452)
+Suite result: ok. 19 passed; 0 failed; 0 skipped; finished in 64.38ms (65.09ms CPU time)
+
+Ran 31 tests for test/security/CCIPAdapter.nist.t.sol:CCIPAdapterNistTest
+[PASS] test_chain_configCorrect() (gas: 20035)
+[PASS] test_chain_governorCanRemove() (gas: 23174)
+[PASS] test_chain_governorCanUpdateGasLimit() (gas: 32267)
+[PASS] test_chain_isSupported() (gas: 13636)
+[PASS] test_estimateFee() (gas: 29219)
+[PASS] test_gas_isMessageProcessed() (gas: 13530)
+[PASS] test_gas_requestVerification() (gas: 230455)
+[PASS] test_pause_blocksRequests() (gas: 76630)
+[PASS] test_pause_governorCanPause() (gas: 43401)
+[PASS] test_pause_governorCanUnpause() (gas: 33643)
+[PASS] test_rateLimit_blocksExcessiveRequests() (gas: 13740698)
+[PASS] test_rateLimit_decreasesOnRequest() (gas: 232487)
+[PASS] test_rateLimit_governorCanUpdateLimit() (gas: 26733)
+[PASS] test_rateLimit_initialCapacity() (gas: 15595)
+[PASS] test_rateLimit_resetsAfterHour() (gas: 13890955)
+[PASS] test_replayProtection_chainStateTracked() (gas: 14169)
+[PASS] test_replayProtection_defaultMessageExpiry() (gas: 12992)
+[PASS] test_replayProtection_governorCanDisable() (gas: 25398)
+[PASS] test_replayProtection_governorCanReEnable() (gas: 25527)
+[PASS] test_replayProtection_governorCanSetChainNonce() (gas: 43785)
+[PASS] test_replayProtection_governorCanSetExpiry() (gas: 25348)
+[PASS] test_replayProtection_initialStateEnabled() (gas: 13161)
+[PASS] test_replayProtection_messagesMarkedAsProcessed() (gas: 232432)
+[PASS] test_request_data() (gas: 255442)
+[PASS] test_request_status() (gas: 255052)
+[PASS] test_request_verification() (gas: 235428)
+[PASS] test_security_nonGovernorCannotDisableReplayProtection() (gas: 18871)
+[PASS] test_security_nonGovernorCannotSetChainNonce() (gas: 19217)
+[PASS] test_security_nonGovernorCannotSetExpiry() (gas: 18997)
+[PASS] test_supportsInterface() (gas: 13425)
+[PASS] test_viewFunctions() (gas: 30525)
+Suite result: ok. 31 passed; 0 failed; 0 skipped; finished in 22.81ms (22.11ms CPU time)
+
+Ran 27 tests for test/bridge/CCIPAdapter.t.sol:CCIPAdapterTest
+[PASS] test_cancelChainAddition_works() (gas: 80941)
+[PASS] test_ccipReceive_revertsIfNotRouter() (gas: 21689)
+[PASS] test_ccipReceive_revertsOnReplayAttack() (gas: 365938)
+[PASS] test_ccipReceive_revertsOnUnknownChain() (gas: 182995)
+[PASS] test_ccipReceive_revertsOnUnknownSender() (gas: 185147)
+[PASS] test_ccipReceive_revertsWhenPaused() (gas: 204706)
+[PASS] test_executeChainAddition_revertsBeforeTimelock() (gas: 100098)
+[PASS] test_executeChainAddition_worksAfter72Hours() (gas: 153236)
+[PASS] test_getRemainingCapacity_returnsCorrectValue() (gas: 15559)
+[PASS] test_getRequest_returnsEmptyForUnknown() (gas: 22215)
+[PASS] test_getResponse_returnsEmptyForUnknown() (gas: 20184)
+[PASS] test_initialize_revertsOnZeroAddresses() (gas: 5527125)
+[PASS] test_initialize_setsCorrectState() (gas: 40814)
+[PASS] test_pause_revertsIfNotGovernor() (gas: 19238)
+[PASS] test_pause_works() (gas: 43337)
+[PASS] test_rateLimit_enforced_at100() (gas: 13068909)
+[PASS] test_removeChain_works() (gas: 118783)
+[PASS] test_requestVerification_revertsOnUnsupportedChain() (gas: 44387)
+[PASS] test_requestVerification_revertsWhenPaused() (gas: 207576)
+[PASS] test_scheduleChainAddition_createsTimelock() (gas: 101996)
+[PASS] test_scheduleChainAddition_revertsIfNotGovernor() (gas: 22206)
+[PASS] test_setRateLimit_works() (gas: 26639)
+[PASS] test_supportsInterface_ccipReceiver() (gas: 11307)
+[PASS] test_supportsInterface_erc165() (gas: 11336)
+[PASS] test_unpause_works() (gas: 33606)
+[PASS] test_updateChainGasLimit_works() (gas: 156057)
+[PASS] test_version_returns100() (gas: 15362)
+Suite result: ok. 27 passed; 0 failed; 0 skipped; finished in 8.92ms (7.53ms CPU time)
+
+Ran 23 tests for test/unit/TAGITCoreLifecycleGaps.t.sol:TAGITCoreLifecycleGapsTest
+[PASS] testFuzz_getAsset_nonExistent(uint256) (runs: 256, μ: 23125, ~: 23125)
+[PASS] testFuzz_recycled_allOperationsRevert(uint8) (runs: 256, μ: 351840, ~: 351349)
+[PASS] test_bound_revert_claim_typedError() (gas: 287437)
+[PASS] test_bound_revert_flag_typedError() (gas: 286868)
+[PASS] test_bound_revert_recycle_typedError() (gas: 285732)
+[PASS] test_getAsset_maxUint_returnsZeroes() (gas: 16045)
+[PASS] test_getAsset_nonExistent_returnsZeroes() (gas: 16693)
+[PASS] test_getAsset_tokenZero_returnsZeroes() (gas: 16183)
+[PASS] test_getTokenByTag_unknownHash_returnsZero() (gas: 13508)
+[PASS] test_getTokenByTag_zeroHash_returnsZero() (gas: 13501)
+[PASS] test_initialize_onImplementation_reverts() (gas: 13496)
+[PASS] test_mint_zeroMetadata_succeeds() (gas: 198528)
+[PASS] test_recycle_ownerOf_unchanged() (gas: 342068)
+[PASS] test_recycle_totalSupply_unchanged() (gas: 414369)
+[PASS] test_recycled_revert_activate() (gas: 346653)
+[PASS] test_recycled_revert_bindTag() (gas: 351129)
+[PASS] test_recycled_revert_claim() (gas: 349087)
+[PASS] test_recycled_revert_flag() (gas: 348587)
+[PASS] test_recycled_revert_recycle() (gas: 345515)
+[PASS] test_resolveQuorum_isTwo() (gas: 10944)
+[PASS] test_resolve_requiresTwoApprovals() (gas: 439847)
+[PASS] test_setAccessController_zero_disablesCapabilityChecks() (gas: 217882)
+[PASS] test_setApprovalForAll_allowed_butTransferBlocked() (gas: 238906)
+Suite result: ok. 23 passed; 0 failed; 0 skipped; finished in 162.74ms (299.02ms CPU time)
+
+Ran 19 tests for test/security/TAGITPrograms.nist.t.sol:TAGITProgramsNistTest
+[PASS] test_drainDetector_governorCanSyncBalance() (gas: 47931)
+[PASS] test_drainDetector_governorCanUpdateBalance() (gas: 33484)
+[PASS] test_drainDetector_initialState() (gas: 19850)
+[PASS] test_drainDetector_ownerCanForceReset() (gas: 345583)
+[PASS] test_drainDetector_tracksDepositsFromFunding() (gas: 80635)
+[PASS] test_gas_claimRewardOverhead() (gas: 211807)
+[PASS] test_gas_viewFunctions() (gas: 39967)
+[PASS] test_integration_normalUsageDoesntTrip() (gas: 750934)
+[PASS] test_integration_recoveryAfterDrainTrip() (gas: 411025)
+[PASS] test_normalOps_batchClaimsWork() (gas: 334333)
+[PASS] test_normalOps_claimRewardWorks() (gas: 218326)
+[PASS] test_normalOps_onVerificationWorks() (gas: 299973)
+[PASS] test_pause_governorCanPause() (gas: 43419)
+[PASS] test_pause_governorCanUnpause() (gas: 33696)
+[PASS] test_pause_nonGovernorCannotPause() (gas: 18405)
+[PASS] test_security_drainDetectorAutosPausesOnSpike() (gas: 354061)
+[PASS] test_security_nonGovernorCannotSyncDrainBalance() (gas: 18429)
+[PASS] test_security_nonGovernorCannotUpdateDrainBalance() (gas: 18887)
+[PASS] test_security_nonOwnerCannotResetDrainDetector() (gas: 18598)
+Suite result: ok. 19 passed; 0 failed; 0 skipped; finished in 9.66ms (8.23ms CPU time)
+
+Ran 40 tests for test/token/TAGITEmissions.t.sol:TAGITEmissionsTest
+[PASS] testFuzz_allocationDistribution(uint256,uint256) (runs: 256, μ: 327471, ~: 327734)
+[PASS] testFuzz_distributeEpoch_timing(uint256) (runs: 256, μ: 622550, ~: 655312)
+[PASS] test_canDistribute_falseAfterDistribution() (gas: 202846)
+[PASS] test_canDistribute_falseAtGenesis() (gas: 15416)
+[PASS] test_canDistribute_trueAfterOneWeek() (gas: 18515)
+[PASS] test_currentEpoch_incrementsAfterOneWeek() (gas: 21196)
+[PASS] test_currentEpoch_partialWeekStaysSameEpoch() (gas: 21380)
+[PASS] test_currentEpoch_startsAtZero() (gas: 13250)
+[PASS] test_distributeEpoch_canCatchUpMultipleEpochs() (gas: 283494)
+[PASS] test_distributeEpoch_distributesToAllRecipients() (gas: 412425)
+[PASS] test_distributeEpoch_emitsEvent() (gas: 207878)
+[PASS] test_distributeEpoch_isPermissionless() (gas: 205049)
+[PASS] test_distributeEpoch_mintsCorrectAmount() (gas: 207072)
+[PASS] test_distributeEpoch_recordsEpochDistribution() (gas: 207400)
+[PASS] test_distributeEpoch_revert_cannotDistributeEpochZero() (gas: 41188)
+[PASS] test_distributeEpoch_revert_cannotDoubleDistribute() (gas: 204286)
+[PASS] test_distributeEpoch_updatesLastDistributedEpoch() (gas: 204123)
+[PASS] test_distributeEpoch_updatesTotalDistributed() (gas: 208455)
+[PASS] test_gas_distributeEpoch_1recipient() (gas: 201087)
+[PASS] test_gas_distributeEpoch_4recipients() (gas: 469237)
+[PASS] test_initialize_revert_zeroGovernor() (gas: 2337846)
+[PASS] test_initialize_revert_zeroToken() (gas: 2337716)
+[PASS] test_initialize_setsDefaultAllocations() (gas: 12852)
+[PASS] test_initialize_setsGenesisTimestamp() (gas: 12931)
+[PASS] test_initialize_setsGovernor() (gas: 15115)
+[PASS] test_initialize_setsToken() (gas: 15535)
+[PASS] test_initialize_startsAtEpochZero() (gas: 13315)
+[PASS] test_nextDistributionTime_calculatesCorrectly() (gas: 17477)
+[PASS] test_pendingDistribution_calculatesCorrectly() (gas: 37194)
+[PASS] test_pendingDistribution_zeroAtGenesis() (gas: 15406)
+[PASS] test_setAllocationWeights_revert_arrayLengthMismatch() (gas: 25231)
+[PASS] test_setAllocationWeights_revert_emptyAllocations() (gas: 19731)
+[PASS] test_setAllocationWeights_revert_notGovernor() (gas: 22666)
+[PASS] test_setAllocationWeights_revert_weightsDontSum10000() (gas: 27826)
+[PASS] test_setAllocationWeights_revert_zeroAddress() (gas: 24584)
+[PASS] test_setAllocationWeights_success() (gas: 104751)
+[PASS] test_setGovernor_revert_notOwner() (gas: 19142)
+[PASS] test_setGovernor_revert_zeroAddress() (gas: 18952)
+[PASS] test_setGovernor_success() (gas: 33629)
+[PASS] test_upgrade_preservesState() (gas: 2581490)
+Suite result: ok. 40 passed; 0 failed; 0 skipped; finished in 260.90ms (265.95ms CPU time)
+
+Ran 44 tests for test/unit/TAGITPaymasterComprehensive.t.sol:TAGITPaymasterComprehensiveTest
+[PASS] testFuzz_dailyLimit_exactBoundary(uint256) (runs: 256, μ: 275299, ~: 296903)
+[PASS] testFuzz_withdrawBrand_randomCaller(address) (runs: 256, μ: 87096, ~: 87096)
+[PASS] test_batchSetSponsorshipConfig_revert_mismatchedLengths() (gas: 21630)
+[PASS] test_batchSetSponsorshipConfig_revert_notGovernor() (gas: 20614)
+[PASS] test_batchSetSponsorshipConfig_success() (gas: 143174)
+[PASS] test_canSponsor_falseAfterLimit() (gas: 138672)
+[PASS] test_canSponsor_falseForUnsponsored() (gas: 16156)
+[PASS] test_canSponsor_trueBeforeLimit() (gas: 20879)
+[PASS] test_dailyLimit_incrementsOnValidation() (gas: 107217)
+[PASS] test_dailyLimit_independentPerUser() (gas: 175489)
+[PASS] test_dailyLimit_resets_nextDay() (gas: 176981)
+[PASS] test_dailyLimit_revert_exceeded() (gas: 150411)
+[PASS] test_dailyLimit_unlimitedWhenZero() (gas: 365419)
+[PASS] test_depositForBrand_revert_unregistered() (gas: 31176)
+[PASS] test_depositForBrand_revert_zeroValue() (gas: 21645)
+[PASS] test_depositProtocol_revert_zeroValue() (gas: 21235)
+[PASS] test_initialize_onImplementation_reverts() (gas: 18494)
+[PASS] test_initialize_revert_doubleInit() (gas: 23602)
+[PASS] test_initialize_revert_zeroEntryPoint() (gas: 6135026)
+[PASS] test_initialize_revert_zeroGovernor() (gas: 6135016)
+[PASS] test_initialize_revert_zeroOwner() (gas: 6135029)
+[PASS] test_pause_blocksValidation() (gas: 57488)
+[PASS] test_postOp_brandDeduction() (gas: 156766)
+[PASS] test_postOp_emitsOperationSponsored() (gas: 70840)
+[PASS] test_postOp_noBrandDeduction_whenInsufficient() (gas: 80008)
+[PASS] test_postOp_revert_notEntryPoint() (gas: 23802)
+[PASS] test_receive_acceptsEth() (gas: 24003)
+[PASS] test_setBrandActive_deactivate() (gas: 30529)
+[PASS] test_setBrandActive_reactivate() (gas: 37279)
+[PASS] test_setBrandActive_revert_notGovernor() (gas: 19948)
+[PASS] test_setGovernor_revert_notGovernor() (gas: 19967)
+[PASS] test_setGovernor_revert_zeroAddress() (gas: 18904)
+[PASS] test_setGovernor_success() (gas: 56708)
+[PASS] test_unpause_resumesValidation() (gas: 84970)
+[PASS] test_validate_happyPath() (gas: 74336)
+[PASS] test_validate_revert_depositTooLow() (gas: 6446815)
+[PASS] test_validate_revert_invalidPaymasterData() (gas: 38917)
+[PASS] test_validate_revert_notEntryPoint() (gas: 27777)
+[PASS] test_validate_revert_operationNotSponsored() (gas: 42461)
+[PASS] test_validate_revert_paused() (gas: 57444)
+[PASS] test_version_returns() (gas: 11791)
+[PASS] test_withdrawProtocol_revert_exceedsBalance() (gas: 27863)
+[PASS] test_withdrawProtocol_revert_notGovernor() (gas: 20341)
+[PASS] test_withdrawProtocol_success() (gas: 50069)
+Suite result: ok. 44 passed; 0 failed; 0 skipped; finished in 285.10ms (297.72ms CPU time)
+
+Ran 34 tests for test/programs/TAGITPrograms.t.sol:TAGITProgramsTest
+[PASS] testFuzz_stakeBoostCapped(uint256) (runs: 256, μ: 176594, ~: 176741)
+[PASS] test_batchClaimRewards_success() (gas: 425428)
+[PASS] test_claimReward_revert_alreadyClaimed() (gas: 313696)
+[PASS] test_claimReward_revert_dailyCapExceeded() (gas: 400821)
+[PASS] test_claimReward_revert_programExpired() (gas: 168969)
+[PASS] test_claimReward_success() (gas: 312504)
+[PASS] test_claimReward_withTierMultiplier() (gas: 345163)
+[PASS] test_createProgram_revert_alreadyExists() (gas: 143891)
+[PASS] test_createProgram_revert_notGovernor() (gas: 21428)
+[PASS] test_createProgram_success() (gas: 144076)
+[PASS] test_fundProgram_success() (gas: 192241)
+[PASS] test_gas_claimReward() (gas: 306954)
+[PASS] test_gas_createProgram() (gas: 137990)
+[PASS] test_getDailyClaims() (gas: 421468)
+[PASS] test_getRemainingBudget() (gas: 309137)
+[PASS] test_getReputationTier_allTiers() (gas: 80904)
+[PASS] test_getTierMultiplier_allTiers() (gas: 18426)
+[PASS] test_getWeightedScore_withBadgeMultiplier() (gas: 87003)
+[PASS] test_getWeightedScore_withStakeBoost() (gas: 171174)
+[PASS] test_notifyCustomsEvent_success() (gas: 22776)
+[PASS] test_onVerification_revert_notCore() (gas: 20296)
+[PASS] test_onVerification_success() (gas: 186370)
+[PASS] test_registerRecall_revert_notManufacturer() (gas: 27275)
+[PASS] test_registerRecall_success() (gas: 30390)
+[PASS] test_slashReputation_recoveryCanSlash() (gas: 67295)
+[PASS] test_slashReputation_revert_notAuthorized() (gas: 59549)
+[PASS] test_slashReputation_success() (gas: 65273)
+[PASS] test_stakeForReputation_revert_zeroAmount() (gas: 41221)
+[PASS] test_stakeForReputation_success() (gas: 134164)
+[PASS] test_updateProgram_success() (gas: 149216)
+[PASS] test_updateReputation_revert_exceedsMax() (gas: 22944)
+[PASS] test_updateReputation_revert_notUpdater() (gas: 22796)
+[PASS] test_updateReputation_success() (gas: 73692)
+[PASS] test_version() (gas: 15340)
+Suite result: ok. 34 passed; 0 failed; 0 skipped; finished in 92.72ms (97.72ms CPU time)
+
+Ran 33 tests for test/treasury/TAGITTreasury.t.sol:TAGITTreasuryTest
+[PASS] testFuzz_withdrawalAmounts(uint256) (runs: 256, μ: 392071, ~: 392187)
+[PASS] test_cancelWithdrawal_byGovernor() (gas: 325119)
+[PASS] test_cancelWithdrawal_byRecipient() (gas: 333508)
+[PASS] test_closeAllocation() (gas: 156062)
+[PASS] test_createAllocation() (gas: 196226)
+[PASS] test_createAllocation_revert_exceedsBalance() (gas: 61291)
+[PASS] test_createAllocation_revert_invalidDuration() (gas: 45228)
+[PASS] test_createAllocation_revert_notGovernor() (gas: 23079)
+[PASS] test_depositToken() (gas: 115036)
+[PASS] test_deposit_eth() (gas: 64640)
+[PASS] test_deposit_eth_receive() (gas: 39757)
+[PASS] test_deposit_revert_zeroAmount() (gas: 38293)
+[PASS] test_emergencySweep() (gas: 180376)
+[PASS] test_emergencySweep_revert_insufficientSigners() (gas: 65675)
+[PASS] test_executeWithdrawal_afterTimelock() (gas: 416194)
+[PASS] test_executeWithdrawal_revert_beforeTimelock() (gas: 318022)
+[PASS] test_gas_createAllocation() (gas: 180584)
+[PASS] test_gas_deposit() (gas: 47397)
+[PASS] test_gas_executeWithdrawal() (gas: 402293)
+[PASS] test_gas_queueWithdrawal() (gas: 313697)
+[PASS] test_getBalance() (gas: 24514)
+[PASS] test_initialization() (gas: 28941)
+[PASS] test_initialization_revert_zeroAddress() (gas: 6310949)
+[PASS] test_initialization_signers() (gas: 61711)
+[PASS] test_invariant_balanceEqualsAllocatedPlusUnallocated() (gas: 295060)
+[PASS] test_queueWithdrawal() (gas: 325302)
+[PASS] test_queueWithdrawal_revert_exceedsAllocation() (gas: 193851)
+[PASS] test_queueWithdrawal_revert_notRecipient() (gas: 193436)
+[PASS] test_remainingAllocation() (gas: 316039)
+[PASS] test_timelockTiers_large() (gas: 11880)
+[PASS] test_timelockTiers_medium() (gas: 14598)
+[PASS] test_timelockTiers_small() (gas: 11897)
+[PASS] test_totalAllocated_afterAllocations() (gas: 290986)
+Suite result: ok. 33 passed; 0 failed; 0 skipped; finished in 53.79ms (54.91ms CPU time)
+
+Ran 9 tests for test/integration/TokenFlows.t.sol:TokenFlowsTest
+[PASS] test_burnFloorEnforced() (gas: 33145)
+[PASS] test_feeRoutingBurnTreasury() (gas: 204504)
+[PASS] test_multipleFeeRoutes() (gas: 562812)
+[PASS] test_multipleStakersShareRewards() (gas: 300626)
+[PASS] test_multipleVestingBeneficiaries() (gas: 375127)
+[PASS] test_stakeEarnClaim() (gas: 195668)
+[PASS] test_stakingWithBurnInteraction() (gas: 375871)
+[PASS] test_treasuryReceivesFromMultipleSources() (gas: 204539)
+[PASS] test_vestingCliffAndRelease() (gas: 250894)
+Suite result: ok. 9 passed; 0 failed; 0 skipped; finished in 12.10ms (4.85ms CPU time)
+
+Ran 22 tests for test/security/TAGITRecovery.nist.t.sol:TAGITRecoveryNistTest
+[PASS] test_appeal_alsoRateLimited() (gas: 1455723)
+[PASS] test_circuitBreaker_governorCanReset() (gas: 20155740)
+[PASS] test_circuitBreaker_ownerCanForceReset() (gas: 20348600)
+[PASS] test_circuitBreaker_resetsAfterWindow() (gas: 20527952)
+[PASS] test_circuitBreaker_tripsAfterThreshold() (gas: 20145331)
+[PASS] test_circuitBreaker_viewState() (gas: 4200569)
+[PASS] test_gas_initiateRecoveryOverhead() (gas: 679351)
+[PASS] test_gas_viewFunctions() (gas: 28880)
+[PASS] test_normalOperations_multipleUsersNotAffected() (gas: 1220335)
+[PASS] test_normalOperations_singleRecoveryWorks() (gas: 681367)
+[PASS] test_rateLimit_blocksAfterMaxPerWindow() (gas: 1859833)
+[PASS] test_rateLimit_governorCanDisable() (gas: 2069885)
+[PASS] test_rateLimit_governorCanResetUser() (gas: 2074167)
+[PASS] test_rateLimit_governorCanUpdateConfig() (gas: 2482301)
+[PASS] test_rateLimit_resetsAfterCooldown() (gas: 2069598)
+[PASS] test_rateLimit_viewRemainingActions() (gas: 1270542)
+[PASS] test_rateLimit_viewUserState() (gas: 1269111)
+[PASS] test_security_circuitBreakerPausesContract() (gas: 20145331)
+[PASS] test_security_globalLimitEnforced() (gas: 6678314)
+[PASS] test_security_nonGovernorCannotResetCircuit() (gas: 18407)
+[PASS] test_security_nonGovernorCannotResetRateLimit() (gas: 19022)
+[PASS] test_security_nonOwnerCannotForceResetCircuit() (gas: 18576)
+Suite result: ok. 22 passed; 0 failed; 0 skipped; finished in 142.85ms (141.15ms CPU time)
+
+Ran 54 tests for test/recovery/TAGITRecovery.t.sol:TAGITRecoveryTest
+[PASS] testFuzz_voteWeights(uint256) (runs: 256, μ: 1160365, ~: 1167598)
+[PASS] test_appeal_requires2xBond() (gas: 1074297)
+[PASS] test_appeal_resetsCaseForVoting() (gas: 1074014)
+[PASS] test_appeal_revert_notClaimant() (gas: 1014944)
+[PASS] test_appeal_revert_notRejected() (gas: 694860)
+[PASS] test_executeResolution_approved() (gas: 1013936)
+[PASS] test_executeResolution_rejected() (gas: 1041011)
+[PASS] test_executeResolution_revert_quorumNotReached() (gas: 967564)
+[PASS] test_executeResolution_revert_votingStillActive() (gas: 1074911)
+[PASS] test_gas_executeResolution() (gas: 997234)
+[PASS] test_gas_initiateRecovery() (gas: 679357)
+[PASS] test_gas_vote() (gas: 844750)
+[PASS] test_getActiveCaseForToken() (gas: 681406)
+[PASS] test_initialize_revert_zeroAccess() (gas: 6223094)
+[PASS] test_initialize_revert_zeroCore() (gas: 6223125)
+[PASS] test_initialize_setsAccess() (gas: 15514)
+[PASS] test_initialize_setsCore() (gas: 15297)
+[PASS] test_initialize_setsGovernor() (gas: 15235)
+[PASS] test_initialize_setsMinimumStake() (gas: 13020)
+[PASS] test_initialize_setsToken() (gas: 15556)
+[PASS] test_initialize_setsTreasury() (gas: 15232)
+[PASS] test_initialize_setsVotingDuration() (gas: 12978)
+[PASS] test_initiateRecovery_createsCase() (gas: 687446)
+[PASS] test_initiateRecovery_emitsEvent() (gas: 683251)
+[PASS] test_initiateRecovery_locksStakeBond() (gas: 687767)
+[PASS] test_initiateRecovery_quarantinesAsset() (gas: 681327)
+[PASS] test_initiateRecovery_revert_activeCaseExists() (gas: 694517)
+[PASS] test_initiateRecovery_revert_claimantIsHolder() (gas: 408594)
+[PASS] test_initiateRecovery_revert_invalidEvidenceHash() (gas: 402925)
+[PASS] test_initiateRecovery_revert_invalidTokenId() (gas: 85591)
+[PASS] test_nextCaseId() (gas: 682635)
+[PASS] test_pause_blocksInitiateRecovery() (gas: 387572)
+[PASS] test_setGovernor_revert_notOwner() (gas: 21228)
+[PASS] test_setGovernor_success() (gas: 33690)
+[PASS] test_setMinimumStake_success() (gas: 28934)
+[PASS] test_setTreasury_success() (gas: 33773)
+[PASS] test_setVotingDuration_revert_notGovernor() (gas: 19775)
+[PASS] test_setVotingDuration_success() (gas: 28892)
+[PASS] test_submitEvidence_emitsEvent() (gas: 688006)
+[PASS] test_submitEvidence_holderCanSubmit() (gas: 688258)
+[PASS] test_submitEvidence_revert_caseNotFound() (gas: 44597)
+[PASS] test_submitEvidence_revert_notAuthorized() (gas: 686410)
+[PASS] test_unpause_allowsOperations() (gas: 691254)
+[PASS] test_version() (gas: 15341)
+[PASS] test_vote_certifiedVerifierWeight() (gas: 40758)
+[PASS] test_vote_emitsEvent() (gas: 848195)
+[PASS] test_vote_governanceWeight() (gas: 28601)
+[PASS] test_vote_manufacturerWeight() (gas: 34691)
+[PASS] test_vote_recordsVote() (gas: 851585)
+[PASS] test_vote_revert_alreadyVoted() (gas: 850550)
+[PASS] test_vote_revert_notBadgeHolder() (gas: 715297)
+[PASS] test_vote_revert_votingEnded() (gas: 687223)
+[PASS] test_vote_updatesVoteCounts() (gas: 969769)
+[PASS] test_vote_verifierWeight() (gas: 46806)
+Suite result: ok. 54 passed; 0 failed; 0 skipped; finished in 240.63ms (244.14ms CPU time)
+
+Ran 21 tests for test/security/TAGITStaking.nist.t.sol:TAGITStakingNistTest
+[PASS] test_gas_stakeWithRateLimiting() (gas: 183826)
+[PASS] test_gas_unstakeWithRateLimiting() (gas: 209847)
+[PASS] test_integration_multipleUsersIndependent() (gas: 556817)
+[PASS] test_integration_normalUsagePattern() (gas: 239638)
+[PASS] test_pause_governorCanPause() (gas: 68658)
+[PASS] test_pause_governorCanUnpause() (gas: 195308)
+[PASS] test_rateLimiter_allowsNormalStaking() (gas: 186055)
+[PASS] test_rateLimiter_allowsNormalUnstaking() (gas: 211857)
+[PASS] test_rateLimiter_blocksAfterThreshold() (gas: 414533)
+[PASS] test_rateLimiter_blocksAndReverts() (gas: 414620)
+[PASS] test_rateLimiter_globalLimitTracked() (gas: 17407)
+[PASS] test_rateLimiter_governorCanDisable() (gas: 1130167)
+[PASS] test_rateLimiter_governorCanResetUserLimit() (gas: 449397)
+[PASS] test_rateLimiter_governorCanUpdateConfig() (gas: 566287)
+[PASS] test_rateLimiter_initialStateEnabled() (gas: 13204)
+[PASS] test_rateLimiter_nonGovernorCannotDisable() (gas: 18536)
+[PASS] test_rateLimiter_nonGovernorCannotResetUser() (gas: 20843)
+[PASS] test_rateLimiter_nonGovernorCannotUpdateConfig() (gas: 19858)
+[PASS] test_rateLimiter_remainingActionsAccurate() (gas: 215480)
+[PASS] test_rateLimiter_resetsAfterWindow() (gas: 443838)
+[PASS] test_rateLimiter_tracksStateCorrectly() (gas: 238082)
+Suite result: ok. 21 passed; 0 failed; 0 skipped; finished in 8.83ms (7.98ms CPU time)
+
+Ran 47 tests for test/token/TAGITStaking.t.sol:TAGITStakingTest
+[PASS] testFuzz_rewardsAccrual(uint256,uint256) (runs: 256, μ: 286812, ~: 287313)
+[PASS] testFuzz_stakeUnstake(uint256) (runs: 256, μ: 170718, ~: 170245)
+[PASS] test_claimRewards_calculatesCorrectly() (gas: 343807)
+[PASS] test_claimRewards_emitsEvent() (gas: 339045)
+[PASS] test_claimRewards_revert_nothingToClaim() (gas: 194734)
+[PASS] test_claimRewards_zeroIfNoStake() (gas: 153348)
+[PASS] test_edgeCase_claimMultipleTimes() (gas: 349702)
+[PASS] test_edgeCase_multipleNotifyRewards() (gas: 310421)
+[PASS] test_edgeCase_setEmissions_onlyOnce() (gas: 23291)
+[PASS] test_edgeCase_stakeAfterRewardsNotified() (gas: 277422)
+[PASS] test_gas_claimRewards() (gas: 331472)
+[PASS] test_gas_stake() (gas: 183797)
+[PASS] test_gas_unstake() (gas: 163460)
+[PASS] test_initialize_revert_zeroGovernor() (gas: 4229677)
+[PASS] test_initialize_revert_zeroToken() (gas: 4229635)
+[PASS] test_initialize_setsEmissions() (gas: 15137)
+[PASS] test_initialize_setsGovernor() (gas: 15205)
+[PASS] test_initialize_setsToken() (gas: 15578)
+[PASS] test_initialize_startsWithZeroTotalStaked() (gas: 12933)
+[PASS] test_invariant_stakingContractFunded() (gas: 275144)
+[PASS] test_invariant_totalStakedEqualsSum() (gas: 395054)
+[PASS] test_multipleStakers_fairDistribution() (gas: 368452)
+[PASS] test_notifyReward_addsRewards() (gas: 144398)
+[PASS] test_notifyReward_onlyEmissions() (gas: 18635)
+[PASS] test_pause_blocksStaking() (gas: 68491)
+[PASS] test_proportionalRewards() (gas: 368861)
+[PASS] test_qualifiesForRepBoost_false() (gas: 186064)
+[PASS] test_qualifiesForRepBoost_true() (gas: 185876)
+[PASS] test_setGovernor_revert_notOwner() (gas: 21154)
+[PASS] test_setGovernor_success() (gas: 33740)
+[PASS] test_setRewardRate_revert_notGovernor() (gas: 18806)
+[PASS] test_setRewardRate_success() (gas: 74845)
+[PASS] test_stake_emitsEvent() (gas: 185967)
+[PASS] test_stake_multipleStakes() (gas: 212589)
+[PASS] test_stake_revert_whenPaused() (gas: 68557)
+[PASS] test_stake_revert_zeroAmount() (gas: 91845)
+[PASS] test_stake_transfersTokens() (gas: 193033)
+[PASS] test_stake_updatesBalance() (gas: 187627)
+[PASS] test_unpause_allowsStaking() (gas: 197562)
+[PASS] test_unstake_emitsEvent() (gas: 165180)
+[PASS] test_unstake_returnsTokens() (gas: 168860)
+[PASS] test_unstake_revert_exceedsBalance() (gas: 201394)
+[PASS] test_unstake_revert_zeroAmount() (gas: 199759)
+[PASS] test_unstake_updatesBalance() (gas: 213955)
+[PASS] test_upgrade_preservesState() (gas: 4436898)
+[PASS] test_upgrade_revert_notOwner() (gas: 4159252)
+[PASS] test_version() (gas: 15288)
+Suite result: ok. 47 passed; 0 failed; 0 skipped; finished in 118.95ms (132.27ms CPU time)
+
+Ran 18 tests for test/fork/CCIPFork.t.sol:CCIPForkTest
+[PASS] test_adapterCapacity() (gas: 15632)
+[PASS] test_adapterInitialization() (gas: 39187)
+[PASS] test_cancelChainAddition() (gas: 80856)
+[PASS] test_cannotExecuteBeforeTimelock() (gas: 99942)
+[PASS] test_cannotReinitialize() (gas: 23945)
+[PASS] test_ccipRouterIsLive() (gas: 15859)
+[PASS] test_executeAfterTimelock() (gas: 153272)
+[PASS] test_feeEstimationSupportedChain() (gas: 171949)
+[PASS] test_feeEstimationUnsupportedChain() (gas: 13934)
+[PASS] test_invalidChainSelector() (gas: 6192)
+[PASS] test_nonGovernorCannotPause() (gas: 18401)
+[PASS] test_pause() (gas: 43266)
+[PASS] test_querySupportedChains() (gas: 16398)
+[PASS] test_routerSupportsInterface() (gas: 23113)
+[PASS] test_scheduleChainAddition() (gas: 102312)
+[PASS] test_setRateLimit() (gas: 31036)
+[PASS] test_supportsInterface() (gas: 13481)
+[PASS] test_unpause() (gas: 33548)
+Suite result: ok. 18 passed; 0 failed; 0 skipped; finished in 662.29ms (3.71ms CPU time)
+
+Ran 18 tests for test/fork/TokenFork.t.sol:TokenForkTest
+[PASS] test_approveAndTransferFrom() (gas: 264492)
+[PASS] test_batchApprove() (gas: 703430)
+[PASS] test_dealAndTransferOp() (gas: 248532)
+[PASS] test_dealAndTransferUsdc() (gas: 254915)
+[PASS] test_dealAndTransferWeth() (gas: 240741)
+[PASS] test_holdMultipleTokens() (gas: 717380)
+[PASS] test_infiniteApproval() (gas: 279972)
+[PASS] test_insufficientAllowanceReverts() (gas: 241245)
+[PASS] test_insufficientBalanceReverts() (gas: 15881)
+[PASS] test_opTokenIsLive() (gas: 9351)
+[PASS] test_queryAllowances() (gas: 37479)
+[PASS] test_queryBalances() (gas: 34121)
+[PASS] test_tokenMetadata() (gas: 41971)
+[PASS] test_totalSupplies() (gas: 35393)
+[PASS] test_transferToSelf() (gas: 235096)
+[PASS] test_transferZero() (gas: 221332)
+[PASS] test_usdcIsLive() (gas: 19006)
+[PASS] test_wethIsLive() (gas: 8947)
+Suite result: ok. 18 passed; 0 failed; 0 skipped; finished in 276.11ms (16.94ms CPU time)
+
+Ran 9 tests for test/integration/E2EHappyPath.t.sol:E2EHappyPathTest
+[PASS] test_fullConsumerJourney() (gas: 522751)
+[PASS] test_fullDisputeJourney() (gas: 877882)
+[PASS] test_fullEndOfLifeJourney() (gas: 375182)
+[PASS] test_fullManufacturerJourney() (gas: 1097552)
+[PASS] test_fullStakingJourney() (gas: 214315)
+[PASS] test_fullTokenEconomicsJourney() (gas: 204534)
+[PASS] test_multiUserInteraction() (gas: 818641)
+[PASS] test_productRecallJourney() (gas: 1184338)
+[PASS] test_productVerificationJourney() (gas: 354002)
+Suite result: ok. 9 passed; 0 failed; 0 skipped; finished in 17.19ms (9.79ms CPU time)
+
+Ran 38 tests for test/unit/escrow/VerificationEscrow.t.sol:VerificationEscrowTest
+[PASS] test_cancelEscrow_revert_alreadyCancelled() (gas: 187104)
+[PASS] test_cancelEscrow_revert_alreadyReleased() (gas: 224458)
+[PASS] test_cancelEscrow_revert_escrowNotFound() (gas: 19781)
+[PASS] test_cancelEscrow_revert_notBuyer() (gas: 199722)
+[PASS] test_cancelEscrow_revert_sellerCannotCancel() (gas: 197681)
+[PASS] test_cancelEscrow_success() (gas: 194921)
+[PASS] test_constructor_revert_zeroOracle() (gas: 87238)
+[PASS] test_constructor_revert_zeroUsdc() (gas: 87225)
+[PASS] test_constructor_setsState() (gas: 22811)
+[PASS] test_createEscrow_multipleEscrows() (gas: 319429)
+[PASS] test_createEscrow_revert_insufficientBalance() (gas: 192865)
+[PASS] test_createEscrow_revert_zeroAmount() (gas: 19715)
+[PASS] test_createEscrow_revert_zeroSeller() (gas: 17499)
+[PASS] test_createEscrow_success() (gas: 204817)
+[PASS] test_fullFlow_createAndCancel() (gas: 189700)
+[PASS] test_fullFlow_createAndRelease() (gas: 227098)
+[PASS] test_fullFlow_releaseBlockedWhenNotBound() (gas: 273239)
+[PASS] test_getEscrow_viewFunction() (gas: 195310)
+[PASS] test_proofAtExactStalenessWindow() (gas: 221859)
+[PASS] test_proofOneSecondPastStaleness() (gas: 204176)
+[PASS] test_releaseWithProof_anyoneCanCall() (gas: 223550)
+[PASS] test_releaseWithProof_revert_alreadyCancelled() (gas: 190557)
+[PASS] test_releaseWithProof_revert_alreadyReleased() (gas: 227932)
+[PASS] test_releaseWithProof_revert_assetIdMismatch() (gas: 203541)
+[PASS] test_releaseWithProof_revert_chainIdMismatch() (gas: 202926)
+[PASS] test_releaseWithProof_revert_escrowNotFound() (gas: 21280)
+[PASS] test_releaseWithProof_revert_oracleNotSet() (gas: 255)
+[PASS] test_releaseWithProof_revert_proofTimestampInFuture() (gas: 203123)
+[PASS] test_releaseWithProof_revert_proofTooStale() (gas: 204012)
+[PASS] test_releaseWithProof_revert_stateFlagged() (gas: 203529)
+[PASS] test_releaseWithProof_revert_stateNotBound() (gas: 203531)
+[PASS] test_releaseWithProof_revert_tamperedSignature() (gas: 208833)
+[PASS] test_releaseWithProof_revert_wrongOracleSignature() (gas: 208650)
+[PASS] test_releaseWithProof_success() (gas: 234880)
+[PASS] test_setTrustedOracle_releaseUsesNewOracle() (gas: 250265)
+[PASS] test_setTrustedOracle_revert_nonOwner() (gas: 16042)
+[PASS] test_setTrustedOracle_revert_zeroAddress() (gas: 13909)
+[PASS] test_setTrustedOracle_success() (gas: 28130)
+Suite result: ok. 38 passed; 0 failed; 0 skipped; finished in 10.39ms (8.92ms CPU time)
+
+Ran 23 tests for test/security/EVMbenchFixes.t.sol:EVMbenchFixesTest
+[PASS] test_PATCH07_executeWithdrawal_revert_allocationExpired() (gas: 318905)
+[PASS] test_PATCH07_executeWithdrawal_succeeds_beforeExpiry() (gas: 406488)
+[PASS] test_PATCH08_emergencySweep_incrementsNonce() (gas: 177677)
+[PASS] test_PATCH08_emergencySweep_revert_replayWithOldNonce() (gas: 192586)
+[PASS] test_PATCH08_emergencySweep_succeedsWithNewNonce() (gas: 244931)
+[PASS] test_PATCH08_sweepNonce_startsAtZero() (gas: 12889)
+[PASS] test_PATCH09_approve_and_transferFrom_reverts() (gas: 229839)
+[PASS] test_PATCH09_claim_stillWorks() (gas: 324372)
+[PASS] test_PATCH09_fullLifecycle_regression() (gas: 506172)
+[PASS] test_PATCH09_mint_stillWorks() (gas: 202692)
+[PASS] test_PATCH09_resolve_stillWorks() (gas: 478140)
+[PASS] test_PATCH09_safeTransferFrom_reverts() (gas: 202387)
+[PASS] test_PATCH09_transferFrom_reverts() (gas: 202239)
+[PASS] test_PATCH10_cappedAtMaxCatchUpEpochs() (gas: 635230)
+[PASS] test_PATCH10_catchUpMultipleEpochs() (gas: 278408)
+[PASS] test_PATCH10_compoundingEffect() (gas: 228615)
+[PASS] test_PATCH10_emitsEventPerEpoch() (gas: 271790)
+[PASS] test_PATCH10_multiCallCatchUp() (gas: 960603)
+[PASS] test_PATCH10_pendingDistribution_cappedAtMax() (gas: 62395)
+[PASS] test_PATCH10_pendingDistribution_multipleEpochs() (gas: 41560)
+[PASS] test_PATCH10_revert_alreadyDistributed() (gas: 187121)
+[PASS] test_PATCH10_singleEpochStillWorks() (gas: 191924)
+[PASS] test_PATCH10_totalDistributed_sumsAllEpochs() (gas: 273273)
+Suite result: ok. 23 passed; 0 failed; 0 skipped; finished in 15.22ms (12.51ms CPU time)
+
+Ran 28 tests for test/security/TAGITTreasury.nist.t.sol:TAGITTreasuryNistTest
+[PASS] test_allocation_normalFlow() (gas: 186151)
+[PASS] test_deposit_ethWorks() (gas: 62226)
+[PASS] test_deposit_tokensUpdateDrainDetector() (gas: 93133)
+[PASS] test_drainDetectorWindowStats() (gas: 19968)
+[PASS] test_drainDetector_checkCapacity() (gas: 21267)
+[PASS] test_drainDetector_governorCanDisable() (gas: 25243)
+[PASS] test_drainDetector_governorCanReset() (gas: 30227)
+[PASS] test_drainDetector_governorCanSyncBalance() (gas: 64556)
+[PASS] test_drainDetector_governorCanUpdateThresholds() (gas: 25188)
+[PASS] test_drainDetector_initialState() (gas: 15375)
+[PASS] test_drainDetector_tracksBalance() (gas: 26506)
+[PASS] test_drainDetector_wouldTriggerCheck() (gas: 21868)
+[PASS] test_gas_createAllocation() (gas: 180502)
+[PASS] test_gas_queueWithdrawal() (gas: 311614)
+[PASS] test_pause_blocksWithdrawals() (gas: 212804)
+[PASS] test_pause_governorCanPause() (gas: 43441)
+[PASS] test_pause_governorCanUnpause() (gas: 33643)
+[PASS] test_security_nonGovernorCannotDisableDrainDetector() (gas: 18827)
+[PASS] test_security_nonGovernorCannotResetDrainDetector() (gas: 18451)
+[PASS] test_security_nonGovernorCannotSyncBalance() (gas: 18320)
+[PASS] test_security_nonGovernorCannotUpdateThresholds() (gas: 19818)
+[PASS] test_security_nonRecipientCannotQueueWithdrawal() (gas: 192266)
+[PASS] test_timelock_largeWithdrawal() (gas: 11902)
+[PASS] test_timelock_mediumWithdrawal() (gas: 11860)
+[PASS] test_timelock_smallWithdrawal() (gas: 11896)
+[PASS] test_viewFunctions() (gas: 41832)
+[PASS] test_withdrawal_drainDetectorBlocksSpike() (gas: 316582)
+[PASS] test_withdrawal_normalFlowSmall() (gas: 405352)
+Suite result: ok. 28 passed; 0 failed; 0 skipped; finished in 6.20ms (4.91ms CPU time)
+
+Ran 41 tests for test/token/TAGITVesting.t.sol:TAGITVestingTest
+[PASS] testFuzz_claimTiming(uint256) (runs: 256, μ: 142138, ~: 141593)
+[PASS] testFuzz_createVest_validParams(address,uint256,uint256,uint256) (runs: 256, μ: 142433, ~: 142891)
+[PASS] test_claim_fullAfterVestingComplete() (gas: 214568)
+[PASS] test_claim_halfwayVested() (gas: 208603)
+[PASS] test_claim_multipleClaimsOverTime() (gas: 240383)
+[PASS] test_claim_partialAfterCliff() (gas: 217922)
+[PASS] test_claim_revert_afterFullyVested() (gas: 213011)
+[PASS] test_claim_revert_noSchedule() (gas: 19241)
+[PASS] test_claim_revert_nothingToClaim() (gas: 214018)
+[PASS] test_claim_revertsBeforeCliff() (gas: 141782)
+[PASS] test_claimableAmount_afterPartialClaim() (gas: 211605)
+[PASS] test_claimableAmount_beforeCliff() (gas: 134703)
+[PASS] test_cliffEndTime() (gas: 134833)
+[PASS] test_constructor_revert_zeroToken() (gas: 86365)
+[PASS] test_constructor_setsOwner() (gas: 10173)
+[PASS] test_constructor_setsToken() (gas: 8364)
+[PASS] test_createVest_emitsEvent() (gas: 135944)
+[PASS] test_createVest_revert_cliffExceedsVesting() (gas: 17781)
+[PASS] test_createVest_revert_duplicateBeneficiary() (gas: 136999)
+[PASS] test_createVest_revert_notOwner() (gas: 16879)
+[PASS] test_createVest_revert_zeroAddress() (gas: 14736)
+[PASS] test_createVest_revert_zeroAmount() (gas: 16953)
+[PASS] test_createVest_revert_zeroDuration() (gas: 17040)
+[PASS] test_createVest_setsCorrectSchedule() (gas: 136763)
+[PASS] test_createVest_updatesTotalAllocated() (gas: 234451)
+[PASS] test_createVest_zeroCliff() (gas: 114500)
+[PASS] test_edgeCase_cliffEqualsVesting() (gas: 139923)
+[PASS] test_edgeCase_multipleVestingSchedules() (gas: 318656)
+[PASS] test_edgeCase_zeroCliff() (gas: 118172)
+[PASS] test_gas_claim() (gas: 206905)
+[PASS] test_gas_createVest() (gas: 132676)
+[PASS] test_grantAmount() (gas: 134248)
+[PASS] test_hasSchedule() (gas: 136288)
+[PASS] test_invariant_claimedNeverExceedsVested() (gas: 315192)
+[PASS] test_invariant_totalClaimedMatchesSum() (gas: 367105)
+[PASS] test_invariant_vestingScheduleImmutable() (gas: 215135)
+[PASS] test_version() (gas: 10267)
+[PASS] test_vestedAmount_beforeCliff() (gas: 137932)
+[PASS] test_vestedAmount_linearCalculation() (gas: 150195)
+[PASS] test_vestedAmount_noSchedule() (gas: 10698)
+[PASS] test_vestingEndTime() (gas: 134942)
+Suite result: ok. 41 passed; 0 failed; 0 skipped; finished in 352.01ms (358.57ms CPU time)
+
+Ran 10 tests for test/fuzz/TAGITTreasury.fuzz.t.sol:TAGITTreasuryFuzzTest
+[PASS] testFuzz_allocation_exceedsBalance(uint256) (runs: 256, μ: 244937, ~: 245141)
+[PASS] testFuzz_allocation_randomAmount(uint256) (runs: 256, μ: 200850, ~: 201013)
+[PASS] testFuzz_allocation_randomDuration(uint48) (runs: 256, μ: 192012, ~: 192236)
+[PASS] testFuzz_emergencySweep_insufficientSigners(uint8) (runs: 256, μ: 59481, ~: 58113)
+[PASS] testFuzz_nonGovernor_reverts(address) (runs: 256, μ: 228512, ~: 228512)
+[PASS] testFuzz_nonRecipient_reverts(address) (runs: 256, μ: 328447, ~: 328447)
+[PASS] testFuzz_withdrawalFlow_fullCycle(uint256,uint48) (runs: 256, μ: 436437, ~: 436802)
+[PASS] testFuzz_withdrawal_executeAfterTimelock(uint256,uint256) (runs: 256, μ: 416981, ~: 417499)
+[PASS] testFuzz_withdrawal_randomAmount(uint256) (runs: 256, μ: 331995, ~: 332122)
+[PASS] testFuzz_withdrawal_timelockTiers(uint256) (runs: 256, μ: 17183, ~: 17341)
+Suite result: ok. 10 passed; 0 failed; 0 skipped; finished in 510.32ms (830.02ms CPU time)
+
+Ran 18 tests for test/unit/IdentityBadge.t.sol:IdentityBadgeTest
+[PASS] testFuzz_grantIdentity(address,uint256) (runs: 256, μ: 104743, ~: 104922)
+[PASS] testFuzz_grantRevokeIdentity(address,uint256) (runs: 256, μ: 86432, ~: 86544)
+[PASS] test_approve_reverts() (gas: 97418)
+[PASS] test_grantIdentity_emitsEvents() (gas: 97407)
+[PASS] test_grantIdentity_multipleBadges() (gas: 148441)
+[PASS] test_grantIdentity_revert_alreadyGranted() (gas: 95954)
+[PASS] test_grantIdentity_revert_invalidBadgeId() (gas: 14029)
+[PASS] test_grantIdentity_revert_notOwner() (gas: 16531)
+[PASS] test_grantIdentity_revert_zeroAddress() (gas: 11746)
+[PASS] test_grantIdentity_success() (gas: 98008)
+[PASS] test_hasIdentity_returnsCorrectly() (gas: 81323)
+[PASS] test_locked_alwaysReturnsTrue() (gas: 91028)
+[PASS] test_revokeIdentity_emitsEvent() (gas: 79864)
+[PASS] test_revokeIdentity_revert_notFound() (gas: 17037)
+[PASS] test_revokeIdentity_revert_notOwner() (gas: 97030)
+[PASS] test_revokeIdentity_success() (gas: 83088)
+[PASS] test_safeTransferFrom_reverts() (gas: 98460)
+[PASS] test_transfer_reverts() (gas: 98377)
+Suite result: ok. 18 passed; 0 failed; 0 skipped; finished in 65.82ms (110.45ms CPU time)
+
+Ran 38 tests for test/libraries/RateLimiter.t.sol:RateLimiterTest
+[PASS] testFuzz_cooldownRespected(uint64) (runs: 256, μ: 120755, ~: 120949)
+[PASS] testFuzz_globalLimitDistributed(uint8) (runs: 256, μ: 713768, ~: 636931)
+[PASS] testFuzz_rateLimitBehavior(uint64,uint64) (runs: 256, μ: 1823478, ~: 1730845)
+[PASS] test_canAct_decreasesRemaining() (gas: 60255)
+[PASS] test_canAct_gasEfficiency() (gas: 46797)
+[PASS] test_canAct_resetsAfterWindow() (gas: 81690)
+[PASS] test_canAct_returnsFalseWhenLocked() (gas: 112048)
+[PASS] test_canAct_returnsMaxWhenDisabled() (gas: 15878)
+[PASS] test_canAct_returnsTrueInitially() (gas: 15496)
+[PASS] test_check_allowsExactlyMaxCalls() (gas: 115200)
+[PASS] test_check_emitsGlobalLimitHit() (gas: 2892036)
+[PASS] test_check_emitsRateLimitHit() (gas: 115839)
+[PASS] test_check_emitsUserUnlocked() (gas: 123498)
+[PASS] test_check_emitsWarningAt80Percent() (gas: 97050)
+[PASS] test_check_gasEfficiency() (gas: 48992)
+[PASS] test_check_incrementsCount() (gas: 55060)
+[PASS] test_check_incrementsGlobalCount() (gas: 79825)
+[PASS] test_check_locksAfterMaxCalls() (gas: 111605)
+[PASS] test_check_noGlobalLimitWhenZero() (gas: 6885576)
+[PASS] test_check_passesWhenDisabled() (gas: 233218)
+[PASS] test_check_resetsAfterLockout() (gas: 124113)
+[PASS] test_check_resetsGlobalCountOnNewWindow() (gas: 1486775)
+[PASS] test_check_resetsOnNewWindow() (gas: 111036)
+[PASS] test_check_revertsOnGlobalLimit() (gas: 2890394)
+[PASS] test_check_revertsWhileLocked() (gas: 116152)
+[PASS] test_check_revertsWithUserLockedAfterMax() (gas: 115034)
+[PASS] test_check_tracksUsersIndependently() (gas: 119270)
+[PASS] test_forceUnlock_allowsNewCalls() (gas: 118993)
+[PASS] test_forceUnlock_unlocksUser() (gas: 124995)
+[PASS] test_initialize_allowsZeroGlobalMax() (gas: 1477450)
+[PASS] test_initialize_revertsOnZeroMaxPerWindow() (gas: 1431270)
+[PASS] test_initialize_revertsOnZeroWindow() (gas: 1431341)
+[PASS] test_initialize_setsCorrectValues() (gas: 13742)
+[PASS] test_isInitialized_returnsFalseBeforeInit() (gas: 1428708)
+[PASS] test_isInitialized_returnsTrueAfterInit() (gas: 8124)
+[PASS] test_setEnabled_disablesRateLimiting() (gas: 12527)
+[PASS] test_updateConfig_skipsZeroValues() (gas: 19148)
+[PASS] test_updateConfig_updatesValues() (gas: 22870)
+Suite result: ok. 38 passed; 0 failed; 0 skipped; finished in 618.69ms (617.94ms CPU time)
+
+Ran 9 tests for test/security/Patch14ActionProof.t.sol:Patch14ActionProofTest
+[PASS] testFuzz_claimReward_random_proofs(bytes32) (runs: 256, μ: 49554, ~: 49554)
+[PASS] test_approveAction_requires_authorization() (gas: 24583)
+[PASS] test_attacker_cannot_claim_with_random_proof() (gas: 50376)
+[PASS] test_batchApproveActions() (gas: 88130)
+[PASS] test_claimReward_reverts_without_approved_proof() (gas: 50342)
+[PASS] test_claimReward_succeeds_with_approved_proof() (gas: 204498)
+[PASS] test_governor_can_approve_action() (gas: 49796)
+[PASS] test_proof_consumed_after_claim() (gas: 205530)
+[PASS] test_proof_tied_to_specific_user() (gas: 86797)
+Suite result: ok. 9 passed; 0 failed; 0 skipped; finished in 686.69ms (686.97ms CPU time)
+
+Ran 52 tests for test/unit/TAGITCore.t.sol:TAGITCoreTest
+[PASS] testFuzz_activate(address,bytes32,bytes32) (runs: 256, μ: 300116, ~: 300116)
+[PASS] testFuzz_bindTag(bytes32) (runs: 256, μ: 285176, ~: 285176)
+[PASS] testFuzz_claim(address,address,bytes32,bytes32) (runs: 256, μ: 333686, ~: 333837)
+[PASS] testFuzz_flag(address,bytes32,bytes32) (runs: 256, μ: 356904, ~: 356904)
+[PASS] testFuzz_mint(address,bytes32) (runs: 256, μ: 207049, ~: 207049)
+[PASS] testFuzz_recycle(address,bytes32,bytes32) (runs: 256, μ: 344890, ~: 344890)
+[PASS] testFuzz_resolve(address,address,bytes32,bytes32) (runs: 256, μ: 488243, ~: 488394)
+[PASS] test_activate_emitsEvent() (gas: 296253)
+[PASS] test_activate_revert_invalidState() (gas: 211120)
+[PASS] test_activate_revert_notTagBound() (gas: 211143)
+[PASS] test_activate_revert_tokenNotFound() (gas: 58199)
+[PASS] test_activate_revert_unauthorized() (gas: 285577)
+[PASS] test_activate_success() (gas: 297634)
+[PASS] test_bindTag_emitsEvent() (gas: 280938)
+[PASS] test_bindTag_revert_invalidState() (gas: 290033)
+[PASS] test_bindTag_revert_invalidTagHash() (gas: 214051)
+[PASS] test_bindTag_revert_tagAlreadyBound() (gas: 384311)
+[PASS] test_bindTag_revert_tokenNotFound() (gas: 62693)
+[PASS] test_bindTag_revert_unauthorized() (gas: 213655)
+[PASS] test_bindTag_success() (gas: 284507)
+[PASS] test_capabilityBypass_whenNoAccessController() (gas: 8739773)
+[PASS] test_capabilityRevocation() (gas: 232904)
+[PASS] test_claim_emitsEvent() (gas: 322926)
+[PASS] test_claim_revert_invalidState() (gas: 290001)
+[PASS] test_claim_revert_tokenNotFound() (gas: 60721)
+[PASS] test_claim_revert_unauthorized() (gas: 305947)
+[PASS] test_claim_revert_zeroAddress() (gas: 302317)
+[PASS] test_claim_success() (gas: 328086)
+[PASS] test_claim_updatesOwnership() (gas: 334764)
+[PASS] test_flag_emitsEvent() (gas: 350954)
+[PASS] test_flag_revert_invalidState() (gas: 305501)
+[PASS] test_flag_revert_tokenNotFound() (gas: 58199)
+[PASS] test_flag_revert_unauthorized() (gas: 330208)
+[PASS] test_flag_success() (gas: 352424)
+[PASS] test_mint_emitsEvent() (gas: 204735)
+[PASS] test_mint_multipleAssets() (gas: 296466)
+[PASS] test_mint_revert_unauthorized() (gas: 56077)
+[PASS] test_mint_revert_zeroAddress() (gas: 55833)
+[PASS] test_mint_success() (gas: 205792)
+[PASS] test_recycle_emitsEvent_fromClaimed() (gas: 341498)
+[PASS] test_recycle_emitsEvent_fromFlagged() (gas: 369018)
+[PASS] test_recycle_revert_invalidState() (gas: 209978)
+[PASS] test_recycle_revert_tokenNotFound() (gas: 58176)
+[PASS] test_recycle_revert_unauthorized() (gas: 330118)
+[PASS] test_recycle_success_fromClaimed() (gas: 343206)
+[PASS] test_recycle_success_fromFlagged() (gas: 370791)
+[PASS] test_resolve_emitsEvent() (gas: 480259)
+[PASS] test_resolve_revert_invalidState() (gas: 332719)
+[PASS] test_resolve_revert_tokenNotFound() (gas: 60699)
+[PASS] test_resolve_revert_unauthorized() (gas: 360115)
+[PASS] test_resolve_revert_zeroAddress() (gas: 358717)
+[PASS] test_resolve_success() (gas: 484779)
+Suite result: ok. 52 passed; 0 failed; 0 skipped; finished in 831.24ms (1.37s CPU time)
+
+Ran 38 tests for test/libraries/ReplayProtection.t.sol:ReplayProtectionTest
+[PASS] testFuzz_expiryRespected(uint64) (runs: 256, μ: 50250, ~: 66755)
+[PASS] testFuzz_nonceSequence(uint64,uint8) (runs: 256, μ: 819962, ~: 410382)
+[PASS] testFuzz_replayDetection(bytes32,uint64) (runs: 256, μ: 74195, ~: 74159)
+[PASS] test_computeMessageId_consistent() (gas: 2813)
+[PASS] test_computeMessageId_differentInputsDifferentIds() (gas: 2748)
+[PASS] test_getChainState_returnsZeroForNew() (gas: 9286)
+[PASS] test_initialize_noExpiry() (gas: 946478)
+[PASS] test_initialize_nonSequential() (gas: 947576)
+[PASS] test_initialize_setsCorrectValues() (gas: 10998)
+[PASS] test_isInitialized_returnsFalseBeforeInit() (gas: 924279)
+[PASS] test_isInitialized_returnsTrueAfterInit() (gas: 8136)
+[PASS] test_isProcessed_returnsFalseForNew() (gas: 8588)
+[PASS] test_isProcessed_returnsTrueAfterProcessing() (gas: 60585)
+[PASS] test_setEnabled_disablesProtection() (gas: 17729)
+[PASS] test_setExpiry_updatesValue() (gas: 12469)
+[PASS] test_setNonce_updatesChainNonce() (gas: 65588)
+[PASS] test_setSequential_updatesValue() (gas: 12387)
+[PASS] test_validateAndMark_acceptsAnyNonceWhenNotSequential() (gas: 1057062)
+[PASS] test_validateAndMark_acceptsBeforeExpiry() (gas: 62230)
+[PASS] test_validateAndMark_acceptsFirstMessage() (gas: 60627)
+[PASS] test_validateAndMark_acceptsSequentialMessages() (gas: 185251)
+[PASS] test_validateAndMark_detectsReplay() (gas: 67869)
+[PASS] test_validateAndMark_emitsExpiredEvent() (gas: 20002)
+[PASS] test_validateAndMark_emitsHighVolumeWarning() (gas: 30991321)
+[PASS] test_validateAndMark_emitsMessageProcessed() (gas: 64531)
+[PASS] test_validateAndMark_emitsNonceViolation() (gas: 72883)
+[PASS] test_validateAndMark_emitsReplayAttempt() (gas: 69902)
+[PASS] test_validateAndMark_gasEfficiency() (gas: 89183)
+[PASS] test_validateAndMark_independentNoncesPerChain() (gas: 170166)
+[PASS] test_validateAndMark_noExpiryAcceptsOldMessages() (gas: 999965)
+[PASS] test_validateAndMark_rejectsAfterExpiry() (gas: 17656)
+[PASS] test_validateAndMark_rejectsNonSequentialNonce() (gas: 71114)
+[PASS] test_validateAndMark_sameIdDifferentChains() (gas: 67958)
+[PASS] test_wouldBeValid_detectsExpiry() (gas: 14031)
+[PASS] test_wouldBeValid_detectsNonceMismatch() (gas: 65568)
+[PASS] test_wouldBeValid_detectsReplay() (gas: 62852)
+[PASS] test_wouldBeValid_gasEfficiency() (gas: 65620)
+[PASS] test_wouldBeValid_returnsTrueForNew() (gas: 15501)
+Suite result: ok. 38 passed; 0 failed; 0 skipped; finished in 209.20ms (255.02ms CPU time)
+
+Ran 23 tests for test/unit/RobotTypes.t.sol:RobotTypesTest
+[PASS] testFuzz_actionBitmask_commutative(uint256,uint256) (runs: 256, μ: 968, ~: 831)
+[PASS] testFuzz_denyAlwaysWins(uint256,uint256) (runs: 256, μ: 974, ~: 831)
+[PASS] test_actionBitmask_noOverlap() (gas: 304)
+[PASS] test_actionBitmask_values() (gas: 584)
+[PASS] test_batchGrantRobotCapabilities() (gas: 103993)
+[PASS] test_capabilityIds_inCorrectRange() (gas: 619)
+[PASS] test_capabilityIds_unique() (gas: 616)
+[PASS] test_denyOverridesAllow() (gas: 436)
+[PASS] test_emptyPolicy_isUnauthorized() (gas: 698)
+[PASS] test_grantRobotCapability_allTypes() (gas: 177212)
+[PASS] test_grantRobotCapability_success() (gas: 44379)
+[PASS] test_grantRobotIdentity_allTypes() (gas: 373292)
+[PASS] test_grantRobotIdentity_success() (gas: 91698)
+[PASS] test_issuerBadges_exist() (gas: 17394)
+[PASS] test_revokeRobotCapability_success() (gas: 39913)
+[PASS] test_revokeRobotIdentity_success() (gas: 79289)
+[PASS] test_robotActionPolicy_construction() (gas: 1121)
+[PASS] test_robotBadgeIds_inCorrectRange() (gas: 726)
+[PASS] test_robotBadgeIds_unique() (gas: 772)
+[PASS] test_robotBadge_isSoulbound() (gas: 93117)
+[PASS] test_robotCapability_viaAccess() (gas: 61138)
+[PASS] test_robotIdentity_viaAccess() (gas: 108471)
+[PASS] test_safetyClass_values() (gas: 518)
+Suite result: ok. 23 passed; 0 failed; 0 skipped; finished in 8.88ms (12.51ms CPU time)
+
+Ran 75 tests for test/unit/IntegrationFactory.t.sol:IntegrationFactoryTest
+[PASS] testFuzz_deployIntegration_uniqueIds(uint8) (runs: 256, μ: 897118, ~: 654062)
+[PASS] testFuzz_processPayment_feeCalculation(uint256,uint96) (runs: 256, μ: 329316, ~: 334192)
+[PASS] test_addSigner_revert_alreadyExists() (gas: 34233)
+[PASS] test_addSigner_revert_zeroAddress() (gas: 28832)
+[PASS] test_addSigner_success() (gas: 130437)
+[PASS] test_constructor_revert_duplicateSigner() (gas: 257383)
+[PASS] test_constructor_revert_requiredSigsExceedsSigners() (gas: 103537)
+[PASS] test_constructor_revert_tooFewSigners() (gas: 99569)
+[PASS] test_constructor_revert_zeroBurner() (gas: 100171)
+[PASS] test_constructor_revert_zeroOwner() (gas: 54509)
+[PASS] test_constructor_revert_zeroRequiredSigs() (gas: 103479)
+[PASS] test_constructor_revert_zeroSigner() (gas: 256060)
+[PASS] test_constructor_setsBurner() (gas: 10544)
+[PASS] test_constructor_setsDefaultMaxPayment() (gas: 7967)
+[PASS] test_constructor_setsOwner() (gas: 10247)
+[PASS] test_constructor_setsRequiredSignatures() (gas: 8076)
+[PASS] test_constructor_setsSigners() (gas: 24104)
+[PASS] test_constructor_startsWithZeroIntegrations() (gas: 11496)
+[PASS] test_deactivateIntegration_emitsEvent() (gas: 172250)
+[PASS] test_deactivateIntegration_revert_alreadyRequested() (gas: 176484)
+[PASS] test_deactivateIntegration_revert_notOwner() (gas: 169238)
+[PASS] test_deactivateIntegration_setsTimestamp() (gas: 175278)
+[PASS] test_deactivateIntegration_statusIsGracePeriod() (gas: 171853)
+[PASS] test_deployIntegration_emitsEvent() (gas: 168447)
+[PASS] test_deployIntegration_feeRateAtMaxBasisPoints() (gas: 169938)
+[PASS] test_deployIntegration_incrementsActiveCount() (gas: 167184)
+[PASS] test_deployIntegration_incrementsId() (gas: 285250)
+[PASS] test_deployIntegration_mapsAgentToIntegration() (gas: 166388)
+[PASS] test_deployIntegration_revert_duplicateAgent() (gas: 173319)
+[PASS] test_deployIntegration_revert_feeRateExceedsBasisPoints() (gas: 26126)
+[PASS] test_deployIntegration_revert_notOwner() (gas: 19589)
+[PASS] test_deployIntegration_revert_zeroAgentId() (gas: 25698)
+[PASS] test_deployIntegration_revert_zeroPartner() (gas: 22792)
+[PASS] test_deployIntegration_revert_zeroPaymentToken() (gas: 22915)
+[PASS] test_deployIntegration_setsConfig() (gas: 170764)
+[PASS] test_deployIntegration_success() (gas: 164649)
+[PASS] test_emergencyPause_blocksDeployment() (gas: 83127)
+[PASS] test_emergencyPause_blocksPayment() (gas: 260502)
+[PASS] test_emergencyPause_pausesContract() (gas: 70960)
+[PASS] test_emergencyUnpause_resumesOperations() (gas: 246316)
+[PASS] test_executeDeactivation_afterGracePeriod() (gas: 161002)
+[PASS] test_executeDeactivation_callable_byAnyone() (gas: 159855)
+[PASS] test_executeDeactivation_decrementsActiveCount() (gas: 157909)
+[PASS] test_executeDeactivation_emitsEvent() (gas: 157717)
+[PASS] test_executeDeactivation_revert_gracePeriodNotExpired() (gas: 177074)
+[PASS] test_executeDeactivation_revert_noDeactivationRequested() (gas: 170485)
+[PASS] test_executeDeactivation_statusIsDeactivated() (gas: 157391)
+[PASS] test_fullLifecycle_deployProcessDeactivate() (gas: 377709)
+[PASS] test_getIntegrationStatus_active() (gas: 166853)
+[PASS] test_isIntegrationActive_false() (gas: 157191)
+[PASS] test_isIntegrationActive_true() (gas: 166333)
+[PASS] test_nonce_startsAtZero() (gas: 8100)
+[PASS] test_processPayment_atMaxCap() (gas: 323106)
+[PASS] test_processPayment_emitsEvent() (gas: 319750)
+[PASS] test_processPayment_fullFeeRate() (gas: 296585)
+[PASS] test_processPayment_revert_exceedsCap() (gas: 208840)
+[PASS] test_processPayment_revert_inactiveIntegration() (gas: 198466)
+[PASS] test_processPayment_revert_zeroAmount() (gas: 174955)
+[PASS] test_processPayment_splitsCorrectly() (gas: 323214)
+[PASS] test_processPayment_worksInGracePeriod() (gas: 320598)
+[PASS] test_processPayment_zeroFeeRate() (gas: 240088)
+[PASS] test_reactivateIntegration_emitsEvent() (gas: 227869)
+[PASS] test_reactivateIntegration_incrementsNonce() (gas: 227463)
+[PASS] test_reactivateIntegration_revert_duplicateSignature() (gas: 205243)
+[PASS] test_reactivateIntegration_revert_insufficientSignatures() (gas: 188032)
+[PASS] test_reactivateIntegration_revert_invalidSigner() (gas: 206239)
+[PASS] test_reactivateIntegration_revert_replayAttack() (gas: 245544)
+[PASS] test_reactivateIntegration_success() (gas: 231511)
+[PASS] test_removeSigner_revert_belowMinimum() (gas: 35426)
+[PASS] test_removeSigner_revert_notFound() (gas: 33949)
+[PASS] test_removeSigner_success() (gas: 139733)
+[PASS] test_setMaxPayment_emitsEvent() (gas: 73771)
+[PASS] test_setMaxPayment_revert_zeroMax() (gas: 28655)
+[PASS] test_setMaxPayment_success() (gas: 71480)
+[PASS] test_version_returns100() (gas: 10364)
+Suite result: ok. 75 passed; 0 failed; 0 skipped; finished in 255.55ms (279.10ms CPU time)
+
+Ran 18 tests for test/fork/EntryPointFork.t.sol:EntryPointForkTest
+[PASS] test_accountNonceFromEntryPoint() (gas: 333867)
+[PASS] test_accountReceivesEth() (gas: 333979)
+[PASS] test_addGuardian() (gas: 403021)
+[PASS] test_addSessionKey() (gas: 434372)
+[PASS] test_createAccount() (gas: 336002)
+[PASS] test_depositToEntryPoint() (gas: 367505)
+[PASS] test_deterministicAddress() (gas: 329110)
+[PASS] test_directExecutionByOwner() (gas: 388740)
+[PASS] test_entryPointDepositInfo() (gas: 14212)
+[PASS] test_entryPointFunctions() (gas: 10779)
+[PASS] test_entryPointIsLive() (gas: 5281)
+[PASS] test_factoryCannotReinitialize() (gas: 28893)
+[PASS] test_factoryInitialization() (gas: 34852)
+[PASS] test_idempotentAccountCreation() (gas: 330784)
+[PASS] test_nonOwnerCannotExecute() (gas: 331134)
+[PASS] test_protocolGuardianDefault() (gas: 330525)
+[PASS] test_sessionKeyValidity() (gas: 441230)
+[PASS] test_versions() (gas: 330098)
+Suite result: ok. 18 passed; 0 failed; 0 skipped; finished in 356.67ms (8.23ms CPU time)
+
+Ran 43 tests for test/unit/RoboticAuthorizer.t.sol:RoboticAuthorizerTest
+[PASS] testFuzz_authorizeRobotAction_onlyAllowedActions(uint256) (runs: 256, μ: 130357, ~: 130357)
+[PASS] testFuzz_denyAlwaysWins(uint256,uint256) (runs: 256, μ: 953, ~: 831)
+[PASS] test_accessController_returnsCorrectAddress() (gas: 15237)
+[PASS] test_assetExistence_checkedViaCoreOwnerOf() (gas: 341460)
+[PASS] test_authorizeRobotAction_correctZone_succeeds() (gas: 182756)
+[PASS] test_authorizeRobotAction_noZoneRequired_anyZoneWorks() (gas: 148604)
+[PASS] test_authorizeRobotAction_nonexistentToken_reverts() (gas: 52437)
+[PASS] test_authorizeRobotAction_prohibitedAction_reverts() (gas: 137194)
+[PASS] test_authorizeRobotAction_success() (gas: 154787)
+[PASS] test_authorizeRobotAction_unauthorizedRobot_reverts() (gas: 97403)
+[PASS] test_authorizeRobotAction_wrongZone_reverts() (gas: 139466)
+[PASS] test_authorizer_independentOfCoreRobotCode() (gas: 25410)
+[PASS] test_coreContract_returnsCorrectAddress() (gas: 15170)
+[PASS] test_getRobotCircuitBreakerCapacity() (gas: 16229)
+[PASS] test_getRobotCircuitBreakerStatus() (gas: 13580)
+[PASS] test_getRobotRateLimitStatus() (gas: 20407)
+[PASS] test_initialize_cannotReinitialize() (gas: 23667)
+[PASS] test_initialize_setsAccessController() (gas: 15216)
+[PASS] test_initialize_setsCoreContract() (gas: 15259)
+[PASS] test_initialize_setsOwner() (gas: 15289)
+[PASS] test_initialize_zeroCore_reverts() (gas: 4003965)
+[PASS] test_initialize_zeroOwner_reverts() (gas: 4003908)
+[PASS] test_queryActionPolicy_multipleCapabilities() (gas: 220651)
+[PASS] test_queryActionPolicy_multipleIdentities() (gas: 222685)
+[PASS] test_queryActionPolicy_noCapabilities() (gas: 234669)
+[PASS] test_queryActionPolicy_nonexistentToken_reverts() (gas: 34069)
+[PASS] test_queryActionPolicy_success() (gas: 156887)
+[PASS] test_queryActionPolicy_unauthorizedRobot_reverts() (gas: 83518)
+[PASS] test_queryActionPolicy_withProhibitedActions() (gas: 190378)
+[PASS] test_queryActionPolicy_withSafetyClass() (gas: 190987)
+[PASS] test_queryActionPolicy_withZone() (gas: 190434)
+[PASS] test_resetRobotCircuitBreaker_notOwner_reverts() (gas: 18597)
+[PASS] test_resetRobotCircuitBreaker_success() (gas: 23075)
+[PASS] test_setAccessController_success() (gas: 31792)
+[PASS] test_setCoreContract_success() (gas: 31914)
+[PASS] test_setCoreContract_zeroAddress_reverts() (gas: 18864)
+[PASS] test_setObjectProhibitedActions_success() (gas: 193357)
+[PASS] test_setObjectSafetyClass_nonexistentToken_reverts() (gas: 33116)
+[PASS] test_setObjectSafetyClass_notOwner_reverts() (gas: 21321)
+[PASS] test_setObjectSafetyClass_success() (gas: 61846)
+[PASS] test_setObjectZone_notOwner_reverts() (gas: 21244)
+[PASS] test_setObjectZone_success() (gas: 193296)
+[PASS] test_setRobotRateLimitEnabled_success() (gas: 23525)
+Suite result: ok. 43 passed; 0 failed; 0 skipped; finished in 78.64ms (97.55ms CPU time)
+
+Ran 21 tests for test/unit/TAGITAccess.t.sol:TAGITAccessTest
+[PASS] testFuzz_accessControl(address,uint256,uint256) (runs: 256, μ: 223938, ~: 224312)
+[PASS] test_fullBIDGESWorkflow() (gas: 206700)
+[PASS] test_hasCapability_delegatesToBadge() (gas: 82776)
+[PASS] test_hasCapability_returnsFalseWhenNotSet() (gas: 11007)
+[PASS] test_hasIdentity_delegatesToBadge() (gas: 130268)
+[PASS] test_hasIdentity_returnsFalseWhenNotSet() (gas: 11006)
+[PASS] test_requireCapability_revert_badgeNotSet() (gas: 16217)
+[PASS] test_requireCapability_revert_missing() (gas: 50314)
+[PASS] test_requireCapability_success() (gas: 79659)
+[PASS] test_requireIdentity_revert_badgeNotSet() (gas: 16413)
+[PASS] test_requireIdentity_revert_missing() (gas: 50508)
+[PASS] test_requireIdentity_success() (gas: 127050)
+[PASS] test_setCapabilityBadge_emitsEvent() (gas: 39224)
+[PASS] test_setCapabilityBadge_revert_notOwner() (gas: 16116)
+[PASS] test_setCapabilityBadge_revert_zeroAddress() (gas: 11266)
+[PASS] test_setCapabilityBadge_success() (gas: 35798)
+[PASS] test_setIdentityBadge_emitsEvent() (gas: 39334)
+[PASS] test_setIdentityBadge_revert_notOwner() (gas: 16162)
+[PASS] test_setIdentityBadge_revert_zeroAddress() (gas: 11398)
+[PASS] test_setIdentityBadge_success() (gas: 35907)
+[PASS] test_updateBadgeContracts() (gas: 4331466)
+Suite result: ok. 21 passed; 0 failed; 0 skipped; finished in 68.05ms (66.93ms CPU time)
+
+Ran 13 tests for test/security/TAGITAccount.nist.t.sol:TAGITAccountNistTest
+[PASS] test_gas_validateUserOpWithOwner() (gas: 30454)
+[PASS] test_gas_validateUserOpWithSessionKey() (gas: 145230)
+[PASS] test_owner_validationSucceedsNoSessionKeyEvent() (gas: 30217)
+[PASS] test_security_onlyEntryPointCanValidate() (gas: 23393)
+[PASS] test_security_onlyOwnerCanAddSessionKey() (gas: 17570)
+[PASS] test_security_onlyOwnerCanRevokeSessionKey() (gas: 124375)
+[PASS] test_security_sessionKeyMaxValidityEnforced() (gas: 125826)
+[PASS] test_sessionKey_emitsAddedEvent() (gas: 123886)
+[PASS] test_sessionKey_emitsFailedEventOnExpired() (gas: 145805)
+[PASS] test_sessionKey_emitsFailedEventOnSelectorNotAllowed() (gas: 146196)
+[PASS] test_sessionKey_emitsFailedEventOnUnknownSigner() (gas: 34766)
+[PASS] test_sessionKey_emitsRevokedEvent() (gas: 97245)
+[PASS] test_sessionKey_emitsUsedEventOnValidation() (gas: 148331)
+Suite result: ok. 13 passed; 0 failed; 0 skipped; finished in 2.80ms (2.31ms CPU time)
+
+Ran 24 tests for test/security/STRIDEAttackVectors.t.sol:STRIDEAttackVectors
+[PASS] test_D01_batchMint_oversized() (gas: 156289)
+[PASS] test_D02_flagCircuitBreaker() (gas: 10500869)
+[PASS] test_D03_mintRateLimiter() (gas: 7326335)
+[PASS] test_D04_treasuryPause() (gas: 431128)
+[PASS] test_E01_singleResolverCantResolve() (gas: 456513)
+[PASS] test_E02_capabilityRevocationEnforced() (gas: 233056)
+[PASS] test_E03_revokedResolverCantApprove() (gas: 669393)
+[PASS] test_E04_nonOwnerCantSetOracle() (gas: 42111)
+[PASS] test_E05_nonOwnerCantSetAccessController() (gas: 53548)
+[PASS] test_I01_tokenURI_unauthorizedRedacted() (gas: 224398)
+[PASS] test_I02_tokenURI_allRolesChecked() (gas: 348687)
+[PASS] test_R01_custodyTransferEmitted() (gas: 529368)
+[PASS] test_R02_stateChangedEmitted() (gas: 521874)
+[PASS] test_R03_resolveApprovalEmitted() (gas: 482771)
+[PASS] test_S01_spoofCapability_unauthorizedMint() (gas: 56013)
+[PASS] test_S02_spoofCapability_allFunctions() (gas: 1015788)
+[PASS] test_S03_spoofOracleSignature() (gas: 221778)
+[PASS] test_S04_spoofResolverIdentity() (gas: 372588)
+[PASS] test_S05_spoofGovernor() (gas: 73085)
+[PASS] test_T01_skipState_mintToClaimed() (gas: 211666)
+[PASS] test_T02_skipState_allInvalid() (gas: 1083355)
+[PASS] test_T03_tamperOracleMessage() (gas: 339257)
+[PASS] test_T04_replayOracleSignature() (gas: 378047)
+[PASS] test_T05_tamperResolveRecipient() (gas: 452219)
+Suite result: ok. 24 passed; 0 failed; 0 skipped; finished in 56.22ms (53.77ms CPU time)
+
+Ran 28 tests for test/unit/agent/TAGITAgentIdentity.t.sol:TAGITAgentIdentityTest
+[PASS] test_decommissionAgent_revertNotRegistrant() (gas: 294002)
+[PASS] test_decommissionAgent_success() (gas: 277270)
+[PASS] test_reactivateAgent_success() (gas: 302883)
+[PASS] test_register_emitsEvents() (gas: 288968)
+[PASS] test_register_multipleAgents() (gas: 472657)
+[PASS] test_register_revertDuplicateWallet() (gas: 306936)
+[PASS] test_register_revertEmptyURI() (gas: 47606)
+[PASS] test_register_revertGovMil() (gas: 48509)
+[PASS] test_register_revertNoAccessController() (gas: 4958335)
+[PASS] test_register_revertNoKYC() (gas: 37914)
+[PASS] test_register_revertWhenPaused() (gas: 29891)
+[PASS] test_register_revertZeroWallet() (gas: 45481)
+[PASS] test_register_success() (gas: 298293)
+[PASS] test_register_walletLookup() (gas: 286977)
+[PASS] test_register_withFee() (gas: 318876)
+[PASS] test_setAgentURI_revertEmptyURI() (gas: 291604)
+[PASS] test_setAgentURI_revertNotRegistrant() (gas: 294664)
+[PASS] test_setAgentURI_success() (gas: 301093)
+[PASS] test_setAgentWallet_revertInvalidSignature() (gas: 308451)
+[PASS] test_setAgentWallet_success() (gas: 339174)
+[PASS] test_setMetadata_multipleKeys() (gas: 390783)
+[PASS] test_setMetadata_revertEmptyKey() (gas: 292037)
+[PASS] test_setMetadata_success() (gas: 324558)
+[PASS] test_soulbound_safeTransferBlocked() (gas: 290885)
+[PASS] test_soulbound_transferBlocked() (gas: 290822)
+[PASS] test_suspendAgent_revertAlreadySuspended() (gas: 300413)
+[PASS] test_suspendAgent_success() (gas: 299925)
+[PASS] test_withdrawFees_success() (gas: 358288)
+Suite result: ok. 28 passed; 0 failed; 0 skipped; finished in 8.73ms (7.69ms CPU time)
+
+Ran 22 tests for test/account/TAGITAccount.t.sol:TAGITAccountTest
+[PASS] testFuzz_sessionKeyExpiry(uint48) (runs: 256, μ: 422939, ~: 422341)
+[PASS] test_addGuardian_updatesThreshold() (gas: 402942)
+[PASS] test_createAccount_counterfactual() (gas: 326235)
+[PASS] test_createAccount_deterministicAddress() (gas: 325912)
+[PASS] test_createAccount_initializesCorrectly() (gas: 328108)
+[PASS] test_createAccount_revert_alreadyInitialized() (gas: 329956)
+[PASS] test_execute_onlyEntryPoint() (gas: 328821)
+[PASS] test_execute_ownerCanCall() (gas: 387961)
+[PASS] test_exportAsset_transfersNFT() (gas: 410828)
+[PASS] test_gas_addSessionKey() (gas: 411327)
+[PASS] test_gas_createAccount() (gas: 320386)
+[PASS] test_paymaster_rejectUnwhitelisted() (gas: 13543)
+[PASS] test_paymaster_respectsDailyLimit() (gas: 122864)
+[PASS] test_paymaster_sponsorsWhitelisted() (gas: 114563)
+[PASS] test_removeProtocolGuardian_7dayTimelock() (gas: 322292)
+[PASS] test_sessionKey_expiredReverts() (gas: 331655)
+[PASS] test_sessionKey_revokeRemovesAccess() (gas: 359056)
+[PASS] test_sessionKey_validWithinWindow() (gas: 414542)
+[PASS] test_sessionKey_wrongSelectorReverts() (gas: 414601)
+[PASS] test_validateUserOp_invalidSignature_reverts() (gas: 341905)
+[PASS] test_validateUserOp_validSignature() (gas: 339086)
+[PASS] test_version() (gas: 27820)
+Suite result: ok. 22 passed; 0 failed; 0 skipped; finished in 65.67ms (64.59ms CPU time)
+
+Ran 21 tests for test/deploy/DeployPaymasterArbitrum.t.sol:DeployPaymasterArbitrumTest
+[PASS] test_activate_isWhitelisted() (gas: 21926)
+[PASS] test_allFourSelectors_areSponsored() (gas: 26411)
+[PASS] test_bindTag_isWhitelisted() (gas: 21948)
+[PASS] test_canSponsor_freshUser() (gas: 46967)
+[PASS] test_circuitBreaker_notTripped() (gas: 14582)
+[PASS] test_claim_isWhitelisted() (gas: 21949)
+[PASS] test_dailyLimit_isConfigured() (gas: 21584)
+[PASS] test_drainDetector_initialized() (gas: 19863)
+[PASS] test_entryPointDeposit_isPositive() (gas: 18911)
+[PASS] test_entryPoint_isCanonical() (gas: 13126)
+[PASS] test_governor_isDeployer() (gas: 15285)
+[PASS] test_initialUsage_isZero() (gas: 14202)
+[PASS] test_maxGas_isConfigured() (gas: 21561)
+[PASS] test_mint_isWhitelisted() (gas: 21927)
+[PASS] test_owner_isDeployer() (gas: 15246)
+[PASS] test_paymaster_notPaused() (gas: 13023)
+[PASS] test_protocolDeposit_matchesFunding() (gas: 12982)
+[PASS] test_stakeDeposited() (gas: 18903)
+[PASS] test_totalGasSponsored_isZero() (gas: 13016)
+[PASS] test_unwhitelisted_selector_notSponsored() (gas: 13606)
+[PASS] test_version_is100() (gas: 11855)
+Suite result: ok. 21 passed; 0 failed; 0 skipped; finished in 1.19s (9.02ms CPU time)
+
+Ran 56 tests for test/libraries/DrainDetector.t.sol:DrainDetectorTest
+[PASS] testFuzz_cooldownRespected(uint64) (runs: 256, μ: 36406, ~: 36564)
+[PASS] testFuzz_spikeDetection(uint256,uint128) (runs: 256, μ: 2138749, ~: 2137257)
+[PASS] testFuzz_velocityAccumulation(uint8) (runs: 256, μ: 137487, ~: 73278)
+[PASS] test_checkWithdrawal_allowsAllWhenDisabled() (gas: 13065)
+[PASS] test_checkWithdrawal_allowsBelowFrequencyThreshold() (gas: 400002)
+[PASS] test_checkWithdrawal_allowsBelowSpikeThreshold() (gas: 26068)
+[PASS] test_checkWithdrawal_allowsBelowVelocityThreshold() (gas: 45006)
+[PASS] test_checkWithdrawal_detectsFrequencyBreach() (gas: 410687)
+[PASS] test_checkWithdrawal_detectsSpike() (gas: 27961)
+[PASS] test_checkWithdrawal_detectsVelocityBreach() (gas: 57114)
+[PASS] test_checkWithdrawal_emitsDetectorReset() (gas: 45365)
+[PASS] test_checkWithdrawal_emitsDetectorTripped() (gas: 31227)
+[PASS] test_checkWithdrawal_emitsFrequencyAlert() (gas: 413863)
+[PASS] test_checkWithdrawal_emitsFrequencyWarningAt80Percent() (gas: 330621)
+[PASS] test_checkWithdrawal_emitsSpikeAlert() (gas: 31248)
+[PASS] test_checkWithdrawal_emitsSpikeWarningAt80Percent() (gas: 32071)
+[PASS] test_checkWithdrawal_emitsVelocityAlert() (gas: 60495)
+[PASS] test_checkWithdrawal_emitsVelocityWarningAt80Percent() (gas: 47289)
+[PASS] test_checkWithdrawal_gasEfficiency() (gas: 31446)
+[PASS] test_checkWithdrawal_resetsAfterCooldown() (gas: 44642)
+[PASS] test_checkWithdrawal_resetsWindowAfterDuration() (gas: 69971)
+[PASS] test_checkWithdrawal_revertsInCooldown() (gas: 32885)
+[PASS] test_checkWithdrawal_tripsOnSpike() (gas: 28076)
+[PASS] test_forceReset_resetsTrippedDetector() (gas: 33135)
+[PASS] test_forceReset_resetsWindowStats() (gas: 38591)
+[PASS] test_initialize_revertsOnExcessiveSpikeThreshold() (gas: 2055495)
+[PASS] test_initialize_revertsOnZeroCooldown() (gas: 2055576)
+[PASS] test_initialize_revertsOnZeroMaxTx() (gas: 2055547)
+[PASS] test_initialize_revertsOnZeroSpikeThreshold() (gas: 2055491)
+[PASS] test_initialize_revertsOnZeroVelocityThreshold() (gas: 2055520)
+[PASS] test_initialize_revertsOnZeroWindow() (gas: 2055423)
+[PASS] test_initialize_setsCorrectValues() (gas: 14370)
+[PASS] test_isEnabled_returnsCorrectState() (gas: 13768)
+[PASS] test_isInitialized_returnsFalseBeforeInit() (gas: 2052197)
+[PASS] test_isInitialized_returnsTrueAfterInit() (gas: 8118)
+[PASS] test_recordDeposit_capsAtMax() (gas: 14479)
+[PASS] test_recordDeposit_updatesBalance() (gas: 14496)
+[PASS] test_recordWithdrawal_emitsBalanceUpdated() (gas: 32297)
+[PASS] test_recordWithdrawal_updatesBalance() (gas: 28639)
+[PASS] test_remainingCapacity_decreasesWithWithdrawals() (gas: 37032)
+[PASS] test_remainingCapacity_fullInitially() (gas: 16489)
+[PASS] test_remainingCapacity_maxWhenDisabled() (gas: 13301)
+[PASS] test_setBalance_updatesDirectly() (gas: 14343)
+[PASS] test_status_cooldownDecreases() (gas: 31392)
+[PASS] test_status_notTrippedAfterCooldown() (gas: 31030)
+[PASS] test_status_notTrippedInitially() (gas: 8590)
+[PASS] test_updateThresholds_revertsOnInvalidSpike() (gas: 10873)
+[PASS] test_updateThresholds_revertsOnInvalidVelocity() (gas: 10901)
+[PASS] test_updateThresholds_updatesMaxTx() (gas: 18836)
+[PASS] test_updateThresholds_updatesSpike() (gas: 18852)
+[PASS] test_updateThresholds_updatesVelocity() (gas: 18873)
+[PASS] test_wouldTrigger_detectsFrequency() (gas: 399919)
+[PASS] test_wouldTrigger_detectsSpike() (gas: 12273)
+[PASS] test_wouldTrigger_detectsVelocity() (gas: 46179)
+[PASS] test_wouldTrigger_gasEfficiency() (gas: 30104)
+[PASS] test_wouldTrigger_returnsFalseForSafe() (gas: 17061)
+Suite result: ok. 56 passed; 0 failed; 0 skipped; finished in 182.39ms (197.08ms CPU time)
+
+Ran 2 tests for test/invariant/DrainDetector.t.sol:DrainDetectorInvariantTest
+[PASS] invariant_drainDetectorNeverOverestimates() (runs: 256, calls: 128000, reverts: 0)
+
+╭----------------------+-------------------+-------+---------+----------╮
+| Contract             | Selector          | Calls | Reverts | Discards |
++=======================================================================+
+| DrainDetectorHandler | deposit           | 42641 | 0       | 0        |
+|----------------------+-------------------+-------+---------+----------|
+| DrainDetectorHandler | governorSync      | 42585 | 0       | 0        |
+|----------------------+-------------------+-------+---------+----------|
+| DrainDetectorHandler | untrackedTransfer | 42774 | 0       | 0        |
+╰----------------------+-------------------+-------+---------+----------╯
+
+[PASS] invariant_syncAligns() (runs: 256, calls: 128000, reverts: 0)
+
+╭----------------------+-------------------+-------+---------+----------╮
+| Contract             | Selector          | Calls | Reverts | Discards |
++=======================================================================+
+| DrainDetectorHandler | deposit           | 42641 | 0       | 0        |
+|----------------------+-------------------+-------+---------+----------|
+| DrainDetectorHandler | governorSync      | 42585 | 0       | 0        |
+|----------------------+-------------------+-------+---------+----------|
+| DrainDetectorHandler | untrackedTransfer | 42774 | 0       | 0        |
+╰----------------------+-------------------+-------+---------+----------╯
+
+Suite result: ok. 2 passed; 0 failed; 0 skipped; finished in 24.30s (38.72s CPU time)
+
+Ran 22 tests for test/unit/agent/TAGITAgentReputation.t.sol:TAGITAgentReputationTest
+[PASS] test_appendResponse_revertAlreadyExists() (gas: 282093)
+[PASS] test_appendResponse_revertNotRegistrant() (gas: 257048)
+[PASS] test_appendResponse_success() (gas: 286524)
+[PASS] test_getSummary_excludesRevoked() (gas: 444516)
+[PASS] test_getSummary_multipleFeedback() (gas: 441356)
+[PASS] test_getSummary_noFeedback() (gas: 12878)
+[PASS] test_getSummary_singleFeedback() (gas: 252885)
+[PASS] test_getSummary_timeWeightedScoring() (gas: 442684)
+[PASS] test_giveFeedback_afterRevoke() (gas: 407155)
+[PASS] test_giveFeedback_emitsEvent() (gas: 246884)
+[PASS] test_giveFeedback_multipleFeedback() (gas: 431471)
+[PASS] test_giveFeedback_revertCommentTooLong() (gas: 189389)
+[PASS] test_giveFeedback_revertDuplicateReview() (gas: 264715)
+[PASS] test_giveFeedback_revertInvalidRating() (gas: 98222)
+[PASS] test_giveFeedback_revertNoKYC() (gas: 38143)
+[PASS] test_giveFeedback_revertSelfReview() (gas: 58212)
+[PASS] test_giveFeedback_revertSelfReviewWallet() (gas: 141016)
+[PASS] test_giveFeedback_success() (gas: 253043)
+[PASS] test_readAllFeedback() (gas: 445081)
+[PASS] test_revokeFeedback_revertAlreadyRevoked() (gas: 255402)
+[PASS] test_revokeFeedback_revertNotReviewer() (gas: 252524)
+[PASS] test_revokeFeedback_success() (gas: 258693)
+Suite result: ok. 22 passed; 0 failed; 0 skipped; finished in 24.31s (12.12ms CPU time)
+
+Ran 10 tests for test/fuzz/TAGITCore.fuzz.t.sol:TAGITCoreFuzzTest
+[PASS] testFuzz_batchMint_randomSize(uint8) (runs: 256, μ: 2559442, ~: 1301099)
+[PASS] testFuzz_bindTag_randomTag(bytes32) (runs: 256, μ: 285302, ~: 285302)
+[PASS] testFuzz_claim_randomOwner(address) (runs: 256, μ: 338842, ~: 338842)
+[PASS] testFuzz_fullLifecycle(address,bytes32,bytes32) (runs: 256, μ: 352460, ~: 352460)
+[PASS] testFuzz_invalidStateTransitions(uint8,uint8) (runs: 256, μ: 185716, ~: 219145)
+[PASS] testFuzz_mint_randomRecipient(address,bytes32) (runs: 256, μ: 216570, ~: 216570)
+[PASS] testFuzz_oracleSignature_wrongKey(uint256) (runs: 256, μ: 239280, ~: 239280)
+[PASS] testFuzz_recycle_fromBothStates(bool) (runs: 256, μ: 400167, ~: 412471)
+[PASS] testFuzz_resolve_randomRecipient(address) (runs: 256, μ: 500676, ~: 500676)
+[PASS] testFuzz_unauthorizedCaller(address) (runs: 256, μ: 1100598, ~: 1100598)
+Suite result: ok. 10 passed; 0 failed; 0 skipped; finished in 78.78s (2.63s CPU time)
+
+Ran 10 tests for test/invariant/TAGITCore.invariant.t.sol:TAGITCoreInvariantTest
+[PASS] invariant_noZeroOwners() (runs: 256, calls: 128000, reverts: 0)
+
+╭------------------+--------------------+-------+---------+----------╮
+| Contract         | Selector           | Calls | Reverts | Discards |
++====================================================================+
+| TAGITCoreHandler | activate           | 15779 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | bindTag            | 16042 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | claim              | 16013 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | flag               | 16113 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | mint               | 16012 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromClaimed | 16061 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromFlagged | 15965 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | resolve            | 16015 | 0       | 0        |
+╰------------------+--------------------+-------+---------+----------╯
+
+[PASS] invariant_ownerConsistency() (runs: 256, calls: 128000, reverts: 0)
+
+╭------------------+--------------------+-------+---------+----------╮
+| Contract         | Selector           | Calls | Reverts | Discards |
++====================================================================+
+| TAGITCoreHandler | activate           | 15779 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | bindTag            | 16042 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | claim              | 16013 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | flag               | 16113 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | mint               | 16012 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromClaimed | 16061 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromFlagged | 15965 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | resolve            | 16015 | 0       | 0        |
+╰------------------+--------------------+-------+---------+----------╯
+
+[PASS] invariant_recycledIsTerminal() (runs: 256, calls: 128000, reverts: 0)
+
+╭------------------+--------------------+-------+---------+----------╮
+| Contract         | Selector           | Calls | Reverts | Discards |
++====================================================================+
+| TAGITCoreHandler | activate           | 15779 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | bindTag            | 16042 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | claim              | 16013 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | flag               | 16113 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | mint               | 16012 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromClaimed | 16061 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromFlagged | 15965 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | resolve            | 16015 | 0       | 0        |
+╰------------------+--------------------+-------+---------+----------╯
+
+[PASS] invariant_stateTransitionsValid() (runs: 256, calls: 128000, reverts: 0)
+
+╭------------------+--------------------+-------+---------+----------╮
+| Contract         | Selector           | Calls | Reverts | Discards |
++====================================================================+
+| TAGITCoreHandler | activate           | 15779 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | bindTag            | 16042 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | claim              | 16013 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | flag               | 16113 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | mint               | 16012 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromClaimed | 16061 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromFlagged | 15965 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | resolve            | 16015 | 0       | 0        |
+╰------------------+--------------------+-------+---------+----------╯
+
+[PASS] invariant_tagBindingUnique() (runs: 256, calls: 128000, reverts: 0)
+
+╭------------------+--------------------+-------+---------+----------╮
+| Contract         | Selector           | Calls | Reverts | Discards |
++====================================================================+
+| TAGITCoreHandler | activate           | 15779 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | bindTag            | 16042 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | claim              | 16013 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | flag               | 16113 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | mint               | 16012 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromClaimed | 16061 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromFlagged | 15965 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | resolve            | 16015 | 0       | 0        |
+╰------------------+--------------------+-------+---------+----------╯
+
+[PASS] invariant_tagMappingBidirectional() (runs: 256, calls: 128000, reverts: 0)
+
+╭------------------+--------------------+-------+---------+----------╮
+| Contract         | Selector           | Calls | Reverts | Discards |
++====================================================================+
+| TAGITCoreHandler | activate           | 15779 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | bindTag            | 16042 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | claim              | 16013 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | flag               | 16113 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | mint               | 16012 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromClaimed | 16061 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromFlagged | 15965 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | resolve            | 16015 | 0       | 0        |
+╰------------------+--------------------+-------+---------+----------╯
+
+[PASS] invariant_timestampsValid() (runs: 256, calls: 128000, reverts: 0)
+
+╭------------------+--------------------+-------+---------+----------╮
+| Contract         | Selector           | Calls | Reverts | Discards |
++====================================================================+
+| TAGITCoreHandler | activate           | 15779 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | bindTag            | 16042 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | claim              | 16013 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | flag               | 16113 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | mint               | 16012 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromClaimed | 16061 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromFlagged | 15965 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | resolve            | 16015 | 0       | 0        |
+╰------------------+--------------------+-------+---------+----------╯
+
+[PASS] invariant_totalSupplyConsistency() (runs: 256, calls: 128000, reverts: 0)
+
+╭------------------+--------------------+-------+---------+----------╮
+| Contract         | Selector           | Calls | Reverts | Discards |
++====================================================================+
+| TAGITCoreHandler | activate           | 15779 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | bindTag            | 16042 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | claim              | 16013 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | flag               | 16113 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | mint               | 16012 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromClaimed | 16061 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromFlagged | 15965 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | resolve            | 16015 | 0       | 0        |
+╰------------------+--------------------+-------+---------+----------╯
+
+[PASS] invariant_totalSupplyEqualsMintCount() (runs: 256, calls: 128000, reverts: 0)
+
+╭------------------+--------------------+-------+---------+----------╮
+| Contract         | Selector           | Calls | Reverts | Discards |
++====================================================================+
+| TAGITCoreHandler | activate           | 15779 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | bindTag            | 16042 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | claim              | 16013 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | flag               | 16113 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | mint               | 16012 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromClaimed | 16061 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromFlagged | 15965 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | resolve            | 16015 | 0       | 0        |
+╰------------------+--------------------+-------+---------+----------╯
+
+[PASS] invariant_validStateValues() (runs: 256, calls: 128000, reverts: 0)
+
+╭------------------+--------------------+-------+---------+----------╮
+| Contract         | Selector           | Calls | Reverts | Discards |
++====================================================================+
+| TAGITCoreHandler | activate           | 15779 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | bindTag            | 16042 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | claim              | 16013 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | flag               | 16113 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | mint               | 16012 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromClaimed | 16061 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | recycleFromFlagged | 15965 | 0       | 0        |
+|------------------+--------------------+-------+---------+----------|
+| TAGITCoreHandler | resolve            | 16015 | 0       | 0        |
+╰------------------+--------------------+-------+---------+----------╯
+
+Suite result: ok. 10 passed; 0 failed; 0 skipped; finished in 179.54s (793.50s CPU time)
+
+Ran 33 tests for test/libraries/CircuitBreaker.t.sol:CircuitBreakerTest
+[PASS] testFuzz_cooldownRespected(uint64) (runs: 256, μ: 66379, ~: 66500)
+[PASS] testFuzz_thresholdBehavior(uint32,uint64) (runs: 256, μ: 2426700, ~: 1776613)
+[PASS] test_check_emitsCircuitReset() (gas: 68644)
+[PASS] test_check_emitsCircuitTripped() (gas: 63623)
+[PASS] test_check_emitsWarningAt80Percent() (gas: 49873)
+[PASS] test_check_gasEfficiency() (gas: 19378)
+[PASS] test_check_incrementsCount() (gas: 28697)
+[PASS] test_check_resetsAfterCooldown() (gas: 69856)
+[PASS] test_check_resetsOnNewWindow() (gas: 60013)
+[PASS] test_check_revertsInCooldown() (gas: 62061)
+[PASS] test_check_tripsAtThreshold() (gas: 61035)
+[PASS] test_forceReset_resetsCountAndWindow() (gas: 38695)
+[PASS] test_forceReset_resetsTrippedCircuit() (gas: 69507)
+[PASS] test_initialize_revertsOnZeroCooldown() (gas: 1119077)
+[PASS] test_initialize_revertsOnZeroThreshold() (gas: 1118976)
+[PASS] test_initialize_revertsOnZeroWindow() (gas: 1119049)
+[PASS] test_initialize_setsCorrectValues() (gas: 13780)
+[PASS] test_isInitialized_returnsFalseBeforeInit() (gas: 1116653)
+[PASS] test_isInitialized_returnsTrueAfterInit() (gas: 8052)
+[PASS] test_remainingCapacity_decreasesWithChecks() (gas: 28285)
+[PASS] test_remainingCapacity_fullInitially() (gas: 11393)
+[PASS] test_remainingCapacity_resetsWithNewWindow() (gas: 36288)
+[PASS] test_remainingCapacity_zeroWhenTripped() (gas: 57797)
+[PASS] test_setCooldown_revertsOnZero() (gas: 10057)
+[PASS] test_setCooldown_updatesValue() (gas: 17526)
+[PASS] test_setThreshold_revertsOnZero() (gas: 9945)
+[PASS] test_setThreshold_updatesValue() (gas: 17412)
+[PASS] test_setWindow_revertsOnZero() (gas: 10012)
+[PASS] test_setWindow_updatesValue() (gas: 17474)
+[PASS] test_status_cooldownDecreases() (gas: 61349)
+[PASS] test_status_notTrippedAfterCooldown() (gas: 61020)
+[PASS] test_status_notTrippedInitially() (gas: 8523)
+[PASS] test_status_trippedAfterThreshold() (gas: 58076)
+Suite result: ok. 33 passed; 0 failed; 0 skipped; finished in 180.43s (180.43s CPU time)
+
+Ran 69 test suites in 180.51s (496.32s CPU time): 1638 tests passed, 0 failed, 0 skipped (1638 total tests)
+
+╭--------------------------------------------------+--------------------+--------------------+------------------+------------------╮
+| File                                             | % Lines            | % Statements       | % Branches       | % Funcs          |
++==================================================================================================================================+
+| script/Deploy.s.sol                              | 0.00% (0/72)       | 0.00% (0/80)       | 100.00% (0/0)    | 0.00% (0/1)      |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| script/DeployIntegrationFactory.s.sol            | 0.00% (0/29)       | 0.00% (0/36)       | 100.00% (0/0)    | 0.00% (0/1)      |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| script/DeployNISTProxies.s.sol                   | 0.00% (0/64)       | 0.00% (0/72)       | 100.00% (0/0)    | 0.00% (0/2)      |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| script/DeployNISTUpgrades.s.sol                  | 0.00% (0/66)       | 0.00% (0/67)       | 100.00% (0/0)    | 0.00% (0/1)      |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| script/UpgradeTAGITCore.s.sol                    | 0.00% (0/79)       | 0.00% (0/101)      | 100.00% (0/0)    | 0.00% (0/2)      |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| script/deploy/DeployAgentSuite.s.sol             | 0.00% (0/44)       | 0.00% (0/46)       | 100.00% (0/0)    | 0.00% (0/1)      |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| script/deploy/DeployArbitrumFull.s.sol           | 0.00% (0/78)       | 0.00% (0/94)       | 100.00% (0/0)    | 0.00% (0/1)      |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| script/deploy/DeployArbitrumSepolia.s.sol        | 0.00% (0/51)       | 0.00% (0/61)       | 100.00% (0/0)    | 0.00% (0/1)      |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| script/deploy/DeployArbitrumSepoliaDemo.s.sol    | 0.00% (0/9)        | 0.00% (0/9)        | 100.00% (0/0)    | 0.00% (0/1)      |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| script/deploy/DeployPaymasterArbitrum.s.sol      | 0.00% (0/60)       | 0.00% (0/65)       | 100.00% (0/0)    | 0.00% (0/2)      |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| script/deploy/DeployRoboticAuthorizer.s.sol      | 0.00% (0/35)       | 0.00% (0/42)       | 0.00% (0/4)      | 0.00% (0/2)      |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| script/deploy/DeployStateAnchor.s.sol            | 0.00% (0/22)       | 0.00% (0/24)       | 100.00% (0/0)    | 0.00% (0/1)      |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| script/deploy/DeployTAGITCoreProxy.s.sol         | 0.00% (0/76)       | 0.00% (0/96)       | 100.00% (0/0)    | 0.00% (0/1)      |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| script/deploy/DeployTokenAndGovernor.s.sol       | 0.00% (0/75)       | 0.00% (0/75)       | 100.00% (0/0)    | 0.00% (0/7)      |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| script/deploy/DeployVerificationEscrow.s.sol     | 0.00% (0/22)       | 0.00% (0/25)       | 100.00% (0/0)    | 0.00% (0/1)      |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| script/deploy/FixAuditIssues.s.sol               | 0.00% (0/54)       | 0.00% (0/62)       | 0.00% (0/8)      | 0.00% (0/1)      |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| script/deploy/SetTrustedOracle.s.sol             | 0.00% (0/41)       | 0.00% (0/48)       | 0.00% (0/5)      | 0.00% (0/1)      |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| script/deploy/UpgradeCoreQuorum.s.sol            | 0.00% (0/54)       | 0.00% (0/70)       | 0.00% (0/2)      | 0.00% (0/2)      |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| script/setup/RegisterSageAgent.s.sol             | 0.00% (0/38)       | 0.00% (0/45)       | 100.00% (0/0)    | 0.00% (0/1)      |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/access/CapabilityBadge.sol                   | 100.00% (36/36)    | 100.00% (43/43)    | 100.00% (4/4)    | 100.00% (5/5)    |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/access/IdentityBadge.sol                     | 94.12% (32/34)     | 96.88% (31/32)     | 100.00% (5/5)    | 88.89% (8/9)     |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/access/TAGITAccess.sol                       | 100.00% (26/26)    | 100.00% (24/24)    | 100.00% (6/6)    | 100.00% (8/8)    |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/account/TAGITAccount.sol                     | 69.95% (142/203)   | 60.50% (144/238)   | 38.46% (20/52)   | 78.12% (25/32)   |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/account/TAGITAccountFactory.sol              | 74.23% (72/97)     | 70.00% (63/90)     | 25.00% (4/16)    | 66.67% (16/24)   |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/account/TAGITPaymaster.sol                   | 91.89% (170/185)   | 91.06% (163/179)   | 65.71% (23/35)   | 90.70% (39/43)   |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/agent/IntegrationFactory.sol                 | 98.74% (157/159)   | 95.38% (165/173)   | 78.95% (30/38)   | 100.00% (27/27)  |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/agent/TAGITAgentIdentity.sol                 | 92.68% (114/123)   | 87.90% (109/124)   | 48.15% (13/27)   | 96.15% (25/26)   |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/agent/TAGITAgentReputation.sol               | 97.80% (89/91)     | 92.23% (95/103)    | 66.67% (14/21)   | 93.33% (14/15)   |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/agent/TAGITAgentValidation.sol               | 97.73% (86/88)     | 94.51% (86/91)     | 72.22% (13/18)   | 100.00% (15/15)  |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/bridge/CCIPAdapter.sol                       | 87.80% (180/205)   | 87.37% (173/198)   | 50.00% (16/32)   | 93.48% (43/46)   |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/core/TAGITCore.sol                           | 100.00% (201/201)  | 100.00% (212/212)  | 100.00% (39/39)  | 100.00% (31/31)  |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/core/TAGITCoreDemo.sol                       | 0.00% (0/22)       | 0.00% (0/18)       | 0.00% (0/3)      | 0.00% (0/7)      |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/escrow/VerificationEscrow.sol                | 100.00% (53/53)    | 98.36% (60/61)     | 94.12% (16/17)   | 100.00% (6/6)    |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/governance/TAGITGovernor.sol                 | 77.30% (126/163)   | 76.40% (136/178)   | 75.00% (21/28)   | 62.16% (23/37)   |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/libraries/CircuitBreaker.sol                 | 100.00% (72/72)    | 100.00% (71/71)    | 100.00% (16/16)  | 100.00% (12/12)  |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/libraries/DrainDetector.sol                  | 96.77% (150/155)   | 97.13% (169/174)   | 87.50% (28/32)   | 100.00% (17/17)  |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/libraries/RateLimiter.sol                    | 92.31% (84/91)     | 91.49% (86/94)     | 82.61% (19/23)   | 100.00% (11/11)  |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/libraries/ReplayProtection.sol               | 98.41% (62/63)     | 98.04% (50/51)     | 92.31% (12/13)   | 100.00% (14/14)  |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/mirror/TAGITStateAnchor.sol                  | 100.00% (29/29)    | 100.00% (30/30)    | 100.00% (5/5)    | 100.00% (8/8)    |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/programs/TAGITPrograms.sol                   | 81.43% (228/280)   | 76.38% (249/326)   | 45.21% (33/73)   | 81.63% (40/49)   |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/recovery/TAGITRecovery.sol                   | 92.99% (199/214)   | 86.51% (186/215)   | 58.82% (30/51)   | 91.18% (31/34)   |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/robot/RoboticAuthorizer.sol                  | 96.26% (103/107)   | 91.38% (106/116)   | 72.73% (16/22)   | 91.30% (21/23)   |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/token/TAGITBurner.sol                        | 100.00% (58/58)    | 100.00% (56/56)    | 100.00% (12/12)  | 100.00% (14/14)  |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/token/TAGITEmissions.sol                     | 97.96% (96/98)     | 98.18% (108/110)   | 91.67% (11/12)   | 94.74% (18/19)   |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/token/TAGITStaking.sol                       | 93.97% (109/116)   | 92.31% (96/104)    | 66.67% (12/18)   | 88.24% (30/34)   |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/token/TAGITToken.sol                         | 95.35% (41/43)     | 94.59% (35/37)     | 100.00% (7/7)    | 91.67% (11/12)   |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/token/TAGITVesting.sol                       | 100.00% (61/61)    | 96.05% (73/76)     | 81.25% (13/16)   | 100.00% (13/13)  |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| src/treasury/TAGITTreasury.sol                   | 88.89% (192/216)   | 80.25% (191/238)   | 44.83% (26/58)   | 100.00% (39/39)  |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/account/TAGITAccount.t.sol                  | 43.48% (10/23)     | 50.00% (7/14)      | 25.00% (1/4)     | 30.00% (3/10)    |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/echidna/TAGITInvariants.sol                 | 0.00% (0/103)      | 0.00% (0/111)      | 0.00% (0/33)     | 0.00% (0/27)     |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/fork/ForkBase.t.sol                         | 65.79% (25/38)     | 68.75% (22/32)     | 25.00% (1/4)     | 55.56% (5/9)     |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/integration/IntegrationBase.t.sol           | 99.22% (128/129)   | 99.34% (150/151)   | 100.00% (0/0)    | 100.00% (15/15)  |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/invariant/DrainDetector.t.sol               | 100.00% (23/23)    | 100.00% (20/20)    | 100.00% (1/1)    | 100.00% (5/5)    |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/invariant/StateInvariants.t.sol             | 0.00% (0/251)      | 0.00% (0/273)      | 0.00% (0/20)     | 0.00% (0/29)     |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/invariant/TAGITCore.invariant.t.sol         | 88.52% (108/122)   | 94.57% (122/129)   | 100.00% (18/18)  | 61.11% (11/18)   |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/libraries/CircuitBreaker.t.sol              | 100.00% (22/22)    | 100.00% (16/16)    | 100.00% (0/0)    | 100.00% (11/11)  |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/libraries/DrainDetector.t.sol               | 100.00% (32/32)    | 100.00% (24/24)    | 100.00% (0/0)    | 100.00% (16/16)  |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/libraries/RateLimiter.t.sol                 | 100.00% (22/22)    | 100.00% (17/17)    | 100.00% (0/0)    | 100.00% (11/11)  |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/libraries/ReplayProtection.t.sol            | 100.00% (26/26)    | 100.00% (21/21)    | 100.00% (0/0)    | 100.00% (13/13)  |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/mocks/GnosisSafeMock.sol                    | 86.21% (25/29)     | 84.38% (27/32)     | 42.86% (3/7)     | 100.00% (5/5)    |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/mocks/TAGITCoreV2Mock.sol                   | 100.00% (8/8)      | 100.00% (4/4)      | 100.00% (0/0)    | 100.00% (4/4)    |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/programs/TAGITPrograms.t.sol                | 50.00% (4/8)       | 50.00% (2/4)       | 100.00% (0/0)    | 50.00% (2/4)     |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/security/CCIPAdapter.nist.t.sol             | 66.67% (4/6)       | 75.00% (3/4)       | 100.00% (0/0)    | 66.67% (2/3)     |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/security/CCIPAdapter_Replay.t.sol           | 100.00% (8/8)      | 100.00% (5/5)      | 100.00% (0/0)    | 100.00% (4/4)    |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/security/IntegrationFactory_FeeBypass.t.sol | 33.33% (6/18)      | 37.50% (3/8)       | 100.00% (0/0)    | 30.00% (3/10)    |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/security/Patch11TreasuryAsset.t.sol         | 100.00% (2/2)      | 100.00% (1/1)      | 100.00% (0/0)    | 100.00% (1/1)    |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/security/Patch12And13Paymaster.t.sol        | 43.75% (7/16)      | 60.00% (6/10)      | 50.00% (2/4)     | 25.00% (2/8)     |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/security/Patch14ActionProof.t.sol           | 33.33% (2/6)       | 33.33% (1/3)       | 100.00% (0/0)    | 33.33% (1/3)     |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/security/Patch15EmailHash.t.sol             | 0.00% (0/15)       | 0.00% (0/8)        | 0.00% (0/2)      | 0.00% (0/8)      |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/security/Patch16SessionKeySpend.t.sol       | 0.00% (0/15)       | 0.00% (0/8)        | 0.00% (0/2)      | 0.00% (0/8)      |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/security/TAGITAccount.nist.t.sol            | 0.00% (0/4)        | 0.00% (0/2)        | 100.00% (0/0)    | 0.00% (0/2)      |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/security/TAGITPaymaster.nist.t.sol          | 36.36% (4/11)      | 40.00% (2/5)       | 0.00% (0/2)      | 33.33% (2/6)     |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/security/TAGITPrograms.nist.t.sol           | 33.33% (2/6)       | 33.33% (1/3)       | 100.00% (0/0)    | 33.33% (1/3)     |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/unit/IntegrationFactory.t.sol               | 47.83% (11/23)     | 53.85% (7/13)      | 0.00% (0/1)      | 36.36% (4/11)    |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/unit/TAGITCoreProxyComprehensive.t.sol      | 66.67% (4/6)       | 66.67% (2/3)       | 100.00% (0/0)    | 66.67% (2/3)     |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/unit/TAGITPaymasterComprehensive.t.sol      | 75.00% (9/12)      | 100.00% (7/7)      | 50.00% (2/4)     | 50.00% (3/6)     |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| test/unit/escrow/VerificationEscrow.t.sol        | 50.00% (2/4)       | 50.00% (1/2)       | 100.00% (0/0)    | 50.00% (1/2)     |
+|--------------------------------------------------+--------------------+--------------------+------------------+------------------|
+| Total                                            | 65.99% (3462/5246) | 63.18% (3481/5510) | 60.00% (492/820) | 75.52% (691/915) |
+╰--------------------------------------------------+--------------------+--------------------+------------------+------------------╯

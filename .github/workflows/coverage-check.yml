@@ -19,34 +19,56 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
 
-      - name: Run coverage
+      - name: Run coverage (summary)
         run: |
-          forge coverage --report summary 2>&1 | tee coverage-output.txt
+          FOUNDRY_FUZZ_RUNS=256 forge coverage --report summary 2>&1 | tee coverage-output.txt
 
-      - name: Check coverage threshold
+      - name: Generate lcov report
         run: |
-          # Extract overall line coverage percentage
-          # Format: | Total | ... | XX.XX% |
-          COVERAGE=$(grep -i "total" coverage-output.txt | grep -oP '\d+\.\d+%' | head -1 | tr -d '%')
+          mkdir -p coverage
+          FOUNDRY_FUZZ_RUNS=256 forge coverage --report lcov --report-file coverage/lcov.info
 
-          if [ -z "$COVERAGE" ]; then
-            echo "::warning::Could not parse coverage. Check output above."
+      - name: Check coverage threshold (src/ only)
+        run: |
+          # Extract only src/ lines from coverage output and compute aggregate line coverage
+          # Format: | src/path/File.sol | XX.XX% (hit/total) | ... |
+          SRC_LINES=$(grep '^| src/' coverage-output.txt)
+
+          if [ -z "$SRC_LINES" ]; then
+            echo "::warning::No src/ coverage lines found. Check output above."
             exit 0
           fi
 
+          # Sum hit/total for Lines column (2nd column after file name)
+          HITS=$(echo "$SRC_LINES" | grep -oE '\([0-9]+/[0-9]+\)' | sed -n '1~4p' | tr -d '()' | cut -d'/' -f1 | paste -sd+ | bc)
+          TOTAL=$(echo "$SRC_LINES" | grep -oE '\([0-9]+/[0-9]+\)' | sed -n '1~4p' | tr -d '()' | cut -d'/' -f2 | paste -sd+ | bc)
+
+          if [ "$TOTAL" -eq 0 ]; then
+            echo "::warning::Total lines is 0. Cannot compute coverage."
+            exit 0
+          fi
+
+          COVERAGE=$(echo "scale=2; $HITS * 100 / $TOTAL" | bc)
           THRESHOLD=85
-          echo "Coverage: ${COVERAGE}%"
+
+          echo "Line Coverage (src/ only): ${COVERAGE}% (${HITS}/${TOTAL})"
           echo "Threshold: ${THRESHOLD}%"
 
           if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
-            echo "::error::Coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
+            echo "::error::Line coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
             exit 1
           else
             echo "Coverage OK: ${COVERAGE}% >= ${THRESHOLD}%"
           fi
 
-      - name: Upload coverage artifact
+      - name: Upload coverage summary
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage-output.txt
+
+      - name: Upload lcov artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: coverage/lcov.info
