@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -39,7 +39,13 @@ import {MIN_STAKE_FOR_REP, VERSION} from "../libraries/Constants.sol";
  *
  * @custom:security-contact security@tagit.network
  */
-contract TAGITStaking is ITAGITStaking, OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, PausableUpgradeable {
+contract TAGITStaking is
+    ITAGITStaking,
+    OwnableUpgradeable,
+    UUPSUpgradeable,
+    ReentrancyGuardUpgradeable,
+    PausableUpgradeable
+{
     using SafeERC20 for IERC20;
     using RateLimiter for RateLimiter.Config;
 
@@ -136,6 +142,7 @@ contract TAGITStaking is ITAGITStaking, OwnableUpgradeable, UUPSUpgradeable, Ree
 
         __Ownable_init(initialOwner);
         __UUPSUpgradeable_init();
+        __ReentrancyGuard_init();
         __Pausable_init();
 
         token = TAGITToken(_token);
@@ -276,11 +283,10 @@ contract TAGITStaking is ITAGITStaking, OwnableUpgradeable, UUPSUpgradeable, Ree
      * @param amount Amount of reward tokens to add
      * @custom:emits RewardAdded
      */
-    function notifyRewardAmount(uint256 amount) external onlyEmissions updateReward(address(0)) {
+    function notifyRewardAmount(uint256 amount) external nonReentrant onlyEmissions updateReward(address(0)) {
         if (amount == 0) revert ZeroAmount();
 
-        // Transfer rewards from emissions
-        IERC20(address(token)).safeTransferFrom(msg.sender, address(this), amount);
+        // CEI Pattern: EFFECTS first, then INTERACTIONS
 
         // Calculate new reward rate
         if (block.timestamp >= _periodFinish) {
@@ -297,6 +303,9 @@ contract TAGITStaking is ITAGITStaking, OwnableUpgradeable, UUPSUpgradeable, Ree
         _periodFinish = block.timestamp + 7 days;
 
         emit RewardAdded(amount);
+
+        // INTERACTIONS: Transfer rewards from emissions (after state updates)
+        IERC20(address(token)).safeTransferFrom(msg.sender, address(this), amount);
     }
 
     // ============================================

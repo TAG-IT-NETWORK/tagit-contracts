@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
 import {ITAGITEmissions} from "../interfaces/ITAGITEmissions.sol";
 import {TAGITToken} from "./TAGITToken.sol";
@@ -33,7 +33,7 @@ import {INFLATION_RATE, EPOCHS_PER_YEAR, EPOCH_DURATION, BASIS_POINTS, VERSION} 
  *
  * @custom:security-contact security@tagit.network
  */
-contract TAGITEmissions is ITAGITEmissions, OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard {
+contract TAGITEmissions is ITAGITEmissions, OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuardUpgradeable {
     // ============================================
     // STATE VARIABLES
     // ============================================
@@ -92,6 +92,7 @@ contract TAGITEmissions is ITAGITEmissions, OwnableUpgradeable, UUPSUpgradeable,
 
         __Ownable_init(initialOwner);
         __UUPSUpgradeable_init();
+        __ReentrancyGuard_init();
 
         token = TAGITToken(_token);
         governor = _governor;
@@ -143,6 +144,13 @@ contract TAGITEmissions is ITAGITEmissions, OwnableUpgradeable, UUPSUpgradeable,
 
         uint256 startEpoch = _lastDistributedEpoch + 1;
 
+        // CEI Pattern: Per-iteration, update state (Effects) before mints (Interactions).
+        // Compounding requires totalSupply to update between iterations via mint.
+        uint256 allocLength = _allocations.length;
+
+        // EFFECTS: Update _lastDistributedEpoch before any external calls
+        _lastDistributedEpoch = startEpoch + epochsToDistribute - 1;
+
         for (uint256 i = 0; i < epochsToDistribute;) {
             uint256 epoch = startEpoch + i;
 
@@ -150,8 +158,14 @@ contract TAGITEmissions is ITAGITEmissions, OwnableUpgradeable, UUPSUpgradeable,
             uint256 totalSupply = token.totalSupply();
             uint256 weeklyAmount = (totalSupply * INFLATION_RATE) / (BASIS_POINTS * EPOCHS_PER_YEAR);
 
-            // Distribute to each allocation
-            uint256 allocLength = _allocations.length;
+            // EFFECTS: Update state before external mint calls
+            _epochDistributions[epoch] = weeklyAmount;
+            _totalDistributed += weeklyAmount;
+            distributed += weeklyAmount;
+
+            emit EpochDistributed(epoch, weeklyAmount, block.timestamp);
+
+            // INTERACTIONS: Mint shares (after state updates for this epoch)
             for (uint256 j = 0; j < allocLength;) {
                 uint256 share = (weeklyAmount * _allocations[j].weight) / BASIS_POINTS;
                 if (share > 0) {
@@ -162,19 +176,10 @@ contract TAGITEmissions is ITAGITEmissions, OwnableUpgradeable, UUPSUpgradeable,
                 }
             }
 
-            _epochDistributions[epoch] = weeklyAmount;
-            _totalDistributed += weeklyAmount;
-            distributed += weeklyAmount;
-
-            emit EpochDistributed(epoch, weeklyAmount, block.timestamp);
-
             unchecked {
                 ++i;
             }
         }
-
-        // Update last distributed epoch (may not reach currentEpoch if capped)
-        _lastDistributedEpoch = startEpoch + epochsToDistribute - 1;
 
         return distributed;
     }
