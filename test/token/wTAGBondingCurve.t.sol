@@ -20,6 +20,34 @@ contract MockWTAG is ERC20 {
 }
 
 /**
+ * @title ETHRejecter
+ * @dev Contract that rejects ETH transfers — used to test ETHTransferFailed paths
+ */
+contract ETHRejecter {
+    wTAGBondingCurve public curve;
+    IERC20 public wtag;
+
+    constructor(wTAGBondingCurve _curve, IERC20 _wtag) {
+        curve = _curve;
+        wtag = _wtag;
+    }
+
+    function doBuy(uint256 amount, uint256 maxCost) external payable {
+        curve.buy{value: msg.value}(amount, maxCost);
+    }
+
+    function doSell(uint256 amount, uint256 minReturn) external {
+        wtag.approve(address(curve), amount);
+        curve.sell(amount, minReturn);
+    }
+
+    // Deliberately reject ETH transfers
+    receive() external payable {
+        revert("rejected");
+    }
+}
+
+/**
  * @title wTAGBondingCurveTest
  * @author TAG IT Network <dev@tagit.network>
  * @notice Comprehensive test suite for the wTAGBondingCurve contract
@@ -660,5 +688,267 @@ contract wTAGBondingCurveTest is Test {
 
         uint256 priceAfter = curve.currentPrice();
         assertGt(priceAfter, priceBefore, "Price should increase after buy");
+    }
+
+    // ============================================
+    // QUOTE VIEW EDGE CASES
+    // ============================================
+
+    function test_getBuyQuote_revert_zeroAmount() public {
+        vm.expectRevert(wTAGBondingCurve.ZeroAmount.selector);
+        curve.getBuyQuote(0);
+    }
+
+    function test_getSellQuote_revert_zeroAmount() public {
+        vm.expectRevert(wTAGBondingCurve.ZeroAmount.selector);
+        curve.getSellQuote(0);
+    }
+
+    function test_getSellQuote_revert_exceedsCurveSupply() public {
+        vm.expectRevert(abi.encodeWithSelector(wTAGBondingCurve.ExceedsCurveSupply.selector, 1 ether, 0));
+        curve.getSellQuote(1 ether);
+    }
+
+    function test_getSellQuote_exactCurveSupply() public {
+        uint256 amount = 100 ether;
+        (uint256 buyCost,) = curve.getBuyQuote(amount);
+        vm.prank(alice);
+        curve.buy{value: buyCost}(amount, buyCost);
+
+        // Should not revert when querying exactly curveSupply
+        (uint256 netReturn, uint256 fee) = curve.getSellQuote(amount);
+        assertGt(netReturn, 0, "Net return should be positive");
+        assertGt(fee, 0, "Fee should be positive");
+    }
+
+    // ============================================
+    // BUY — INSUFFICIENT wTAG BALANCE
+    // ============================================
+
+    function test_buy_revert_insufficientWtagBalance() public {
+        // Deploy a curve with NO wTAG tokens
+        wTAGBondingCurve emptyCurve = new wTAGBondingCurve(address(wtag), owner, INITIAL_PRICE, SLOPE, FEE_BPS);
+        // Do NOT fund it with wTAG
+
+        uint256 amount = 100 ether;
+        (uint256 totalCost,) = emptyCurve.getBuyQuote(amount);
+
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(wTAGBondingCurve.InsufficientBalance.selector, amount, 0));
+        emptyCurve.buy{value: totalCost}(amount, totalCost);
+    }
+
+    // ============================================
+    // UPDATEPARAMS — FEE & SLOPE TOO HIGH
+    // ============================================
+
+    function test_updateParams_revert_feeTooHigh() public {
+        vm.prank(owner);
+        vm.expectRevert(abi.encodeWithSelector(wTAGBondingCurve.FeeTooHigh.selector, 1001, 1000));
+        curve.updateParams(INITIAL_PRICE, SLOPE, 1001);
+    }
+
+    function test_updateParams_revert_slopeTooHigh() public {
+        vm.prank(owner);
+        vm.expectRevert(abi.encodeWithSelector(wTAGBondingCurve.SlopeTooHigh.selector, 1e12 + 1, 1e12));
+        curve.updateParams(INITIAL_PRICE, 1e12 + 1, FEE_BPS);
+    }
+
+    function test_updateParams_maxBoundaryValues() public {
+        vm.prank(owner);
+        curve.updateParams(1, 1e12, 1000);
+
+        assertEq(curve.initialPrice(), 1);
+        assertEq(curve.slope(), 1e12);
+        assertEq(curve.feeBps(), 1000);
+    }
+
+    // ============================================
+    // ETH TRANSFER FAILURE TESTS
+    // ============================================
+
+    function test_buy_revert_ethRefundFails() public {
+        // Use ETHRejecter contract as buyer so refund is rejected
+        ETHRejecter rejecter = new ETHRejecter(curve, IERC20(address(wtag)));
+        vm.deal(address(rejecter), 100 ether);
+
+        uint256 amount = 10 ether;
+        (uint256 totalCost,) = curve.getBuyQuote(amount);
+
+        // Send more than needed to trigger a refund, which will fail
+        vm.expectRevert(abi.encodeWithSelector(wTAGBondingCurve.ETHTransferFailed.selector, address(rejecter), 1 ether));
+        rejecter.doBuy{value: totalCost + 1 ether}(amount, totalCost + 1 ether);
+    }
+
+    function test_sell_revert_ethTransferFails() public {
+        // First, buy tokens to an EOA, then transfer them to the rejecter
+        uint256 amount = 10 ether;
+        (uint256 buyCost,) = curve.getBuyQuote(amount);
+        vm.prank(alice);
+        curve.buy{value: buyCost}(amount, buyCost);
+
+        // Transfer wTAG to the rejecter
+        ETHRejecter rejecter = new ETHRejecter(curve, IERC20(address(wtag)));
+        vm.prank(alice);
+        wtag.transfer(address(rejecter), amount);
+
+        // Rejecter tries to sell — ETH send back will fail
+        (uint256 netReturn,) = curve.getSellQuote(amount);
+        vm.expectRevert(
+            abi.encodeWithSelector(wTAGBondingCurve.ETHTransferFailed.selector, address(rejecter), netReturn)
+        );
+        rejecter.doSell(amount, netReturn);
+    }
+
+    function test_withdrawFees_revert_ethTransferFails() public {
+        // Generate fees
+        uint256 amount = 100 ether;
+        (uint256 buyCost,) = curve.getBuyQuote(amount);
+        vm.prank(alice);
+        curve.buy{value: buyCost}(amount, buyCost);
+
+        uint256 fees = curve.accruedFees();
+        assertGt(fees, 0);
+
+        // Deploy a new curve owned by a contract that rejects ETH
+        ETHRejecter rejecterOwner = new ETHRejecter(curve, IERC20(address(wtag)));
+        wTAGBondingCurve ownedCurve =
+            new wTAGBondingCurve(address(wtag), address(rejecterOwner), INITIAL_PRICE, SLOPE, FEE_BPS);
+        wtag.mint(address(ownedCurve), CURVE_WTAG_SUPPLY);
+
+        // Generate fees on the new curve
+        (uint256 cost2,) = ownedCurve.getBuyQuote(amount);
+        vm.prank(alice);
+        ownedCurve.buy{value: cost2}(amount, cost2);
+
+        uint256 ownedFees = ownedCurve.accruedFees();
+        assertGt(ownedFees, 0);
+
+        // Withdraw as the rejecter owner — ETH transfer will fail
+        vm.prank(address(rejecterOwner));
+        vm.expectRevert(
+            abi.encodeWithSelector(wTAGBondingCurve.ETHTransferFailed.selector, address(rejecterOwner), ownedFees)
+        );
+        ownedCurve.withdrawFees();
+    }
+
+    // ============================================
+    // SINGLE-WEI PRECISION TESTS
+    // ============================================
+
+    function test_buy_singleWeiPrecision() public {
+        // Buy exactly 1 wei of tokens (smallest possible amount)
+        uint256 amount = 1;
+        (uint256 totalCost, uint256 fee) = curve.getBuyQuote(amount);
+
+        // Cost may round down to 0 for very tiny amounts; verify no revert
+        vm.prank(alice);
+        curve.buy{value: totalCost + 1}(amount, totalCost + 1);
+
+        assertEq(wtag.balanceOf(alice), amount);
+        assertEq(curve.curveSupply(), amount);
+    }
+
+    function test_sell_partialAmount() public {
+        // Buy 100 tokens, sell only 50
+        uint256 buyAmount = 100 ether;
+        (uint256 buyCost,) = curve.getBuyQuote(buyAmount);
+        vm.prank(alice);
+        curve.buy{value: buyCost}(buyAmount, buyCost);
+
+        uint256 sellAmount = 50 ether;
+        vm.startPrank(alice);
+        wtag.approve(address(curve), sellAmount);
+        (uint256 netReturn,) = curve.getSellQuote(sellAmount);
+        curve.sell(sellAmount, netReturn);
+        vm.stopPrank();
+
+        assertEq(curve.curveSupply(), 50 ether, "Supply should reflect partial sell");
+        assertEq(wtag.balanceOf(alice), 50 ether, "Alice should have remaining tokens");
+    }
+
+    // ============================================
+    // ADDITIONAL FUZZ TESTS
+    // ============================================
+
+    function testFuzz_buy(uint256 amount) public {
+        amount = bound(amount, 1e15, 50_000 ether); // min 0.001 tokens, max 50K
+
+        (uint256 totalCost, uint256 fee) = curve.getBuyQuote(amount);
+        vm.assume(totalCost <= alice.balance);
+        vm.assume(totalCost > 0);
+
+        vm.prank(alice);
+        curve.buy{value: totalCost}(amount, totalCost);
+
+        assertEq(wtag.balanceOf(alice), amount, "Should receive exact token amount");
+        assertEq(curve.curveSupply(), amount, "Curve supply should match");
+        assertEq(curve.accruedFees(), fee, "Fees should match quote");
+    }
+
+    function testFuzz_sell(uint256 buyAmount, uint256 sellPct) public {
+        buyAmount = bound(buyAmount, 1 ether, 10_000 ether);
+        sellPct = bound(sellPct, 1, 100);
+        uint256 sellAmount = (buyAmount * sellPct) / 100;
+        vm.assume(sellAmount >= 1);
+
+        (uint256 buyCost,) = curve.getBuyQuote(buyAmount);
+        vm.assume(buyCost <= alice.balance);
+
+        vm.prank(alice);
+        curve.buy{value: buyCost}(buyAmount, buyCost);
+
+        vm.startPrank(alice);
+        wtag.approve(address(curve), sellAmount);
+        (uint256 netReturn,) = curve.getSellQuote(sellAmount);
+        curve.sell(sellAmount, netReturn);
+        vm.stopPrank();
+
+        assertEq(curve.curveSupply(), buyAmount - sellAmount, "Supply should decrease by sell amount");
+        assertEq(wtag.balanceOf(alice), buyAmount - sellAmount, "Token balance should reflect sell");
+    }
+
+    function testFuzz_sellReturnLessThanBuyCostWithFees(uint256 amount) public {
+        amount = bound(amount, 1 ether, 10_000 ether);
+
+        (uint256 buyCost,) = curve.getBuyQuote(amount);
+        vm.assume(buyCost <= alice.balance);
+
+        vm.prank(alice);
+        curve.buy{value: buyCost}(amount, buyCost);
+
+        vm.startPrank(alice);
+        wtag.approve(address(curve), amount);
+        (uint256 netReturn,) = curve.getSellQuote(amount);
+        vm.stopPrank();
+
+        // With non-zero fees, selling should always return less than buying cost
+        assertLt(netReturn, buyCost, "Sell return with fees should be less than buy cost");
+    }
+
+    // ============================================
+    // OWNERSHIP TRANSFER TEST
+    // ============================================
+
+    function test_ownershipTransfer() public {
+        vm.prank(owner);
+        curve.transferOwnership(alice);
+
+        assertEq(curve.owner(), alice, "Ownership should transfer");
+
+        // Alice should now be able to pause
+        vm.prank(alice);
+        curve.pause();
+        assertTrue(curve.paused(), "New owner should be able to pause");
+    }
+
+    // ============================================
+    // CONSTANTS VERIFICATION
+    // ============================================
+
+    function test_constantValues() public view {
+        assertEq(curve.PRECISION(), 1e18, "PRECISION should be 1e18");
+        assertEq(curve.MAX_FEE_BPS(), 1000, "MAX_FEE_BPS should be 1000");
+        assertEq(curve.MAX_SLOPE(), 1e12, "MAX_SLOPE should be 1e12");
     }
 }
