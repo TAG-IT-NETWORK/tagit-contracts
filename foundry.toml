@@ -47,4 +47,9 @@ base_sepolia = { key = "${BASESCAN_API_KEY}", url = "https://api-sepolia.basesca
 fork_block_number = 125000000
 no_match_path = "test/unit/*"
 
+# Documentation generation
+[doc]
+out = "docs"
+repository = "https://github.com/tag-it-network/tagit-contracts"
+
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
