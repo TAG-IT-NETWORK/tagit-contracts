@@ -74,24 +74,64 @@ interface IRoboticAuthorizer {
     // ADMIN FUNCTIONS
     // ============================================
 
+    /// @notice Update the safety classification for an object
+    /// @param tokenId The asset token ID
+    /// @param safetyClass The new SafetyClass enum value
     function setObjectSafetyClass(uint256 tokenId, SafetyClass safetyClass) external;
+
+    /// @notice Update the required zone for an object
+    /// @param tokenId The asset token ID
+    /// @param zone The new zone identifier (bytes32-encoded)
     function setObjectZone(uint256 tokenId, bytes32 zone) external;
+
+    /// @notice Update the prohibited action bitmask for an object
+    /// @param tokenId The asset token ID
+    /// @param prohibitedActions Bitmask of actions that are denied (deny-wins over allow)
     function setObjectProhibitedActions(uint256 tokenId, uint256 prohibitedActions) external;
+
+    /// @notice Reset the robot authorization circuit breaker after cooldown
     function resetRobotCircuitBreaker() external;
+
+    /// @notice Enable or disable robot-level rate limiting
+    /// @param enabled Whether rate limiting is active
     function setRobotRateLimitEnabled(bool enabled) external;
+
+    /// @notice Update the TAGITCore contract reference
+    /// @param core New TAGITCore contract address
     function setCoreContract(address core) external;
+
+    /// @notice Update the TAGITAccess controller reference
+    /// @param controller New TAGITAccess contract address
     function setAccessController(address controller) external;
 
     // ============================================
     // VIEW FUNCTIONS
     // ============================================
 
+    /// @notice Check whether the circuit breaker is currently tripped
+    /// @return isTripped True if the breaker is active
+    /// @return cooldownRemaining Seconds until the breaker resets (0 if not tripped)
     function getRobotCircuitBreakerStatus() external view returns (bool isTripped, uint256 cooldownRemaining);
+
+    /// @notice Check rate limit status for a specific robot
+    /// @param robot The robot wallet address
+    /// @return canAct Whether the robot can currently perform actions
+    /// @return remaining Number of actions remaining in the current window
+    /// @return lockedUntil Timestamp when the rate limit resets (0 if not locked)
     function getRobotRateLimitStatus(address robot)
         external
         view
         returns (bool canAct, uint256 remaining, uint256 lockedUntil);
+
+    /// @notice Get remaining capacity before circuit breaker trips
+    /// @return Number of robot authorization operations before circuit trips
     function getRobotCircuitBreakerCapacity() external view returns (uint256);
+
+    /// @notice Get the TAGITCore contract address
+    /// @return The current TAGITCore contract address
     function coreContract() external view returns (address);
+
+    /// @notice Get the TAGITAccess controller address
+    /// @return The current access controller address
     function accessController() external view returns (address);
 }
