@@ -8,6 +8,18 @@ pragma solidity ^0.8.20;
  */
 interface ITAGITStaking {
     // ============================================
+    // ENUMS
+    // ============================================
+
+    /// @notice Lock tier for time-locked staking with reward multipliers
+    /// @dev Multipliers in basis points: TIER_30=12000 (1.2x), TIER_90=15000 (1.5x), TIER_180=20000 (2.0x)
+    enum LockTier {
+        TIER_30, // 30-day lock, 1.2x reward multiplier
+        TIER_90, // 90-day lock, 1.5x reward multiplier
+        TIER_180 // 180-day lock, 2.0x reward multiplier
+    }
+
+    // ============================================
     // STRUCTS
     // ============================================
 
@@ -16,6 +28,14 @@ interface ITAGITStaking {
         uint256 amount; // Tokens staked
         uint256 rewardPerTokenPaid; // Rewards already accounted
         uint256 rewards; // Accumulated unclaimed rewards
+    }
+
+    /// @notice Locked stake entry for time-locked staking
+    struct LockedStake {
+        uint256 amount; // Tokens locked
+        LockTier tier; // Lock tier (determines duration + multiplier)
+        uint256 lockEnd; // Timestamp when lock expires
+        bool released; // Whether stake has been released
     }
 
     // ============================================
@@ -43,6 +63,14 @@ interface ITAGITStaking {
     /// @notice Emitted when emissions address is set
     event EmissionsSet(address indexed emissions);
 
+    /// @notice Emitted when a locked stake is created
+    event LockedStakeCreated(
+        address indexed user, uint256 indexed stakeId, uint256 amount, LockTier tier, uint256 lockEnd
+    );
+
+    /// @notice Emitted when a locked stake is released
+    event LockedStakeReleased(address indexed user, uint256 indexed stakeId, uint256 amount, uint256 rewardBonus);
+
     // ============================================
     // ERRORS
     // ============================================
@@ -67,6 +95,15 @@ interface ITAGITStaking {
 
     /// @notice Thrown when emissions address is already set
     error EmissionsAlreadySet();
+
+    /// @notice Thrown when lock period has not expired
+    error LockNotExpired(uint256 stakeId, uint256 lockEnd, uint256 currentTime);
+
+    /// @notice Thrown when lock tier is invalid
+    error InvalidTier(uint8 tier);
+
+    /// @notice Thrown when locked stake ID is invalid or already released
+    error StakeNotFound(uint256 stakeId);
 
     // ============================================
     // USER FUNCTIONS
@@ -156,4 +193,42 @@ interface ITAGITStaking {
      * @return True if stake >= MIN_STAKE_FOR_REP
      */
     function qualifiesForRepBoost(address user) external view returns (bool);
+
+    // ============================================
+    // LOCKED STAKING FUNCTIONS
+    // ============================================
+
+    /**
+     * @notice Stake tokens with a time lock for boosted rewards
+     * @param amount Amount of tokens to lock
+     * @param tier Lock tier (determines duration and multiplier)
+     */
+    function stakeLocked(uint256 amount, LockTier tier) external;
+
+    /**
+     * @notice Unlock a locked stake after the lock period expires
+     * @param stakeId Index of the locked stake to release
+     */
+    function unlockStake(uint256 stakeId) external;
+
+    /**
+     * @notice Get all locked stakes for a user
+     * @param user Address to query
+     * @return Array of locked stake entries
+     */
+    function getLockedStakes(address user) external view returns (LockedStake[] memory);
+
+    /**
+     * @notice Get locked stake count for a user
+     * @param user Address to query
+     * @return Number of locked stakes (including released)
+     */
+    function lockedStakeCount(address user) external view returns (uint256);
+
+    /**
+     * @notice Get effective staked balance (flex + boosted locked) for reward calculations
+     * @param user Address to query
+     * @return Effective staked balance
+     */
+    function effectiveBalance(address user) external view returns (uint256);
 }
