@@ -1,44 +1,168 @@
 {
-  "network": "OP Sepolia",
-  "chainId": 11155420,
-  "deployedAt": "2026-01-08T00:00:00Z",
-  "deployer": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D",
-  "contracts": {
-    "IdentityBadge": {
-      "address": "0x26F2EBb84664EF1eF8554e15777EBEc6611256A6",
-      "type": "ERC-5192 Soulbound",
-      "description": "Soulbound identity badges (WHO someone is)"
+  "networks": {
+    "op-sepolia": {
+      "chainId": 11155420,
+      "deployedAt": "2026-01-08T00:00:00Z",
+      "deployer": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D",
+      "contracts": {
+        "IdentityBadge": {
+          "address": "0x26F2EBb84664EF1eF8554e15777EBEc6611256A6",
+          "type": "ERC-5192 Soulbound",
+          "description": "Soulbound identity badges (WHO someone is)"
+        },
+        "CapabilityBadge": {
+          "address": "0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505",
+          "type": "ERC-1155",
+          "description": "Transferable capability tokens (WHAT someone can do)"
+        },
+        "TAGITAccess": {
+          "address": "0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9",
+          "type": "BIDGES Facade",
+          "description": "Access control controller combining badges"
+        },
+        "TAGITCore": {
+          "address": "0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe",
+          "type": "ERC-721",
+          "description": "Digital Twin NFT with lifecycle state machine"
+        }
+      },
+      "configuration": {
+        "TAGITAccess.identityBadge": "0x26F2EBb84664EF1eF8554e15777EBEc6611256A6",
+        "TAGITAccess.capabilityBadge": "0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505",
+        "TAGITCore.accessController": "0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9"
+      },
+      "blockExplorer": {
+        "url": "https://sepolia-optimism.etherscan.io",
+        "verified": true,
+        "verifiedAt": "2026-01-08T00:00:00Z"
+      }
     },
-    "CapabilityBadge": {
-      "address": "0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505",
-      "type": "ERC-1155",
-      "description": "Transferable capability tokens (WHAT someone can do)"
-    },
-    "TAGITAccess": {
-      "address": "0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9",
-      "type": "BIDGES Facade",
-      "description": "Access control controller combining badges"
-    },
-    "TAGITCore": {
-      "address": "0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe",
-      "type": "ERC-721",
-      "description": "Digital Twin NFT with lifecycle state machine"
+    "base-sepolia": {
+      "chainId": 84532,
+      "deployedAt": "2026-03-30T00:00:00Z",
+      "deployer": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D",
+      "contracts": {
+        "IdentityBadge": {
+          "address": "0xa8BbC7f95f5D979e8E9208bc627194384b257c24",
+          "type": "ERC-5192 Soulbound"
+        },
+        "CapabilityBadge": {
+          "address": "0x676f593c451E4dF2345026af891Acc92c4344455",
+          "type": "ERC-1155"
+        },
+        "TAGITAccess": {
+          "address": "0x0A729a8D75b896B30a34f96F2e6b7827523826D8",
+          "type": "BIDGES Facade"
+        },
+        "TimelockController": {
+          "address": "0xe06e058e1ff18a17a0940C5a0202971bB0feB02a"
+        },
+        "TAGITCore": {
+          "proxy": "0xAdBAc728205c91F2FfF3194Bf0cAf13457e32b68",
+          "implementation": "0x2cb1E0ecE274217F214057c0a829582834Aeaf7f",
+          "type": "UUPS"
+        },
+        "TAGITStaking": {
+          "proxy": "0x40629Cf37077105576d9C53fa909Fd199e0A1285",
+          "implementation": "0x3D0d271B8d99BFcb8EC76f2ef0cCB4916f7FA13b",
+          "type": "UUPS"
+        },
+        "TAGITToken": {
+          "proxy": "0x8D4486152f6C8ff24B4e5a1ACF71d05755983a5E",
+          "implementation": "0xa14a34dd9D51C5DADC526EC9d95B86dBda8a3D30",
+          "type": "UUPS"
+        },
+        "TAGITGovernor": {
+          "proxy": "0x853848d52d6325f62799412A5aa866be15dfd711",
+          "implementation": "0xa51f975F096814DBC1C33E8Ad3aBAa4C52032feB",
+          "type": "UUPS"
+        },
+        "TAGITTreasury": {
+          "proxy": "0xcA9c7FAD8c4FCFc342Ead99E1354633a9a8F8D42",
+          "implementation": "0x48b5238600e6cc7fE05D806b978f059241b6472b",
+          "type": "ERC1967"
+        },
+        "TAGITRecovery": {
+          "proxy": "0x5bA8335Daa18A8C1e531f96BB498A2d817Feab85",
+          "implementation": "0x9de54f758326fE31ae98301F70620FD4a97D8753",
+          "type": "UUPS"
+        },
+        "TAGITPrograms": {
+          "proxy": "0xc359B42ebbEE5Ab1A6f733972A14e82342A0B53D",
+          "implementation": "0xDcB9CA7fEb9a4E9ce93E4eF9f46b65c0F9457Cec",
+          "type": "UUPS"
+        },
+        "TAGITPaymaster": {
+          "proxy": "0x065F3eD12D151DCE28E47964c19034b29DBb7ee2",
+          "implementation": "0x683A530154468A9E830C47636acaC1A29570115F",
+          "type": "UUPS"
+        },
+        "TAGITAccount": {
+          "address": "0xB3f757FCa307a7FebA5CA210Cd7D840EC69990e8",
+          "type": "Implementation Singleton"
+        },
+        "TAGITAccountFactory": {
+          "proxy": "0xf7eFefc59EB154040Db4C9c2aD9417Ddb10b4936",
+          "implementation": "0xFa7E212eEc6E9214c9dDE5bd29C9E1e4eF0894B6",
+          "type": "UUPS"
+        },
+        "CCIPAdapter": {
+          "proxy": "0x62AFdac497F8b7e8D9365cd98C84c23592EA9471",
+          "implementation": "0x6a58eE8f2d50D981b1793868C550727B9c58FbA6",
+          "type": "UUPS"
+        },
+        "TAGITAgentIdentity": {
+          "address": "0x3fb24bb463e69cC7F64437B16CA872D08482c055",
+          "type": "ERC-8004"
+        },
+        "TAGITAgentReputation": {
+          "address": "0x590C96DF31C5d991d22B91436ed100AE9F269965"
+        },
+        "TAGITAgentValidation": {
+          "address": "0xeF4ED1b54501ed78b5f4E34c7ba416f012a14fB3"
+        },
+        "RoboticAuthorizer": {
+          "proxy": "0x38950034556e4DE9B9306b0d3d8563Bba7AcCeF0",
+          "implementation": "0xe2E6e29fc99d13eb61fBE08f855814D5b4A549bc",
+          "type": "UUPS"
+        },
+        "TAGITEmissions": {
+          "proxy": "0xB07d2339CeA6aaCDC28582A513026f1E476878A5",
+          "implementation": "0x8637905262196843bf669449C8846AF66ce124C0",
+          "type": "UUPS"
+        },
+        "TAGITBurner": {
+          "proxy": "0x4c08cBeCDaef4FC3F3a493d668dd23acBc1f1f84",
+          "implementation": "0xA234bc5b6a07FE1f206ce972cf2EE53B42b6AAF5",
+          "type": "UUPS"
+        },
+        "TAGITVesting": {
+          "address": "0x52B77395Ebe1F805666F1278cdf121b816e7da8E",
+          "type": "Non-upgradeable"
+        },
+        "IntegrationFactory": {
+          "address": "0x10891bb4B541e2498B034A5D5CA1e4C8e5309711",
+          "type": "Non-upgradeable"
+        },
+        "VerificationEscrow": {
+          "address": "0x4c9aACfcb64169E3BC187c227c4C0e0a5CFDA1cF",
+          "type": "Non-upgradeable",
+          "note": "Previously deployed (Mar 17, 2026)"
+        }
+      },
+      "configuration": {
+        "TAGITCore.owner": "0xe06e058e1ff18a17a0940C5a0202971bB0feB02a",
+        "TAGITCore.accessController": "0x0A729a8D75b896B30a34f96F2e6b7827523826D8",
+        "TAGITCore.trustedOracle": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D",
+        "TimelockController.delay": "60 seconds",
+        "EntryPoint": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+        "CCIPRouter": "0xD3b06cEbF099CE7DA4AcCf578aaebFDBd6e88a93",
+        "USDC": "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
+      },
+      "blockExplorer": {
+        "url": "https://sepolia.basescan.org",
+        "verified": "pending"
+      }
     }
-  },
-  "configuration": {
-    "TAGITAccess.identityBadge": "0x26F2EBb84664EF1eF8554e15777EBEc6611256A6",
-    "TAGITAccess.capabilityBadge": "0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505",
-    "TAGITCore.accessController": "0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9"
-  },
-  "blockExplorer": {
-    "url": "https://sepolia-optimism.etherscan.io",
-    "links": {
-      "IdentityBadge": "https://sepolia-optimism.etherscan.io/address/0x26F2EBb84664EF1eF8554e15777EBEc6611256A6",
-      "CapabilityBadge": "https://sepolia-optimism.etherscan.io/address/0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505",
-      "TAGITAccess": "https://sepolia-optimism.etherscan.io/address/0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9",
-      "TAGITCore": "https://sepolia-optimism.etherscan.io/address/0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe"
-    },
-    "verified": true,
-    "verifiedAt": "2026-01-08T00:00:00Z"
   }
 }
