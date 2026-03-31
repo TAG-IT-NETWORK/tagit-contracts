@@ -43,11 +43,15 @@ import {TAGITAgentValidation} from "../../src/agent/TAGITAgentValidation.sol";
 // Robotics
 import {RoboticAuthorizer} from "../../src/robot/RoboticAuthorizer.sol";
 
-// Token Economics (new — never deployed before)
+// Token Economics
 import {TAGITEmissions} from "../../src/token/TAGITEmissions.sol";
 import {TAGITBurner} from "../../src/token/TAGITBurner.sol";
 import {TAGITVesting} from "../../src/token/TAGITVesting.sol";
 import {IntegrationFactory} from "../../src/agent/IntegrationFactory.sol";
+
+// Wrapped TAGIT
+import {wTAG} from "../../src/token/wTAG.sol";
+import {wTAGStaking} from "../../src/token/wTAGStaking.sol";
 
 /**
  * @title DeployBaseSepoliaFull
@@ -55,14 +59,14 @@ import {IntegrationFactory} from "../../src/agent/IntegrationFactory.sol";
  * @notice Full-stack deployment of all TAG IT contracts to Base Sepolia (chain 84532).
  * @dev Hackathon mode — deployer keeps control, 60s timelock delay.
  *
- *   Deploys 23 new contracts across 8 phases:
+ *   Deploys 25 new contracts across 8 phases:
  *     Phase 1: Core & Access (IdentityBadge, CapabilityBadge, TAGITAccess, Timelock, TAGITCore)
  *     Phase 2: Token & Governance (TAGITStaking, TAGITToken, TAGITGovernor)
  *     Phase 3: NIST Proxies (Treasury, Recovery, Programs, Paymaster)
  *     Phase 4: Account Abstraction (TAGITAccount, TAGITAccountFactory)
  *     Phase 5: Bridge & Agent (CCIPAdapter, AgentIdentity, AgentReputation, AgentValidation)
  *     Phase 6: Robotics (RoboticAuthorizer)
- *     Phase 7: New Contracts (Emissions, Burner, Vesting, IntegrationFactory)
+ *     Phase 7: Token Economics + wTAG (Emissions, Burner, Vesting, IntegrationFactory, wTAG, wTAGStaking)
  *     Phase 8: Wiring & Capabilities (access controller, oracle, badges, timelock delay)
  *
  *   Note: VerificationEscrow already deployed at 0x4c9aACfcb64169E3BC187c227c4C0e0a5CFDA1cF
@@ -140,6 +144,8 @@ contract DeployBaseSepoliaFull is Script {
     address public burnerProxy;
     address public vestingAddr;
     address public integrationFactoryAddr;
+    address public wtagAddr;
+    address public wtagStakingAddr;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -209,31 +215,34 @@ contract DeployBaseSepoliaFull is Script {
 
     // ═══════════════════════════════════════════════════════════════════
     // Phase 2: Token & Governance (3 contracts)
+    //   Order: Token → Staking → Governor
+    //   Token MUST deploy before Staking (Staking.initialize needs token address)
+    //   Both must deploy before Governor (Governor needs IVotes + ITAGITStaking)
     // ═══════════════════════════════════════════════════════════════════
     function _phase2_TokenAndGovernance(address deployer) internal {
         console2.log("--- Phase 2: Token & Governance ---");
 
-        // 6. TAGITStaking (deploy before Governor — Governor needs ITAGITStaking)
-        {
-            TAGITStaking impl = new TAGITStaking();
-            stakingImpl = address(impl);
-            bytes memory init = abi.encodeCall(TAGITStaking.initialize, (deployer, deployer, deployer));
-            stakingProxy = address(new ERC1967Proxy(stakingImpl, init));
-        }
-        console2.log("6a. TAGITStaking impl: ", stakingImpl);
-        console2.log("6b. TAGITStaking proxy:", stakingProxy);
-
-        // 7. TAGITToken
+        // 6. TAGITToken — FIRST (Staking and Governor both need it)
         {
             TAGITToken impl = new TAGITToken();
             tokenImpl = address(impl);
             bytes memory init = abi.encodeCall(TAGITToken.initialize, (deployer, deployer));
             tokenProxy = address(new ERC1967Proxy(tokenImpl, init));
         }
-        console2.log("7a. TAGITToken impl:   ", tokenImpl);
-        console2.log("7b. TAGITToken proxy:  ", tokenProxy);
+        console2.log("6a. TAGITToken impl:   ", tokenImpl);
+        console2.log("6b. TAGITToken proxy:  ", tokenProxy);
 
-        // 8. TAGITGovernor
+        // 7. TAGITStaking — SECOND (now has real token address)
+        {
+            TAGITStaking impl = new TAGITStaking();
+            stakingImpl = address(impl);
+            bytes memory init = abi.encodeCall(TAGITStaking.initialize, (tokenProxy, deployer, deployer));
+            stakingProxy = address(new ERC1967Proxy(stakingImpl, init));
+        }
+        console2.log("7a. TAGITStaking impl: ", stakingImpl);
+        console2.log("7b. TAGITStaking proxy:", stakingProxy);
+
+        // 8. TAGITGovernor — THIRD (needs Token + Staking)
         {
             TAGITGovernor impl = new TAGITGovernor();
             govImpl = address(impl);
@@ -434,6 +443,16 @@ contract DeployBaseSepoliaFull is Script {
             integrationFactoryAddr = address(factory);
         }
         console2.log("23. IntegrationFactory:", integrationFactoryAddr);
+
+        // 24. wTAG (NOT upgradeable — wraps TAGITToken 1:1)
+        wTAG wtag = new wTAG(tokenProxy, deployer, deployer);
+        wtagAddr = address(wtag);
+        console2.log("24. wTAG:              ", wtagAddr);
+
+        // 25. wTAGStaking (NOT upgradeable — wraps staking via wTAG→TAGIT)
+        wTAGStaking wtagStaking = new wTAGStaking(wtagAddr, stakingProxy, deployer);
+        wtagStakingAddr = address(wtagStaking);
+        console2.log("25. wTAGStaking:       ", wtagStakingAddr);
         console2.log("");
     }
 
@@ -548,13 +567,18 @@ contract DeployBaseSepoliaFull is Script {
         console2.log("  RoboticAuth (proxy): ", robotProxy);
         console2.log("");
 
-        console2.log("NEW CONTRACTS (first-ever deployment):");
+        console2.log("TOKEN ECONOMICS:");
         console2.log("  TAGITEmissions (impl):", emissionsImpl);
         console2.log("  TAGITEmissions (proxy):", emissionsProxy);
         console2.log("  TAGITBurner (impl):  ", burnerImpl);
         console2.log("  TAGITBurner (proxy): ", burnerProxy);
         console2.log("  TAGITVesting:        ", vestingAddr);
         console2.log("  IntegrationFactory:  ", integrationFactoryAddr);
+        console2.log("");
+
+        console2.log("WRAPPED TAGIT:");
+        console2.log("  wTAG:                ", wtagAddr);
+        console2.log("  wTAGStaking:         ", wtagStakingAddr);
         console2.log("");
 
         console2.log("PREVIOUSLY DEPLOYED:");
@@ -568,7 +592,7 @@ contract DeployBaseSepoliaFull is Script {
         console2.log("  CCIP Router:         ", CCIP_ROUTER);
         console2.log("");
 
-        console2.log("TOTAL: 23 new contracts + 1 existing = 24 on Base Sepolia");
+        console2.log("TOTAL: 25 new contracts + 1 existing = 26 on Base Sepolia");
         console2.log("");
         console2.log("Next steps:");
         console2.log("  1. Update deployment-addresses.json with Base Sepolia addresses");

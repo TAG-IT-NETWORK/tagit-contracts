@@ -39,110 +39,122 @@
     },
     "base-sepolia": {
       "chainId": 84532,
-      "deployedAt": "2026-03-30T00:00:00Z",
+      "deployedAt": "2026-03-31T00:00:00Z",
+      "note": "v2 redeployment — fixed Token→Staking init order + added wTAG/wTAGStaking",
       "deployer": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D",
       "contracts": {
         "IdentityBadge": {
-          "address": "0xa8BbC7f95f5D979e8E9208bc627194384b257c24",
+          "address": "0xebdAC9A0663c02a7297681b078aaD893EF345030",
           "type": "ERC-5192 Soulbound"
         },
         "CapabilityBadge": {
-          "address": "0x676f593c451E4dF2345026af891Acc92c4344455",
+          "address": "0xb05d22706B08A3F6409601de520cf7A6dbCB573d",
           "type": "ERC-1155"
         },
         "TAGITAccess": {
-          "address": "0x0A729a8D75b896B30a34f96F2e6b7827523826D8",
+          "address": "0xb56A1D91995C212342FaA843468F03521340A1D6",
           "type": "BIDGES Facade"
         },
         "TimelockController": {
-          "address": "0xe06e058e1ff18a17a0940C5a0202971bB0feB02a"
+          "address": "0xfdA2478dB73064eF770f4e5E5b97BC83801126e1"
         },
         "TAGITCore": {
-          "proxy": "0xAdBAc728205c91F2FfF3194Bf0cAf13457e32b68",
-          "implementation": "0x2cb1E0ecE274217F214057c0a829582834Aeaf7f",
-          "type": "UUPS"
-        },
-        "TAGITStaking": {
-          "proxy": "0x40629Cf37077105576d9C53fa909Fd199e0A1285",
-          "implementation": "0x3D0d271B8d99BFcb8EC76f2ef0cCB4916f7FA13b",
+          "proxy": "0x3adC7eFdB58Ae85483Eff5D4966D916185F31D1d",
+          "implementation": "0x5C383ECB1B367579c7806014c32092cBD71a17f7",
           "type": "UUPS"
         },
         "TAGITToken": {
-          "proxy": "0x8D4486152f6C8ff24B4e5a1ACF71d05755983a5E",
-          "implementation": "0xa14a34dd9D51C5DADC526EC9d95B86dBda8a3D30",
+          "proxy": "0x5f98B83cD7Aef769cc51D2FB739BA49D561170DE",
+          "implementation": "0xa412b5C203f74E88f434C405e694528F04cACf59",
           "type": "UUPS"
         },
+        "TAGITStaking": {
+          "proxy": "0xb22F5688559d07e3A12dBB89F0481B967407F267",
+          "implementation": "0x06861990FD9EDA0d47C8F005b09DDa502977B2EF",
+          "type": "UUPS",
+          "note": "v2 — correctly initialized with TAGITToken address"
+        },
         "TAGITGovernor": {
-          "proxy": "0x853848d52d6325f62799412A5aa866be15dfd711",
-          "implementation": "0xa51f975F096814DBC1C33E8Ad3aBAa4C52032feB",
+          "proxy": "0xCF67Df870ECcbB7838c3Ab7876467c89d84DCe89",
+          "implementation": "0x1fB00d79E6bAfF059e1c5fA034E4D59B766E0d44",
           "type": "UUPS"
         },
         "TAGITTreasury": {
-          "proxy": "0xcA9c7FAD8c4FCFc342Ead99E1354633a9a8F8D42",
-          "implementation": "0x48b5238600e6cc7fE05D806b978f059241b6472b",
+          "proxy": "0xa4A3720d705334f409Dd24836Cc75D642125f759",
+          "implementation": "0x3837A9BfC98F624be5587a7f10980cCa5f68c4C8",
           "type": "ERC1967"
         },
         "TAGITRecovery": {
-          "proxy": "0x5bA8335Daa18A8C1e531f96BB498A2d817Feab85",
-          "implementation": "0x9de54f758326fE31ae98301F70620FD4a97D8753",
+          "proxy": "0x6Bc3c69367E586810a3b317fA9F0406504E95866",
+          "implementation": "0xe2f49Bb534894f83421cbD18e747039F3866E14F",
           "type": "UUPS"
         },
         "TAGITPrograms": {
-          "proxy": "0xc359B42ebbEE5Ab1A6f733972A14e82342A0B53D",
-          "implementation": "0xDcB9CA7fEb9a4E9ce93E4eF9f46b65c0F9457Cec",
+          "proxy": "0x62a3CF048E66Be0119F0CcD97eC964B726B9A982",
+          "implementation": "0x26D0B3b5Ff2061Fb38ce1Aa66433a8F4439e46a8",
           "type": "UUPS"
         },
         "TAGITPaymaster": {
-          "proxy": "0x065F3eD12D151DCE28E47964c19034b29DBb7ee2",
-          "implementation": "0x683A530154468A9E830C47636acaC1A29570115F",
+          "proxy": "0x6fFfA92eFb419e812d5c9C9D0c1b1A0F5C6FFd1c",
+          "implementation": "0x4609a869a813E7E596BF5Bf5cbC08F8092Ce6340",
           "type": "UUPS"
         },
         "TAGITAccount": {
-          "address": "0xB3f757FCa307a7FebA5CA210Cd7D840EC69990e8",
+          "address": "0x2160044C7c46B08a552361595E09e8C8DDD06E85",
           "type": "Implementation Singleton"
         },
         "TAGITAccountFactory": {
-          "proxy": "0xf7eFefc59EB154040Db4C9c2aD9417Ddb10b4936",
-          "implementation": "0xFa7E212eEc6E9214c9dDE5bd29C9E1e4eF0894B6",
+          "proxy": "0x3eD2C0e92f0E52dC68D04172Ad37Df4724893AD3",
+          "implementation": "0x6122B891f27bD1C492664C6CA1527e988a5CF8fA",
           "type": "UUPS"
         },
         "CCIPAdapter": {
-          "proxy": "0x62AFdac497F8b7e8D9365cd98C84c23592EA9471",
-          "implementation": "0x6a58eE8f2d50D981b1793868C550727B9c58FbA6",
+          "proxy": "0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505",
+          "implementation": "0x26F2EBb84664EF1eF8554e15777EBEc6611256A6",
           "type": "UUPS"
         },
         "TAGITAgentIdentity": {
-          "address": "0x3fb24bb463e69cC7F64437B16CA872D08482c055",
+          "address": "0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9",
           "type": "ERC-8004"
         },
         "TAGITAgentReputation": {
-          "address": "0x590C96DF31C5d991d22B91436ed100AE9F269965"
+          "address": "0x32be6C82A57d5bCe897538d7dA4109eA0eeB0aA1"
         },
         "TAGITAgentValidation": {
-          "address": "0xeF4ED1b54501ed78b5f4E34c7ba416f012a14fB3"
+          "address": "0x34766dBa7040C2c8817f1Ee1e448209826DD607e"
         },
         "RoboticAuthorizer": {
-          "proxy": "0x38950034556e4DE9B9306b0d3d8563Bba7AcCeF0",
-          "implementation": "0xe2E6e29fc99d13eb61fBE08f855814D5b4A549bc",
+          "proxy": "0x5c38684D87E826589eC5ED401d94C9671CAe9F40",
+          "implementation": "0x95F35f612eE3e3F188FEF0Aa272458c5D44169ED",
           "type": "UUPS"
         },
         "TAGITEmissions": {
-          "proxy": "0xB07d2339CeA6aaCDC28582A513026f1E476878A5",
-          "implementation": "0x8637905262196843bf669449C8846AF66ce124C0",
+          "proxy": "0x0672fcc5B753786c2Cd1805494fF094CB5d6e579",
+          "implementation": "0x11D1eaB20030092577F23e0939c6CBC0D9124e8A",
           "type": "UUPS"
         },
         "TAGITBurner": {
-          "proxy": "0x4c08cBeCDaef4FC3F3a493d668dd23acBc1f1f84",
-          "implementation": "0xA234bc5b6a07FE1f206ce972cf2EE53B42b6AAF5",
+          "proxy": "0xcB8abCe0770c499B789481f8C6c20fa0d6980D2A",
+          "implementation": "0x6811E98bDD40A45Cc325c8553F146945BA53e17F",
           "type": "UUPS"
         },
         "TAGITVesting": {
-          "address": "0x52B77395Ebe1F805666F1278cdf121b816e7da8E",
+          "address": "0x7dd4c98a2aFE60eE06bA5c136dBeb7f93DD2699D",
           "type": "Non-upgradeable"
         },
         "IntegrationFactory": {
-          "address": "0x10891bb4B541e2498B034A5D5CA1e4C8e5309711",
+          "address": "0xd68919371c26700dDb8252aD1825Aa02a0381a86",
           "type": "Non-upgradeable"
+        },
+        "wTAG": {
+          "address": "0x746385e59aCB225779D64e74200e464a3f1C23d0",
+          "type": "Non-upgradeable",
+          "note": "Wrapped TAGIT — ERC20Capped, 3.33% cap, 7-day lockout"
+        },
+        "wTAGStaking": {
+          "address": "0xBd4c4848C9fF09B7955a193E3b96456344D9acBe",
+          "type": "Non-upgradeable",
+          "note": "wTAG staking wrapper — delegates to TAGITStaking"
         },
         "VerificationEscrow": {
           "address": "0x4c9aACfcb64169E3BC187c227c4C0e0a5CFDA1cF",
@@ -151,9 +163,10 @@
         }
       },
       "configuration": {
-        "TAGITCore.owner": "0xe06e058e1ff18a17a0940C5a0202971bB0feB02a",
-        "TAGITCore.accessController": "0x0A729a8D75b896B30a34f96F2e6b7827523826D8",
+        "TAGITCore.owner": "0xfdA2478dB73064eF770f4e5E5b97BC83801126e1",
+        "TAGITCore.accessController": "0xb56A1D91995C212342FaA843468F03521340A1D6",
         "TAGITCore.trustedOracle": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D",
+        "TAGITStaking.token": "0x5f98B83cD7Aef769cc51D2FB739BA49D561170DE",
         "TimelockController.delay": "60 seconds",
         "EntryPoint": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
         "CCIPRouter": "0xD3b06cEbF099CE7DA4AcCf578aaebFDBd6e88a93",
