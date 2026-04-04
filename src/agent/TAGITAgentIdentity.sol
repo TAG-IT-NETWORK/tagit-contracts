@@ -125,6 +125,9 @@ contract TAGITAgentIdentity is ERC721, ERC721URIStorage, Ownable, Pausable, Reen
     /// @notice Agent is already in requested status
     error AgentAlreadyInStatus(uint256 agentId, AgentStatus status);
 
+    /// @notice ETH transfer failed
+    error ETHTransferFailed();
+
     // ============================================
     // EVENTS
     // ============================================
@@ -634,7 +637,7 @@ contract TAGITAgentIdentity is ERC721, ERC721URIStorage, Ownable, Pausable, Reen
         if (to == address(0)) revert ZeroAddress();
         uint256 balance = address(this).balance;
         (bool success,) = to.call{value: balance}("");
-        require(success);
+        if (!success) revert ETHTransferFailed();
     }
 
     // ============================================
