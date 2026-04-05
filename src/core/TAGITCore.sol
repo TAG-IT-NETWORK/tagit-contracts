@@ -381,9 +381,36 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
     /// @dev Must be set before bindTag() can be called. Configurable by admin.
     address public trustedOracle;
 
+    // ============================================
+    // METADATA STORAGE (v2 upgrade)
+    // ============================================
+
+    /// @notice Mapping from token ID to metadata content hash
+    /// @dev keccak256 of the full metadata JSON — used for integrity verification
+    mapping(uint256 => bytes32) public metadataHash;
+
+    /// @notice Base URI for token metadata (e.g., "https://api.tagit.network/v1/assets/")
+    /// @dev Concatenated with tokenId to form full tokenURI
+    string private _baseTokenURI;
+
+    /// @notice Emitted when metadata hash is set or updated
+    /// @param tokenId The asset token ID
+    /// @param previousHash Previous metadata hash (bytes32(0) if first set)
+    /// @param newHash New metadata hash
+    /// @param updater Address that performed the update
+    event MetadataHashUpdated(uint256 indexed tokenId, bytes32 previousHash, bytes32 newHash, address indexed updater);
+
+    /// @notice Emitted when base URI is updated
+    /// @param previousURI Previous base URI
+    /// @param newURI New base URI
+    event BaseURIUpdated(string previousURI, string newURI);
+
+    /// @notice Metadata hash cannot be zero
+    error InvalidMetadataHash();
+
     /// @notice Storage gap for future upgrades (ERC-7201 compatible)
-    /// @dev Reserve 34 slots for future storage variables
-    uint256[34] private __gap;
+    /// @dev Reserve 32 slots for future storage variables (reduced from 34: -1 mapping, -1 string)
+    uint256[32] private __gap;
 
     // ============================================
     // CONSTRUCTOR (disabled for proxy)
@@ -536,6 +563,11 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
         _assets[tokenId] =
             Asset({owner: to, timestamp: uint64(block.timestamp), state: State.MINTED, flags: 0, reserved: 0});
 
+        // Store metadata hash for integrity verification
+        if (metadata != bytes32(0)) {
+            metadataHash[tokenId] = metadata;
+        }
+
         // Mint ERC721 token
         _mint(to, tokenId);
 
@@ -544,6 +576,9 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
         // ============================================
         emit AssetMinted(tokenId, to, metadata);
         emit StateChanged(tokenId, State.NONE, State.MINTED, msg.sender);
+        if (metadata != bytes32(0)) {
+            emit MetadataHashUpdated(tokenId, bytes32(0), metadata, msg.sender);
+        }
 
         // PATCH-03: CustodyTransfer audit trail
         bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.NONE), address(0), block.number - 1));
@@ -1020,6 +1055,63 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
         emit CustodyTransfer(
             tokenId, uint8(currentState), uint8(State.RECYCLED), asset.owner, asset.owner, block.timestamp, prevHash
         );
+    }
+
+    // ============================================
+    // METADATA MANAGEMENT (v2)
+    // ============================================
+
+    /**
+     * @notice Update the metadata hash for an existing asset
+     * @dev Call this when metadata evolves (e.g., after binding NFC tag, new scan, ownership change).
+     *      The hash proves metadata integrity — anyone can verify keccak256(metadata) === on-chain hash.
+     * @param tokenId The asset token ID
+     * @param newHash keccak256 hash of the updated metadata JSON
+     * @custom:security Only asset owner or callers with MINTER_CAPABILITY can update
+     * @custom:security ReentrancyGuard prevents reentrancy
+     * @custom:emits MetadataHashUpdated
+     */
+    function updateMetadataHash(uint256 tokenId, bytes32 newHash) external nonReentrant {
+        // CHECKS
+        if (newHash == bytes32(0)) revert InvalidMetadataHash();
+        if (_assets[tokenId].state == State.NONE) revert TokenNotFound(tokenId);
+
+        // Only owner of the token or MINTER can update metadata
+        bool isAuthorized = _assets[tokenId].owner == msg.sender;
+        if (!isAuthorized && address(accessController) != address(0)) {
+            try accessController.requireCapability(msg.sender, uint256(MINTER_CAPABILITY)) {
+                isAuthorized = true;
+            } catch {}
+        }
+        if (!isAuthorized) revert Unauthorized(msg.sender, uint256(MINTER_CAPABILITY));
+
+        // EFFECTS
+        bytes32 previousHash = metadataHash[tokenId];
+        metadataHash[tokenId] = newHash;
+
+        // INTERACTIONS
+        emit MetadataHashUpdated(tokenId, previousHash, newHash, msg.sender);
+    }
+
+    /**
+     * @notice Set the base URI for all token metadata
+     * @dev Tokens will resolve to baseURI + tokenId (e.g., "https://api.tagit.network/v1/assets/1")
+     * @param baseURI_ New base URI string
+     * @custom:security Only owner (TimelockController) can update
+     * @custom:emits BaseURIUpdated
+     */
+    function setBaseURI(string calldata baseURI_) external onlyOwner {
+        string memory previousURI = _baseTokenURI;
+        _baseTokenURI = baseURI_;
+        emit BaseURIUpdated(previousURI, baseURI_);
+    }
+
+    /**
+     * @notice Override ERC721 _baseURI to return configurable base URI
+     * @return The base URI for token metadata
+     */
+    function _baseURI() internal view override returns (string memory) {
+        return _baseTokenURI;
     }
 
     // ============================================

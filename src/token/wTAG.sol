@@ -50,7 +50,8 @@ contract wTAG is ERC20Capped, ERC20Burnable, AccessControl, ReentrancyGuard {
     // ============================================
 
     /// @notice Address of the underlying TAGIT token contract
-    IERC20 public immutable tagToken;
+    /// @dev Set via setTagToken() after deployment. Zero means TAGIT is not yet deployed.
+    IERC20 public tagToken;
 
     /// @notice Timestamp of the Token Generation Event
     /// @dev Set by admin via setTGE(); zero means TGE has not been scheduled
@@ -78,6 +79,12 @@ contract wTAG is ERC20Capped, ERC20Burnable, AccessControl, ReentrancyGuard {
     /// @dev Thrown when wrap/unwrap is called before TGE is set
     error TGENotSet();
 
+    /// @dev Thrown when wrap/unwrap is called before tagToken is set
+    error TagTokenNotSet();
+
+    /// @dev Thrown when setTagToken is called after tagToken is already set
+    error TagTokenAlreadySet();
+
     // ============================================
     // EVENTS
     // ============================================
@@ -94,6 +101,9 @@ contract wTAG is ERC20Capped, ERC20Burnable, AccessControl, ReentrancyGuard {
     /// @notice Emitted when wTAG tokens are minted by the minter role
     event Minted(address indexed to, uint256 amount);
 
+    /// @notice Emitted when the underlying TAGIT token address is configured
+    event TagTokenSet(address indexed token, address indexed setter);
+
     // ============================================
     // CONSTRUCTOR
     // ============================================
@@ -109,11 +119,13 @@ contract wTAG is ERC20Capped, ERC20Burnable, AccessControl, ReentrancyGuard {
         ERC20("Wrapped TAGIT", "wTAG")
         ERC20Capped((GENESIS_SUPPLY * CAP_BPS) / BASIS_POINTS)
     {
-        if (_tagToken == address(0)) revert ZeroAddress();
         if (_admin == address(0)) revert ZeroAddress();
         if (_minter == address(0)) revert ZeroAddress();
 
-        tagToken = IERC20(_tagToken);
+        // tagToken can be address(0) at deploy — set later via setTagToken()
+        if (_tagToken != address(0)) {
+            tagToken = IERC20(_tagToken);
+        }
 
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(MINTER_ROLE, _minter);
@@ -137,6 +149,23 @@ contract wTAG is ERC20Capped, ERC20Burnable, AccessControl, ReentrancyGuard {
         tgeTimestamp = _tgeTimestamp;
 
         emit TGESet(_tgeTimestamp, msg.sender);
+    }
+
+    /**
+     * @notice Set the underlying TAGIT token address (one-time only)
+     * @dev Only callable by DEFAULT_ADMIN_ROLE. Cannot be changed once set.
+     *      Can also be set in the constructor — this is for deferred configuration.
+     * @param _tagToken Address of the deployed TAGIT ERC-20 token
+     * @custom:security One-time setter — tagToken is immutable after configuration
+     * @custom:emits TagTokenSet
+     */
+    function setTagToken(address _tagToken) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (address(tagToken) != address(0)) revert TagTokenAlreadySet();
+        if (_tagToken == address(0)) revert ZeroAddress();
+
+        tagToken = IERC20(_tagToken);
+
+        emit TagTokenSet(_tagToken, msg.sender);
     }
 
     // ============================================
@@ -174,6 +203,7 @@ contract wTAG is ERC20Capped, ERC20Burnable, AccessControl, ReentrancyGuard {
      */
     function wrap(uint256 amount) external nonReentrant {
         if (amount == 0) revert ZeroAmount();
+        if (address(tagToken) == address(0)) revert TagTokenNotSet();
         if (tgeTimestamp == 0) revert TGENotSet();
 
         // Effects: mint wTAG first (CEI pattern — state change before external call)
@@ -194,6 +224,7 @@ contract wTAG is ERC20Capped, ERC20Burnable, AccessControl, ReentrancyGuard {
      */
     function unwrap(uint256 amount) external nonReentrant {
         if (amount == 0) revert ZeroAmount();
+        if (address(tagToken) == address(0)) revert TagTokenNotSet();
         if (tgeTimestamp == 0) revert TGENotSet();
 
         // Effects: burn wTAG first (CEI pattern)
