@@ -3,44 +3,267 @@
     "op-sepolia": {
       "chainId": 11155420,
       "deployedAt": "2026-01-08T00:00:00Z",
+      "lastUpdated": "2026-04-02T00:00:00Z",
       "deployer": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D",
       "contracts": {
         "IdentityBadge": {
           "address": "0x26F2EBb84664EF1eF8554e15777EBEc6611256A6",
-          "type": "ERC-5192 Soulbound",
-          "description": "Soulbound identity badges (WHO someone is)"
+          "type": "ERC-5192 Soulbound"
         },
         "CapabilityBadge": {
           "address": "0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505",
-          "type": "ERC-1155",
-          "description": "Transferable capability tokens (WHAT someone can do)"
+          "type": "ERC-1155"
         },
         "TAGITAccess": {
           "address": "0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9",
-          "type": "BIDGES Facade",
-          "description": "Access control controller combining badges"
+          "type": "BIDGES Facade"
+        },
+        "TimelockController": {
+          "address": "0x1B2bdd6f0a3C9127397dE51C36Dc237b097410a8"
         },
         "TAGITCore": {
-          "address": "0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe",
-          "type": "ERC-721",
-          "description": "Digital Twin NFT with lifecycle state machine"
+          "proxy": "0x8BdE22da889306d422802728cb98B6Da42ed8e1a",
+          "implementation": "0x92c8e84a32D24b26B5Cf07d9a8CeD4DA8c055192",
+          "type": "UUPS"
+        },
+        "TAGITToken": {
+          "proxy": "0x061a89736F91cAC11272B8A95fc7e377cD0e4067",
+          "implementation": "0xF5a5F2d05C20423C0Bbd0B5F2a95A387943A76De",
+          "type": "UUPS",
+          "note": "Deployed 2026-04-02"
+        },
+        "TAGITStaking": {
+          "proxy": "0xe500CDfbA693CE1f39A6F05CfB4614971370Ee93",
+          "implementation": "0x12EE464e32a683f813fDb478e6C8e68E3d63d781",
+          "type": "UUPS"
+        },
+        "TAGITGovernor": {
+          "proxy": "0x8A7cd4FC493663Fc5CD0268704969D644BA773e3",
+          "implementation": "0x15348eFc63689D1C26Dc25Aa281567b786e34C5f",
+          "type": "UUPS",
+          "note": "Deployed 2026-04-02"
+        },
+        "TAGITTreasury": {
+          "proxy": "0x841B07Ad929CCC589446e29Aa0C4Dd1639B48674",
+          "implementation": "0xf6f5e2e03f6e28aE9Dc17bCc814a0cf758c887c9",
+          "type": "ERC1967"
+        },
+        "TAGITRecovery": {
+          "proxy": "0x17c0af6B37aBD06587303f1695a06A668F8A5A8c",
+          "implementation": "0x8d8a5300e8c5E8BaBebd73175954ce01a427CDCe",
+          "type": "UUPS"
+        },
+        "TAGITPrograms": {
+          "proxy": "0x4d1007eB4823a5a13905A0361478C339421ce4C9",
+          "implementation": "0x066FB866C0345115FA27a27cC704e8eaC61A565f",
+          "type": "UUPS"
+        },
+        "TAGITPaymaster": {
+          "proxy": "0x670DC1C7821E0A717CFf5Cc949B05EC01b532104",
+          "implementation": "0x4339c46D63231063250834D9b3fa4E51FdB8026e",
+          "type": "UUPS"
+        },
+        "TAGITAccount": {
+          "address": "0xC159FDec7a8fDc0d98571C89c342e28bB405e682",
+          "type": "Implementation Singleton"
+        },
+        "TAGITAccountFactory": {
+          "proxy": "0x0ECe601E24789409C87010E064F88d584b051d68",
+          "implementation": "0x8D27B612a9D3e45d51D2234B2f4e03dCC5ca844b",
+          "type": "UUPS"
+        },
+        "CCIPAdapter": {
+          "proxy": "0x76C375716bE762EEcb4860D06bB051735e6fb3FA",
+          "implementation": "0x8dA6D7ffCD4cc0F2c9FfD6411CeD7C9c573C9E88",
+          "type": "UUPS"
+        },
+        "TAGITAgentIdentity": {
+          "address": "0xA7f34FD595eBc397Fe04DcE012dbcf0fbbD2A78D",
+          "type": "ERC-8004"
+        },
+        "TAGITAgentReputation": {
+          "address": "0x57CCa1974DFE29593FBD24fdAEE1cD614Bfd6E4a"
+        },
+        "TAGITAgentValidation": {
+          "address": "0x9806919185F98Bd07a64F7BC7F264e91939e86b7"
+        },
+        "RoboticAuthorizer": {
+          "proxy": "0x36DB6d989f0597CF7b243c4Ef1362CC9B9cbB8AE",
+          "implementation": "0x26dE81F182313b94825C66C1F555F038C91687eD",
+          "type": "UUPS"
+        },
+        "TAGITEmissions": {
+          "proxy": "0x0259822faf08597f5B9D399F59332d136c6D518d",
+          "implementation": "0x4EeD0aB813A5c5336eC0a044f052Aa82537CEF00",
+          "type": "UUPS",
+          "note": "Deployed 2026-04-02"
+        },
+        "TAGITBurner": {
+          "proxy": "0xBAa0346AD5ED79Ec280cb0951C5Ea80A35D985A9",
+          "implementation": "0xF571553a1e08FEE3a216AdBc0fC59DbA41368AAe",
+          "type": "UUPS",
+          "note": "Deployed 2026-04-02"
+        },
+        "TAGITVesting": {
+          "address": "0x4052d29e2aB49193F0577934963b9650F633e63F",
+          "type": "Non-upgradeable",
+          "note": "Deployed 2026-04-02"
+        },
+        "IntegrationFactory": {
+          "address": "0xac3687df5A09a5FeD697eb40B6dB22a98cC7B0a8",
+          "type": "Non-upgradeable",
+          "note": "Deployed 2026-04-02"
+        },
+        "VerificationEscrow": {
+          "address": "0x698D4DbaE56BC7e36E2Ab34bd47aB97461219726",
+          "type": "Non-upgradeable",
+          "note": "Deployed 2026-04-02"
         }
       },
       "configuration": {
         "TAGITAccess.identityBadge": "0x26F2EBb84664EF1eF8554e15777EBEc6611256A6",
         "TAGITAccess.capabilityBadge": "0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505",
-        "TAGITCore.accessController": "0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9"
+        "TAGITCore.accessController": "0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9",
+        "EntryPoint": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+        "CCIPRouter": "0x114A20A10b43D4115e5aeef7345a1A71d2a60C57"
       },
       "blockExplorer": {
         "url": "https://sepolia-optimism.etherscan.io",
         "verified": true,
-        "verifiedAt": "2026-01-08T00:00:00Z"
+        "verifiedAt": "2026-04-02T00:00:00Z"
+      }
+    },
+    "arbitrum-sepolia": {
+      "chainId": 421614,
+      "deployedAt": "2026-04-02T00:00:00Z",
+      "note": "Full stack redeployment — supersedes hackathon deployment (Mar 2026)",
+      "deployer": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D",
+      "contracts": {
+        "IdentityBadge": {
+          "address": "0x76965313af612bac577e137d8190fb1e3523a307",
+          "type": "ERC-5192 Soulbound"
+        },
+        "CapabilityBadge": {
+          "address": "0xb639d0b53338f83c25883271ea4c1adc60f14f7a",
+          "type": "ERC-1155"
+        },
+        "TAGITAccess": {
+          "address": "0x801c45774fc70dc6ade30cc0a2f524cadadcddc7",
+          "type": "BIDGES Facade"
+        },
+        "TimelockController": {
+          "address": "0x239b1e5782403a9f8a4bdf10b7c86a17be473cb7"
+        },
+        "TAGITCore": {
+          "proxy": "0x5952f5af2429e6f973FE40aD6bEad5c770837233",
+          "implementation": "0x9fb2055984B43879c82B6CDDa8821FEfda83e7df",
+          "type": "UUPS"
+        },
+        "TAGITToken": {
+          "proxy": "0x42456C31b336D866DE9EB56f9916Af0A97Ae14f6",
+          "implementation": "0x5497a48243b69a3B19F44d7cE3E81A0d195c800B",
+          "type": "UUPS"
+        },
+        "TAGITStaking": {
+          "proxy": "0xc7fB8B6A838449a19d138601cF1711C5f36Fd655",
+          "implementation": "0xc10ddC8d385953730e93A3deAd5E3A9CCAd221D1",
+          "type": "UUPS"
+        },
+        "TAGITGovernor": {
+          "proxy": "0xad0b3009b5C57D3034bB4b8eBaCb1028D6891c06",
+          "implementation": "0x09CaEB6b689183E57Bb35Be4DD201a55f675Ef5E",
+          "type": "UUPS"
+        },
+        "TAGITTreasury": {
+          "proxy": "0x79af1F94Bbe40Ad8A52774fFD69626EE48701d48",
+          "implementation": "0xc420f5A9C9097664796b443421bb5125B8846974",
+          "type": "ERC1967"
+        },
+        "TAGITRecovery": {
+          "proxy": "0xfFdDB206e8F0027EC598EDA8b0CdFf528f9a3A7F",
+          "implementation": "0xbADA37d4d300c06dE09cF752B08703A8773600C4",
+          "type": "UUPS"
+        },
+        "TAGITPrograms": {
+          "proxy": "0xe798CD1CD53DdD27D07b1ea084c0D379A5Bc400c",
+          "implementation": "0x74bF2b7988dF6440cCb329f201B8a828A44b6caC",
+          "type": "UUPS"
+        },
+        "TAGITPaymaster": {
+          "proxy": "0x533830101306d69D70b830ABdeE954774c561c32",
+          "implementation": "0x1C346A0a5D4D9E2E12CBF015081369395c81811B",
+          "type": "UUPS"
+        },
+        "TAGITAccount": {
+          "address": "0xa97fBBD5aB97a0d8067E3dD1A51d2b0b88e14ac2",
+          "type": "Implementation Singleton"
+        },
+        "TAGITAccountFactory": {
+          "proxy": "0xBC68ff3E74020c78e8A69cD553503A9aF93bBDC1",
+          "implementation": "0x213767060F842A7bFF6E3Ce30249eDbd177c02c5",
+          "type": "UUPS"
+        },
+        "CCIPAdapter": {
+          "proxy": "0x8b1b3C5946a62C4ba35B25621e74d49a41D40BC5",
+          "implementation": "0x83F972aa8d3CA0f34E65665d87Daac3BEE85cac5",
+          "type": "UUPS"
+        },
+        "TAGITAgentIdentity": {
+          "address": "0x5F5F71653d4929c6cD06EF8B16828b084BDf737c",
+          "type": "ERC-8004"
+        },
+        "TAGITAgentReputation": {
+          "address": "0x6792EC172F57e124923FC10486cA47341F351D3c"
+        },
+        "TAGITAgentValidation": {
+          "address": "0xbD7ac881567993DFBC56Bf7a7D76db083f04425c"
+        },
+        "RoboticAuthorizer": {
+          "proxy": "0x98eF7b708c0cD26169a4A2092e6F1706760aff1d",
+          "implementation": "0x85dd1E8B5f3C9720652D94be04878070E4e90Dea",
+          "type": "UUPS"
+        },
+        "TAGITEmissions": {
+          "proxy": "0xa6203965F164aDbE954041C912F517CAeDD90aA0",
+          "implementation": "0xE1F3c5AF7505CE2DE9932Bb5A98e8d90Aeff6fc1",
+          "type": "UUPS"
+        },
+        "TAGITBurner": {
+          "proxy": "0xca85E7B6CcE9907DEd1A6b2b6DC98Fba5FE7E8C5",
+          "implementation": "0xc1e08c57d037bD7DbEd3A58Df56CCDFEE5ba7245",
+          "type": "UUPS"
+        },
+        "TAGITVesting": {
+          "address": "0xE4C87C0acDbd73789Ea16fE1f6D712050C0bFd13",
+          "type": "Non-upgradeable"
+        },
+        "IntegrationFactory": {
+          "address": "0x7580f30625730C8Ad1086bC36eeB1258472430EA",
+          "type": "Non-upgradeable"
+        },
+        "VerificationEscrow": {
+          "address": "0xF78C7d5bdED8eA0B159b0223a631679E91508C04",
+          "type": "Non-upgradeable"
+        }
+      },
+      "configuration": {
+        "TAGITCore.owner": "0x239b1e5782403a9f8a4bdf10b7c86a17be473cb7",
+        "TAGITCore.accessController": "0x801c45774fc70dc6ade30cc0a2f524cadadcddc7",
+        "TAGITCore.trustedOracle": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D",
+        "TimelockController.delay": "60 seconds",
+        "EntryPoint": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+        "CCIPRouter": "0x2a9C5afB0d0e4BAb2BCdaE109EC4b0c4Be15a165"
+      },
+      "blockExplorer": {
+        "url": "https://sepolia.arbiscan.io",
+        "verified": true,
+        "verifiedAt": "2026-04-02T00:00:00Z"
       }
     },
     "base-sepolia": {
       "chainId": 84532,
       "deployedAt": "2026-03-31T00:00:00Z",
-      "note": "v2 redeployment — fixed Token→Staking init order + added wTAG/wTAGStaking",
+      "note": "v2 redeployment - fixed Token->Staking init order + added wTAG/wTAGStaking",
       "deployer": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D",
       "contracts": {
         "IdentityBadge": {
@@ -71,8 +294,7 @@
         "TAGITStaking": {
           "proxy": "0xb22F5688559d07e3A12dBB89F0481B967407F267",
           "implementation": "0x06861990FD9EDA0d47C8F005b09DDa502977B2EF",
-          "type": "UUPS",
-          "note": "v2 — correctly initialized with TAGITToken address"
+          "type": "UUPS"
         },
         "TAGITGovernor": {
           "proxy": "0xCF67Df870ECcbB7838c3Ab7876467c89d84DCe89",
@@ -149,17 +371,16 @@
         "wTAG": {
           "address": "0x746385e59aCB225779D64e74200e464a3f1C23d0",
           "type": "Non-upgradeable",
-          "note": "Wrapped TAGIT — ERC20Capped, 3.33% cap, 7-day lockout"
+          "note": "Wrapped TAGIT - ERC20Capped, 3.33% cap, 7-day lockout. BASE ONLY."
         },
         "wTAGStaking": {
           "address": "0xBd4c4848C9fF09B7955a193E3b96456344D9acBe",
           "type": "Non-upgradeable",
-          "note": "wTAG staking wrapper — delegates to TAGITStaking"
+          "note": "wTAG staking wrapper - delegates to TAGITStaking. BASE ONLY."
         },
         "VerificationEscrow": {
           "address": "0x4c9aACfcb64169E3BC187c227c4C0e0a5CFDA1cF",
-          "type": "Non-upgradeable",
-          "note": "Previously deployed (Mar 17, 2026)"
+          "type": "Non-upgradeable"
         }
       },
       "configuration": {
@@ -174,7 +395,9 @@
       },
       "blockExplorer": {
         "url": "https://sepolia.basescan.org",
-        "verified": "pending"
+        "verified": true,
+        "verifiedAt": "2026-03-31T00:00:00Z",
+        "note": "All 39 contracts verified via forge verify-contract"
       }
     }
   }

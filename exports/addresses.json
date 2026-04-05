@@ -13,54 +13,40 @@
         "TAGITAccess": "0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9",
         "IdentityBadge": "0x26F2EBb84664EF1eF8554e15777EBEc6611256A6",
         "CapabilityBadge": "0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505",
-        "TAGITCore_deprecated": "0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe",
-        "RoboticAuthorizer": "0x36DB6d989f0597CF7b243c4Ef1362CC9B9cbB8AE",
-        "RoboticAuthorizerImplementation": "0x26dE81F182313b94825C66C1F555F038C91687eD"
-      },
-      "proxyArchitecture": {
-        "TAGITCore": {
-          "pattern": "UUPS (EIP-1822)",
-          "proxy": "0x8BdE22da889306d422802728cb98B6Da42ed8e1a",
-          "implementation": "0x92c8e84a32D24b26B5Cf07d9a8CeD4DA8c055192",
-          "admin": "TimelockController",
-          "upgradeDelay": "5 minutes (testnet)",
-          "notes": "Deployed via DeployTAGITCoreProxy.s.sol. Use getImplementation() on the proxy to read the current logic contract. Old non-proxy TAGITCore at 0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe is deprecated."
-        },
-        "RoboticAuthorizer": {
-          "pattern": "UUPS (EIP-1822)",
-          "proxy": "0x36DB6d989f0597CF7b243c4Ef1362CC9B9cbB8AE",
-          "implementation": "0x26dE81F182313b94825C66C1F555F038C91687eD",
-          "admin": "TimelockController",
-          "upgradeDelay": "5 minutes (testnet)"
-        }
-      },
-      "nistImplementations": {
-        "TAGITRecovery": "0x6138a80c06A5e6a3CB6cc491A3a2c4DF4adD1600",
-        "TAGITPaymaster": "0x4339c46D63231063250834D9b3fa4E51FdB8026e",
-        "TAGITTreasury": "0xf6f5e2e03f6e28aE9Dc17bCc814a0cf758c887c9",
-        "TAGITPrograms": "0xe78DB7702FF5190DAc2F3E09213Ff84bF9efE32b",
-        "TAGITStaking": "0x12EE464e32a683f813fDb478e6C8e68E3d63d781",
-        "TAGITAccount": "0xC159FDec7a8fDc0d98571C89c342e28bB405e682",
-        "TAGITAccountFactory": "0x8D27B612a9D3e45d51D2234B2f4e03dCC5ca844b",
-        "CCIPAdapter": "0x8dA6D7ffCD4cc0F2c9FfD6411CeD7C9c573C9E88"
-      },
-      "nistProxies": {
-        "TAGITRecovery": "0x17c0af6B37aBD06587303f1695a06A668F8A5A8c",
-        "TAGITPaymaster": "0x670DC1C7821E0A717CFf5Cc949B05EC01b532104",
-        "TAGITTreasury": "0x841B07Ad929CCC589446e29Aa0C4Dd1639B48674",
-        "TAGITPrograms": "0x4d1007eB4823a5a13905A0361478C339421ce4C9",
+        "TAGITToken": "0x061a89736F91cAC11272B8A95fc7e377cD0e4067",
+        "TAGITTokenImplementation": "0xF5a5F2d05C20423C0Bbd0B5F2a95A387943A76De",
         "TAGITStaking": "0xe500CDfbA693CE1f39A6F05CfB4614971370Ee93",
+        "TAGITStakingImplementation": "0x12EE464e32a683f813fDb478e6C8e68E3d63d781",
+        "TAGITGovernor": "0x8A7cd4FC493663Fc5CD0268704969D644BA773e3",
+        "TAGITGovernorImplementation": "0x15348eFc63689D1C26Dc25Aa281567b786e34C5f",
+        "TAGITTreasury": "0x841B07Ad929CCC589446e29Aa0C4Dd1639B48674",
+        "TAGITTreasuryImplementation": "0xf6f5e2e03f6e28aE9Dc17bCc814a0cf758c887c9",
+        "TAGITRecovery": "0x17c0af6B37aBD06587303f1695a06A668F8A5A8c",
+        "TAGITRecoveryImplementation": "0x8d8a5300e8c5E8BaBebd73175954ce01a427CDCe",
+        "TAGITPrograms": "0x4d1007eB4823a5a13905A0361478C339421ce4C9",
+        "TAGITProgramsImplementation": "0x066FB866C0345115FA27a27cC704e8eaC61A565f",
+        "TAGITPaymaster": "0x670DC1C7821E0A717CFf5Cc949B05EC01b532104",
+        "TAGITPaymasterImplementation": "0x4339c46D63231063250834D9b3fa4E51FdB8026e",
+        "TAGITAccount": "0xC159FDec7a8fDc0d98571C89c342e28bB405e682",
         "TAGITAccountFactory": "0x0ECe601E24789409C87010E064F88d584b051d68",
-        "CCIPAdapter": "0x76C375716bE762EEcb4860D06bB051735e6fb3FA"
+        "TAGITAccountFactoryImplementation": "0x8D27B612a9D3e45d51D2234B2f4e03dCC5ca844b",
+        "CCIPAdapter": "0x76C375716bE762EEcb4860D06bB051735e6fb3FA",
+        "CCIPAdapterImplementation": "0x8dA6D7ffCD4cc0F2c9FfD6411CeD7C9c573C9E88",
+        "RoboticAuthorizer": "0x36DB6d989f0597CF7b243c4Ef1362CC9B9cbB8AE",
+        "RoboticAuthorizerImplementation": "0x26dE81F182313b94825C66C1F555F038C91687eD",
+        "TAGITAgentIdentity": "0xA7f34FD595eBc397Fe04DcE012dbcf0fbbD2A78D",
+        "TAGITAgentReputation": "0x57CCa1974DFE29593FBD24fdAEE1cD614Bfd6E4a",
+        "TAGITAgentValidation": "0x9806919185F98Bd07a64F7BC7F264e91939e86b7",
+        "TAGITEmissions": "0x0259822faf08597f5B9D399F59332d136c6D518d",
+        "TAGITEmissionsImplementation": "0x4EeD0aB813A5c5336eC0a044f052Aa82537CEF00",
+        "TAGITBurner": "0xBAa0346AD5ED79Ec280cb0951C5Ea80A35D985A9",
+        "TAGITBurnerImplementation": "0xF571553a1e08FEE3a216AdBc0fC59DbA41368AAe",
+        "TAGITVesting": "0x4052d29e2aB49193F0577934963b9650F633e63F",
+        "IntegrationFactory": "0xac3687df5A09a5FeD697eb40B6dB22a98cC7B0a8",
+        "VerificationEscrow": "0x698D4DbaE56BC7e36E2Ab34bd47aB97461219726"
       },
       "deployedAt": "2026-01-08T00:00:00Z",
-      "nistControls": {
-        "IR-4": "CircuitBreaker in Recovery, Paymaster",
-        "AC-7": "RateLimiter in Recovery, Staking, CCIP",
-        "SI-4": "DrainDetector in Paymaster, Treasury, Programs",
-        "SC-8": "ReplayProtection in CCIPAdapter",
-        "AU-3": "Session events in TAGITAccount"
-      }
+      "lastUpdated": "2026-04-02T00:00:00Z"
     },
     "arbitrum-sepolia": {
       "chainId": 421614,
@@ -68,84 +54,104 @@
       "rpcUrl": "https://sepolia-rollup.arbitrum.io/rpc",
       "blockExplorer": "https://sepolia.arbiscan.io",
       "contracts": {
-        "TAGITCore": "0x2cb1E0ecE274217F214057c0a829582834Aeaf7f",
-        "TAGITCoreProxy": "0x2cb1E0ecE274217F214057c0a829582834Aeaf7f",
-        "TAGITCoreImplementation": "0xe06e058e1ff18a17a0940C5a0202971bB0feB02a",
-        "TimelockController": "0x6D7F3242DAFB07b8E873Cf1e0a635536ba241fbA",
-        "TAGITAccess": "0x676f593c451E4dF2345026af891Acc92c4344455",
-        "IdentityBadge": "0xEd6a36beB559A8047121B6300fF0060b0E64b5C7",
-        "CapabilityBadge": "0xa8BbC7f95f5D979e8E9208bc627194384b257c24",
-        "RoboticAuthorizer": "0x73E84b5A82164C6c0301A9c4689D60aE9B9050a8",
-        "RoboticAuthorizerImplementation": "0xCfD09BE958119328085cE37CF047e0E14DD5e7a4"
+        "TAGITCore": "0x5952f5af2429e6f973FE40aD6bEad5c770837233",
+        "TAGITCoreImplementation": "0x9fb2055984B43879c82B6CDDa8821FEfda83e7df",
+        "TimelockController": "0x239b1e5782403a9f8a4bdf10b7c86a17be473cb7",
+        "TAGITAccess": "0x801c45774fc70dc6ade30cc0a2f524cadadcddc7",
+        "IdentityBadge": "0x76965313af612bac577e137d8190fb1e3523a307",
+        "CapabilityBadge": "0xb639d0b53338f83c25883271ea4c1adc60f14f7a",
+        "TAGITToken": "0x42456C31b336D866DE9EB56f9916Af0A97Ae14f6",
+        "TAGITTokenImplementation": "0x5497a48243b69a3B19F44d7cE3E81A0d195c800B",
+        "TAGITStaking": "0xc7fB8B6A838449a19d138601cF1711C5f36Fd655",
+        "TAGITStakingImplementation": "0xc10ddC8d385953730e93A3deAd5E3A9CCAd221D1",
+        "TAGITGovernor": "0xad0b3009b5C57D3034bB4b8eBaCb1028D6891c06",
+        "TAGITGovernorImplementation": "0x09CaEB6b689183E57Bb35Be4DD201a55f675Ef5E",
+        "TAGITTreasury": "0x79af1F94Bbe40Ad8A52774fFD69626EE48701d48",
+        "TAGITTreasuryImplementation": "0xc420f5A9C9097664796b443421bb5125B8846974",
+        "TAGITRecovery": "0xfFdDB206e8F0027EC598EDA8b0CdFf528f9a3A7F",
+        "TAGITRecoveryImplementation": "0xbADA37d4d300c06dE09cF752B08703A8773600C4",
+        "TAGITPrograms": "0xe798CD1CD53DdD27D07b1ea084c0D379A5Bc400c",
+        "TAGITProgramsImplementation": "0x74bF2b7988dF6440cCb329f201B8a828A44b6caC",
+        "TAGITPaymaster": "0x533830101306d69D70b830ABdeE954774c561c32",
+        "TAGITPaymasterImplementation": "0x1C346A0a5D4D9E2E12CBF015081369395c81811B",
+        "TAGITAccount": "0xa97fBBD5aB97a0d8067E3dD1A51d2b0b88e14ac2",
+        "TAGITAccountFactory": "0xBC68ff3E74020c78e8A69cD553503A9aF93bBDC1",
+        "TAGITAccountFactoryImplementation": "0x213767060F842A7bFF6E3Ce30249eDbd177c02c5",
+        "CCIPAdapter": "0x8b1b3C5946a62C4ba35B25621e74d49a41D40BC5",
+        "CCIPAdapterImplementation": "0x83F972aa8d3CA0f34E65665d87Daac3BEE85cac5",
+        "RoboticAuthorizer": "0x98eF7b708c0cD26169a4A2092e6F1706760aff1d",
+        "RoboticAuthorizerImplementation": "0x85dd1E8B5f3C9720652D94be04878070E4e90Dea",
+        "TAGITAgentIdentity": "0x5F5F71653d4929c6cD06EF8B16828b084BDf737c",
+        "TAGITAgentReputation": "0x6792EC172F57e124923FC10486cA47341F351D3c",
+        "TAGITAgentValidation": "0xbD7ac881567993DFBC56Bf7a7D76db083f04425c",
+        "TAGITEmissions": "0xa6203965F164aDbE954041C912F517CAeDD90aA0",
+        "TAGITEmissionsImplementation": "0xE1F3c5AF7505CE2DE9932Bb5A98e8d90Aeff6fc1",
+        "TAGITBurner": "0xca85E7B6CcE9907DEd1A6b2b6DC98Fba5FE7E8C5",
+        "TAGITBurnerImplementation": "0xc1e08c57d037bD7DbEd3A58Df56CCDFEE5ba7245",
+        "TAGITVesting": "0xE4C87C0acDbd73789Ea16fE1f6D712050C0bFd13",
+        "IntegrationFactory": "0x7580f30625730C8Ad1086bC36eeB1258472430EA",
+        "VerificationEscrow": "0xF78C7d5bdED8eA0B159b0223a631679E91508C04"
       },
-      "proxyArchitecture": {
-        "TAGITCore": {
-          "pattern": "UUPS (EIP-1822)",
-          "proxy": "0x2cb1E0ecE274217F214057c0a829582834Aeaf7f",
-          "implementation": "0xe06e058e1ff18a17a0940C5a0202971bB0feB02a",
-          "admin": "TimelockController",
-          "upgradeDelay": "60 seconds (hackathon)"
-        },
-        "RoboticAuthorizer": {
-          "pattern": "UUPS (EIP-1822)",
-          "proxy": "0x73E84b5A82164C6c0301A9c4689D60aE9B9050a8",
-          "implementation": "0xCfD09BE958119328085cE37CF047e0E14DD5e7a4",
-          "admin": "TimelockController",
-          "upgradeDelay": "60 seconds (hackathon)"
-        },
-        "TAGITPaymaster": {
-          "pattern": "UUPS (EIP-1822)",
-          "proxy": "0xBbB9f7dB1C38Af7998b511d8026042755Eb4F4C4",
-          "implementation": "0x4c9aACfcb64169E3BC187c227c4C0e0a5CFDA1cF",
-          "admin": "deployer (hackathon)",
-          "upgradeDelay": "N/A"
-        }
+      "deployedAt": "2026-04-02T00:00:00Z",
+      "note": "Full stack redeployment. Supersedes hackathon deployment (Mar 2026)."
+    },
+    "base-sepolia": {
+      "chainId": 84532,
+      "name": "Base Sepolia",
+      "rpcUrl": "https://sepolia.base.org",
+      "blockExplorer": "https://sepolia.basescan.org",
+      "contracts": {
+        "TAGITCore": "0x3adC7eFdB58Ae85483Eff5D4966D916185F31D1d",
+        "TAGITCoreImplementation": "0x5C383ECB1B367579c7806014c32092cBD71a17f7",
+        "TimelockController": "0xfdA2478dB73064eF770f4e5E5b97BC83801126e1",
+        "TAGITAccess": "0xb56A1D91995C212342FaA843468F03521340A1D6",
+        "IdentityBadge": "0xebdAC9A0663c02a7297681b078aaD893EF345030",
+        "CapabilityBadge": "0xb05d22706B08A3F6409601de520cf7A6dbCB573d",
+        "TAGITToken": "0x5f98B83cD7Aef769cc51D2FB739BA49D561170DE",
+        "TAGITTokenImplementation": "0xa412b5C203f74E88f434C405e694528F04cACf59",
+        "TAGITStaking": "0xb22F5688559d07e3A12dBB89F0481B967407F267",
+        "TAGITStakingImplementation": "0x06861990FD9EDA0d47C8F005b09DDa502977B2EF",
+        "TAGITGovernor": "0xCF67Df870ECcbB7838c3Ab7876467c89d84DCe89",
+        "TAGITGovernorImplementation": "0x1fB00d79E6bAfF059e1c5fA034E4D59B766E0d44",
+        "TAGITTreasury": "0xa4A3720d705334f409Dd24836Cc75D642125f759",
+        "TAGITTreasuryImplementation": "0x3837A9BfC98F624be5587a7f10980cCa5f68c4C8",
+        "TAGITRecovery": "0x6Bc3c69367E586810a3b317fA9F0406504E95866",
+        "TAGITRecoveryImplementation": "0xe2f49Bb534894f83421cbD18e747039F3866E14F",
+        "TAGITPrograms": "0x62a3CF048E66Be0119F0CcD97eC964B726B9A982",
+        "TAGITProgramsImplementation": "0x26D0B3b5Ff2061Fb38ce1Aa66433a8F4439e46a8",
+        "TAGITPaymaster": "0x6fFfA92eFb419e812d5c9C9D0c1b1A0F5C6FFd1c",
+        "TAGITPaymasterImplementation": "0x4609a869a813E7E596BF5Bf5cbC08F8092Ce6340",
+        "TAGITAccount": "0x2160044C7c46B08a552361595E09e8C8DDD06E85",
+        "TAGITAccountFactory": "0x3eD2C0e92f0E52dC68D04172Ad37Df4724893AD3",
+        "TAGITAccountFactoryImplementation": "0x6122B891f27bD1C492664C6CA1527e988a5CF8fA",
+        "CCIPAdapter": "0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505",
+        "CCIPAdapterImplementation": "0x26F2EBb84664EF1eF8554e15777EBEc6611256A6",
+        "RoboticAuthorizer": "0x5c38684D87E826589eC5ED401d94C9671CAe9F40",
+        "RoboticAuthorizerImplementation": "0x95F35f612eE3e3F188FEF0Aa272458c5D44169ED",
+        "TAGITAgentIdentity": "0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9",
+        "TAGITAgentReputation": "0x32be6C82A57d5bCe897538d7dA4109eA0eeB0aA1",
+        "TAGITAgentValidation": "0x34766dBa7040C2c8817f1Ee1e448209826DD607e",
+        "TAGITEmissions": "0x0672fcc5B753786c2Cd1805494fF094CB5d6e579",
+        "TAGITEmissionsImplementation": "0x11D1eaB20030092577F23e0939c6CBC0D9124e8A",
+        "TAGITBurner": "0xcB8abCe0770c499B789481f8C6c20fa0d6980D2A",
+        "TAGITBurnerImplementation": "0x6811E98bDD40A45Cc325c8553F146945BA53e17F",
+        "TAGITVesting": "0x7dd4c98a2aFE60eE06bA5c136dBeb7f93DD2699D",
+        "IntegrationFactory": "0xd68919371c26700dDb8252aD1825Aa02a0381a86",
+        "VerificationEscrow": "0x4c9aACfcb64169E3BC187c227c4C0e0a5CFDA1cF",
+        "wTAG": "0x746385e59aCB225779D64e74200e464a3f1C23d0",
+        "wTAGStaking": "0xBd4c4848C9fF09B7955a193E3b96456344D9acBe"
       },
-      "erc4337": {
-        "EntryPoint": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
-        "TAGITPaymasterImplementation": "0x4c9aACfcb64169E3BC187c227c4C0e0a5CFDA1cF",
-        "TAGITPaymasterProxy": "0xBbB9f7dB1C38Af7998b511d8026042755Eb4F4C4"
-      },
-      "deployedAt": "2026-03-02T00:00:00Z",
-      "nistControls": {
-        "IR-4": "CircuitBreaker in Paymaster (500 ops/hr)",
-        "SI-4": "DrainDetector in Paymaster"
-      },
-      "demo": {
-        "TAGITCoreDemo": "0x62A81066Cc868cDe6115b87F1d585c891BFfCcC3",
-        "deployedAt": "2026-03-06",
-        "preMinted": [
-          {"tokenId": 1, "name": "Nasal Drops"},
-          {"tokenId": 2, "name": "Di0r Eye Cream"},
-          {"tokenId": 3, "name": "Sunbiz Certificate"}
-        ],
-        "arbiscan": "https://sepolia.arbiscan.io/address/0x62A81066Cc868cDe6115b87F1d585c891BFfCcC3"
-      }
+      "deployedAt": "2026-03-31T00:00:00Z",
+      "note": "Primary testnet. wTAG/wTAGStaking are BASE ONLY."
     },
     "op-mainnet": {
       "chainId": 10,
       "name": "OP Mainnet",
       "rpcUrl": "https://mainnet.optimism.io",
       "blockExplorer": "https://optimistic.etherscan.io",
-      "contracts": {
-        "TAGITCore": null,
-        "TAGITCoreProxy": null,
-        "TAGITCoreImplementation": null,
-        "TimelockController": null,
-        "TAGITAccess": null,
-        "IdentityBadge": null,
-        "CapabilityBadge": null
-      },
-      "proxyArchitecture": {
-        "TAGITCore": {
-          "pattern": "UUPS (EIP-1822)",
-          "proxy": null,
-          "implementation": null,
-          "admin": "TimelockController",
-          "upgradeDelay": "48 hours"
-        }
-      },
-      "deployedAt": null
+      "contracts": {},
+      "deployedAt": null,
+      "note": "Planned for Phase 4 after DAO approval"
     }
   },
   "stateEnum": {
