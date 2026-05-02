@@ -191,60 +191,86 @@ library RateLimiter {
 
         UserState storage state = userStates[user];
 
+        // Cache fields into memory to avoid repeated SLOADs from storage
+        // (UserState packs into 1 slot — single SLOAD populates all three values)
+        uint64 stateCount = state.count;
+        uint64 stateWindowStart = state.windowStart;
+        uint64 stateLockedUntil = state.lockedUntil;
+
         // Check if user is locked out (check BEFORE any state changes)
-        if (state.lockedUntil > 0) {
-            if (block.timestamp < state.lockedUntil) {
-                revert UserLocked(user, state.lockedUntil - block.timestamp);
+        if (stateLockedUntil > 0) {
+            if (block.timestamp < stateLockedUntil) {
+                revert UserLocked(user, stateLockedUntil - block.timestamp);
             }
-            // Lockout expired - reset
-            _resetUser(state);
+            // Lockout expired - reset locally; will write back below
+            stateCount = 0;
+            stateWindowStart = uint64(block.timestamp);
+            stateLockedUntil = 0;
             emit UserUnlocked(user, block.timestamp);
         }
 
         // Check if we need to start a new window for user
-        if (block.timestamp >= state.windowStart + self.windowDuration) {
-            state.windowStart = uint64(block.timestamp);
-            state.count = 0;
+        if (block.timestamp >= stateWindowStart + self.windowDuration) {
+            stateWindowStart = uint64(block.timestamp);
+            stateCount = 0;
         }
 
+        // Cache config fields once (Config slot 1 holds maxPerWindow + windowDuration + cooldownDuration + enabled)
+        uint64 maxPerWindow_ = self.maxPerWindow;
+
         // Check if already at limit (shouldn't happen normally, but safety check)
-        if (state.count >= self.maxPerWindow) {
+        if (stateCount >= maxPerWindow_) {
             uint64 lockedUntil = uint64(block.timestamp) + self.cooldownDuration;
             state.lockedUntil = lockedUntil;
-            emit RateLimitHit(user, state.count, lockedUntil);
+            emit RateLimitHit(user, stateCount, lockedUntil);
             revert RateLimitExceeded(user, lockedUntil);
         }
 
         // Check global limit if enabled
-        if (self.globalMaxPerWindow > 0) {
+        uint64 globalMax = self.globalMaxPerWindow;
+        if (globalMax > 0) {
+            uint64 globalCount_ = self.globalCount;
+            uint64 globalWindowStart_ = self.globalWindowStart;
+
             // Reset global window if needed
-            if (block.timestamp >= self.globalWindowStart + self.windowDuration) {
-                self.globalWindowStart = uint64(block.timestamp);
-                self.globalCount = 0;
+            if (block.timestamp >= globalWindowStart_ + self.windowDuration) {
+                globalWindowStart_ = uint64(block.timestamp);
+                globalCount_ = 0;
             }
 
-            if (self.globalCount >= self.globalMaxPerWindow) {
-                emit GlobalLimitHit(block.timestamp, self.globalCount);
-                revert GlobalLimitExceeded(self.globalCount, self.globalMaxPerWindow);
+            if (globalCount_ >= globalMax) {
+                emit GlobalLimitHit(block.timestamp, globalCount_);
+                revert GlobalLimitExceeded(globalCount_, globalMax);
             }
 
-            self.globalCount++;
+            // Single SSTORE for the global slot (writes both fields in one go)
+            unchecked {
+                self.globalCount = globalCount_ + 1;
+            }
+            self.globalWindowStart = globalWindowStart_;
         }
 
-        // Increment user counter
-        state.count++;
+        // Increment user counter (in memory)
+        unchecked {
+            stateCount += 1;
+        }
 
         // Check if user just hit limit - allow this action but lock for next
-        if (state.count >= self.maxPerWindow) {
-            state.lockedUntil = uint64(block.timestamp) + self.cooldownDuration;
-            emit RateLimitHit(user, state.count, state.lockedUntil);
+        if (stateCount >= maxPerWindow_) {
+            stateLockedUntil = uint64(block.timestamp) + self.cooldownDuration;
+            emit RateLimitHit(user, stateCount, stateLockedUntil);
             // DON'T revert - allow this action so lockout state persists
         }
 
         // Emit warning at 80% of limit
-        if (state.count == (self.maxPerWindow * 80) / 100) {
-            emit RateLimitWarning(user, state.count, self.maxPerWindow);
+        if (stateCount == (maxPerWindow_ * 80) / 100) {
+            emit RateLimitWarning(user, stateCount, maxPerWindow_);
         }
+
+        // Single packed SSTORE: write count + windowStart + lockedUntil to the user slot in one operation
+        state.count = stateCount;
+        state.windowStart = stateWindowStart;
+        state.lockedUntil = stateLockedUntil;
 
         return true;
     }
