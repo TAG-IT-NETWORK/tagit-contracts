@@ -111,6 +111,8 @@ contract OfferEscrowTest is Test {
     function _baseOffer() internal view returns (OfferEscrow.Offer memory) {
         return OfferEscrow.Offer({
             buyer: buyer,
+            seller: seller,
+            chipPubkey: address(0), // tap-accept disabled by default; tap tests override
             nft: address(nft),
             tokenId: TOKEN_ID,
             paymentToken: address(usdc),
@@ -193,7 +195,7 @@ contract OfferEscrowTest is Test {
         escrow.acceptOffer(h);
     }
 
-    function test_revert_when_nonOwner_accepts() public {
+    function test_revert_when_nonSeller_accepts() public {
         OfferEscrow.Offer memory offer = _baseOffer();
         bytes memory sig = _signOffer(offer, buyerKey);
 
@@ -201,7 +203,7 @@ contract OfferEscrowTest is Test {
         bytes32 h = escrow.fundOffer(offer, sig);
 
         vm.prank(buyer);
-        vm.expectRevert(OfferEscrow.NotOwnerOfToken.selector);
+        vm.expectRevert(OfferEscrow.NotSeller.selector);
         escrow.acceptOffer(h);
     }
 
@@ -251,14 +253,16 @@ contract OfferEscrowTest is Test {
     }
 
     function test_acceptOfferByTap_with_monotonic_counter() public {
+        uint256 chipKey = 0xC417;
+        address chipPubkey = vm.addr(chipKey);
+
         OfferEscrow.Offer memory offer = _baseOffer();
+        offer.chipPubkey = chipPubkey;
         bytes memory sig = _signOffer(offer, buyerKey);
 
         vm.prank(buyer);
         bytes32 h = escrow.fundOffer(offer, sig);
 
-        uint256 chipKey = 0xC417;
-        address chipPubkey = vm.addr(chipKey);
         uint32 counter = 7;
         bytes memory chipSig = _signTap(chipKey, h, chipPubkey, counter);
 
@@ -270,23 +274,26 @@ contract OfferEscrowTest is Test {
     }
 
     function test_revert_tap_replay_with_stale_counter() public {
+        uint256 chipKey = 0xC417;
+        address chipPubkey = vm.addr(chipKey);
+
         // First, bump the chip counter via a successful tap on token 19
         nft.mint(seller, 19);
         OfferEscrow.Offer memory offer2 = _baseOffer();
         offer2.tokenId = 19;
         offer2.nonce = 2;
+        offer2.chipPubkey = chipPubkey;
         bytes memory sig2 = _signOffer(offer2, buyerKey);
         vm.prank(buyer);
         bytes32 h2 = escrow.fundOffer(offer2, sig2);
 
-        uint256 chipKey = 0xC417;
-        address chipPubkey = vm.addr(chipKey);
         bytes memory tapSig = _signTap(chipKey, h2, chipPubkey, 10);
         escrow.acceptOfferByTap(h2, chipPubkey, 10, tapSig);
         assertEq(escrow.chipCounter(chipPubkey), 10);
 
         // Now fund original offer and try to replay a stale counter (5)
         OfferEscrow.Offer memory offer = _baseOffer();
+        offer.chipPubkey = chipPubkey;
         bytes memory sig = _signOffer(offer, buyerKey);
         vm.prank(buyer);
         bytes32 h = escrow.fundOffer(offer, sig);
@@ -294,6 +301,96 @@ contract OfferEscrowTest is Test {
         bytes memory replaySig = _signTap(chipKey, h, chipPubkey, 5);
         vm.expectRevert(OfferEscrow.ChipCounterReplay.selector);
         escrow.acceptOfferByTap(h, chipPubkey, 5, replaySig);
+    }
+
+    /// @dev Audit finding (CRITICAL): caller cannot substitute an attacker-controlled chip key.
+    function test_revert_tap_with_wrong_chip_key() public {
+        uint256 realChipKey = 0xC417;
+        address realChipPubkey = vm.addr(realChipKey);
+        uint256 attackerKey = 0xBADBAD;
+        address attackerPubkey = vm.addr(attackerKey);
+
+        OfferEscrow.Offer memory offer = _baseOffer();
+        offer.chipPubkey = realChipPubkey; // offer commits to the real chip
+        bytes memory sig = _signOffer(offer, buyerKey);
+
+        vm.prank(buyer);
+        bytes32 h = escrow.fundOffer(offer, sig);
+
+        // Attacker signs the tap digest with their own key, claims it's the chip
+        bytes memory attackerSig = _signTap(attackerKey, h, attackerPubkey, 7);
+
+        vm.expectRevert(OfferEscrow.ChipMismatch.selector);
+        escrow.acceptOfferByTap(h, attackerPubkey, 7, attackerSig);
+
+        // NFT and USDC remain locked, not redirected
+        assertEq(nft.ownerOf(TOKEN_ID), seller);
+        assertEq(usdc.balanceOf(address(escrow)), OFFER_AMOUNT);
+    }
+
+    /// @dev When the buyer didn't commit to a chip (chipPubkey = address(0)), the tap path is disabled.
+    function test_revert_tap_when_disabled() public {
+        OfferEscrow.Offer memory offer = _baseOffer(); // chipPubkey = address(0)
+        bytes memory sig = _signOffer(offer, buyerKey);
+
+        vm.prank(buyer);
+        bytes32 h = escrow.fundOffer(offer, sig);
+
+        uint256 chipKey = 0xC417;
+        address chipPubkey = vm.addr(chipKey);
+        bytes memory chipSig = _signTap(chipKey, h, chipPubkey, 7);
+
+        vm.expectRevert(OfferEscrow.TapDisabled.selector);
+        escrow.acceptOfferByTap(h, chipPubkey, 7, chipSig);
+    }
+
+    /// @dev Audit finding (HIGH): seller cannot redirect proceeds by transferring the NFT mid-flight.
+    function test_revert_acceptOffer_after_seller_transferred_nft() public {
+        OfferEscrow.Offer memory offer = _baseOffer();
+        bytes memory sig = _signOffer(offer, buyerKey);
+
+        vm.prank(buyer);
+        bytes32 h = escrow.fundOffer(offer, sig);
+
+        // Seller moves the NFT to a third party before accepting
+        address thirdParty = address(0xC0FFEE);
+        vm.prank(seller);
+        nft.transferFrom(seller, thirdParty, TOKEN_ID);
+
+        // Original seller can no longer accept — they no longer own the NFT
+        vm.prank(seller);
+        vm.expectRevert(OfferEscrow.SellerNoLongerOwner.selector);
+        escrow.acceptOffer(h);
+
+        // Third party (new owner) is not the named seller — cannot accept either
+        vm.prank(thirdParty);
+        vm.expectRevert(OfferEscrow.NotSeller.selector);
+        escrow.acceptOffer(h);
+
+        // USDC remains in escrow; buyer can timeout-refund
+        assertEq(usdc.balanceOf(address(escrow)), OFFER_AMOUNT);
+    }
+
+    /// @dev Audit finding (HIGH): same protection on the tap-accept path.
+    function test_revert_acceptOfferByTap_after_seller_transferred_nft() public {
+        uint256 chipKey = 0xC417;
+        address chipPubkey = vm.addr(chipKey);
+
+        OfferEscrow.Offer memory offer = _baseOffer();
+        offer.chipPubkey = chipPubkey;
+        bytes memory sig = _signOffer(offer, buyerKey);
+
+        vm.prank(buyer);
+        bytes32 h = escrow.fundOffer(offer, sig);
+
+        // Seller moves the NFT away after the buyer funded
+        vm.prank(seller);
+        nft.transferFrom(seller, address(0xC0FFEE), TOKEN_ID);
+
+        // Even a legitimate chip tap cannot settle if the seller no longer owns the NFT
+        bytes memory chipSig = _signTap(chipKey, h, chipPubkey, 7);
+        vm.expectRevert(OfferEscrow.SellerNoLongerOwner.selector);
+        escrow.acceptOfferByTap(h, chipPubkey, 7, chipSig);
     }
 
     function test_reentrancy_during_refund_is_blocked() public {
