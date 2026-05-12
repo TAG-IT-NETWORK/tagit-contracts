@@ -1,0 +1,41 @@
+{
+  "network": "optimism-sepolia",
+  "chainId": 11155420,
+  "explorer": "https://optimism-sepolia.blockscout.com",
+  "deployer": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D",
+  "deployedAt": "2026-05-12",
+  "task": "3544e3e9-a2d3-81bf-8aa7-d6e466e1dd39",
+  "contracts": {
+    "TAGITToken": {
+      "proxy": "0x7e4318c1958eAf85784c1BB555A866FAC0aeBa6a",
+      "implementation": "0x1279D9d2369437BE61b92bcafAb9cC7921c86053",
+      "type": "ERC1967Proxy + UUPS",
+      "treasury": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D",
+      "owner": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D",
+      "symbol": "TAGIT",
+      "decimals": 18,
+      "genesisSupply": "7777777333000000000000000000"
+    },
+    "VerificationEscrow": {
+      "address": "0xcddadd3fa573aa3adb6171fbd66e72c189b60465",
+      "type": "standalone",
+      "usdc": "0x5fd84259d66Cd46123540766Be93DFE6D43130D7",
+      "trustedOracle": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D",
+      "owner": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D"
+    },
+    "ReputationStaking": {
+      "address": "0xeff11Cd64d4Ed77666A860C0216E7355572D2A2A",
+      "type": "standalone",
+      "stakingToken": "0x7e4318c1958eAf85784c1BB555A866FAC0aeBa6a",
+      "owner": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D",
+      "minStake": "100000000000000000000",
+      "minLockSeconds": 604800
+    }
+  },
+  "notes": [
+    "All three contracts owned by deployer EOA; rotate to multisig before mainnet.",
+    "TAGITToken emissions address NOT set yet — call setEmissionsAddress() once TAGITEmissions is deployed.",
+    "Etherscan verification not yet performed (Blockscout is the OP Sepolia primary explorer).",
+    "VerificationEscrow uses OP Sepolia Circle USDC at 0x5fd84259d66Cd46123540766Be93DFE6D43130D7."
+  ]
+}
