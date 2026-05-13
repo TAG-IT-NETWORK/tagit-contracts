@@ -454,7 +454,22 @@ contract LifecycleIntegrationTest is Test {
 
     /**
      * @notice Verify gas usage is within expected bounds
-     * @dev Documents gas costs for lifecycle operations
+     * @dev Documents gas costs for lifecycle operations.
+     *
+     *      Mint gas budget breakdown (measured ~207,436 gas):
+     *      - ERC721 _mint base cost (Transfer event + owner/balance SSTOREs): ~70,000
+     *      - Asset struct cold SSTORE (1 packed slot): ~22,100
+     *      - metadataHash[tokenId] cold SSTORE (V2 verifiable metadata): ~22,100
+     *      - _nextTokenId + _totalSupply SSTOREs (warm after init): ~10,000
+     *      - NIST AC-7 RateLimiter.check (cold UserState + Config slot 2): ~30,000
+     *      - TAGITAccess.requireCapability staticcall (BIDGES badge): ~9,065
+     *      - Events: AssetMinted, StateChanged, MetadataHashUpdated, CustodyTransfer
+     *
+     *      Threshold raised from 200k → 215k to account for the V2 metadata
+     *      storage commit (87e27883) which added the verifiable metadataHash
+     *      mapping + MetadataHashUpdated event. The RateLimiter library was
+     *      also gas-optimized (single packed SSTORE write-back) in this same
+     *      branch (sudo/fix-mint-gas-regression).
      */
     function test_scenario_gasEfficiency() public {
         // Mint
@@ -462,7 +477,9 @@ contract LifecycleIntegrationTest is Test {
         uint256 gasBefore = gasleft();
         uint256 tokenId = tagitCore.mint(manufacturer, METADATA);
         uint256 mintGas = gasBefore - gasleft();
-        assertLt(mintGas, 200000, "Mint gas should be under 200k (includes NIST AC-7 rate limit)");
+        // NIST AC-7 rate limiter (~30k) + V2 metadataHash storage (~22k) +
+        // ERC721 base mint (~70k) + Asset SSTORE (~22k) + capability check (~9k)
+        assertLt(mintGas, 215000, "Mint gas should be under 215k (includes NIST AC-7 rate limit + V2 metadata storage)");
 
         // Bind
         (bytes memory crGas, bytes memory sigGas) = _oracleSign(tokenId, TAG_HASH);
