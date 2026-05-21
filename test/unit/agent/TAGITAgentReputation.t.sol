@@ -66,6 +66,10 @@ contract TAGITAgentReputationTest is Test {
         vm.prank(registrant1);
         agentId = agentIdentity.register(agentWallet1, "ipfs://QmAgent1");
 
+        // Activate agent (register creates INACTIVE; activate transitions to ACTIVE)
+        vm.prank(registrant1);
+        agentIdentity.activate(agentId);
+
         // Deploy Reputation
         vm.prank(owner);
         reputation = new TAGITAgentReputation();

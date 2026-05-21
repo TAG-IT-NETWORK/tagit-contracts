@@ -69,6 +69,18 @@ contract AgentSecurityTest is Test {
     }
 
     // ============================================
+    // HELPERS
+    // ============================================
+
+    function _registerAndActivateAgent(address op, address wallet, string memory uri) internal returns (uint256) {
+        vm.prank(op);
+        uint256 agentId = identity.register(wallet, uri);
+        vm.prank(op);
+        identity.activate(agentId);
+        return agentId;
+    }
+
+    // ============================================
     // DEFENSE GUARD REJECTION
     // ============================================
 
@@ -90,8 +102,7 @@ contract AgentSecurityTest is Test {
     }
 
     function test_security_noKycCannotGiveFeedback() public {
-        vm.prank(operator);
-        uint256 agentId = identity.register(agentWallet, "ipfs://QmAgent");
+        uint256 agentId = _registerAndActivateAgent(operator, agentWallet, "ipfs://QmAgent");
 
         address noKyc = makeAddr("noKycReviewer");
         vm.prank(noKyc);
@@ -100,8 +111,7 @@ contract AgentSecurityTest is Test {
     }
 
     function test_security_noKycCannotRequestValidation() public {
-        vm.prank(operator);
-        uint256 agentId = identity.register(agentWallet, "ipfs://QmAgent");
+        uint256 agentId = _registerAndActivateAgent(operator, agentWallet, "ipfs://QmAgent");
 
         address noKyc = makeAddr("noKycRequester");
         vm.prank(noKyc);
@@ -114,8 +124,7 @@ contract AgentSecurityTest is Test {
     // ============================================
 
     function test_security_registrantCannotSelfReview() public {
-        vm.prank(operator);
-        uint256 agentId = identity.register(agentWallet, "ipfs://QmAgent");
+        uint256 agentId = _registerAndActivateAgent(operator, agentWallet, "ipfs://QmAgent");
 
         vm.prank(operator);
         vm.expectRevert(abi.encodeWithSelector(TAGITAgentReputation.SelfReviewBlocked.selector, operator, agentId));
@@ -123,8 +132,7 @@ contract AgentSecurityTest is Test {
     }
 
     function test_security_agentWalletCannotSelfReview() public {
-        vm.prank(operator);
-        uint256 agentId = identity.register(agentWallet, "ipfs://QmAgent");
+        uint256 agentId = _registerAndActivateAgent(operator, agentWallet, "ipfs://QmAgent");
 
         identityBadge.grantIdentity(agentWallet, 1);
         vm.prank(agentWallet);
@@ -133,8 +141,7 @@ contract AgentSecurityTest is Test {
     }
 
     function test_security_cannotDuplicateFeedback() public {
-        vm.prank(operator);
-        uint256 agentId = identity.register(agentWallet, "ipfs://QmAgent");
+        uint256 agentId = _registerAndActivateAgent(operator, agentWallet, "ipfs://QmAgent");
 
         vm.prank(attacker);
         reputation.giveFeedback(agentId, 5, "First review");
@@ -184,8 +191,7 @@ contract AgentSecurityTest is Test {
     // ============================================
 
     function test_security_nonValidatorCannotRespond() public {
-        vm.prank(operator);
-        uint256 agentId = identity.register(agentWallet, "ipfs://QmAgent");
+        uint256 agentId = _registerAndActivateAgent(operator, agentWallet, "ipfs://QmAgent");
 
         vm.prank(operator);
         uint256 requestId = validation.validationRequest(agentId, false);
@@ -198,8 +204,7 @@ contract AgentSecurityTest is Test {
     function test_security_validatorCannotDoubleRespond() public {
         capabilityBadge.grantCapability(attacker, uint256(VALIDATOR_CAPABILITY));
 
-        vm.prank(operator);
-        uint256 agentId = identity.register(agentWallet, "ipfs://QmAgent");
+        uint256 agentId = _registerAndActivateAgent(operator, agentWallet, "ipfs://QmAgent");
 
         vm.prank(operator);
         uint256 requestId = validation.validationRequest(agentId, true); // Defense quorum = 3
@@ -219,8 +224,7 @@ contract AgentSecurityTest is Test {
     function test_security_cannotRespondToExpiredRequest() public {
         capabilityBadge.grantCapability(attacker, uint256(VALIDATOR_CAPABILITY));
 
-        vm.prank(operator);
-        uint256 agentId = identity.register(agentWallet, "ipfs://QmAgent");
+        uint256 agentId = _registerAndActivateAgent(operator, agentWallet, "ipfs://QmAgent");
 
         vm.prank(operator);
         uint256 requestId = validation.validationRequest(agentId, false);
@@ -238,8 +242,7 @@ contract AgentSecurityTest is Test {
     // ============================================
 
     function test_fuzz_feedbackRating(uint8 rating) public {
-        vm.prank(operator);
-        uint256 agentId = identity.register(agentWallet, "ipfs://QmAgent");
+        uint256 agentId = _registerAndActivateAgent(operator, agentWallet, "ipfs://QmAgent");
 
         vm.prank(attacker);
         if (rating >= 1 && rating <= 5) {
@@ -257,8 +260,7 @@ contract AgentSecurityTest is Test {
     function test_fuzz_validationScore(uint8 score) public {
         capabilityBadge.grantCapability(attacker, uint256(VALIDATOR_CAPABILITY));
 
-        vm.prank(operator);
-        uint256 agentId = identity.register(agentWallet, "ipfs://QmAgent");
+        uint256 agentId = _registerAndActivateAgent(operator, agentWallet, "ipfs://QmAgent");
 
         vm.prank(operator);
         uint256 requestId = validation.validationRequest(agentId, false);

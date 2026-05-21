@@ -39,6 +39,7 @@ contract TAGITAgentIdentityTest is Test {
     event AgentStatusChanged(
         uint256 indexed agentId, TAGITAgentIdentity.AgentStatus oldStatus, TAGITAgentIdentity.AgentStatus newStatus
     );
+    event AgentActivated(uint256 indexed agentId, address indexed registrant);
 
     function setUp() public {
         // Create test accounts
@@ -88,21 +89,24 @@ contract TAGITAgentIdentityTest is Test {
         assertEq(reg, registrant1, "Registrant should match");
         assertEq(wallet, agentWallet1, "Wallet should match");
         assertGt(registeredAt, 0, "Timestamp should be set");
-        assertTrue(active, "Agent should be active");
+        assertFalse(active, "Agent should start inactive");
 
         // Check ERC721 ownership
         assertEq(agentIdentity.ownerOf(agentId), registrant1, "Token owner should be registrant");
 
         // Check token URI
         assertEq(agentIdentity.tokenURI(agentId), "ipfs://QmAgent1", "URI should match");
+
+        // Activate and verify
+        vm.prank(registrant1);
+        agentIdentity.activate(agentId);
+        (,,, bool activeAfter) = agentIdentity.getAgent(agentId);
+        assertTrue(activeAfter, "Agent should be active after activation");
     }
 
     function test_register_multipleAgents() public {
-        vm.prank(registrant1);
-        uint256 id1 = agentIdentity.register(agentWallet1, "ipfs://QmAgent1");
-
-        vm.prank(registrant1);
-        uint256 id2 = agentIdentity.register(agentWallet2, "ipfs://QmAgent2");
+        uint256 id1 = _registerAndActivate(registrant1, agentWallet1, "ipfs://QmAgent1");
+        uint256 id2 = _registerAndActivate(registrant1, agentWallet2, "ipfs://QmAgent2");
 
         assertEq(id1, 1);
         assertEq(id2, 2);
@@ -181,6 +185,77 @@ contract TAGITAgentIdentityTest is Test {
 
         assertEq(agentId, 1);
         assertEq(address(agentIdentity).balance, 0.01 ether);
+    }
+
+    // ============================================
+    // ACTIVATE TESTS
+    // ============================================
+
+    function test_activate_success() public {
+        vm.prank(registrant1);
+        uint256 agentId = agentIdentity.register(agentWallet1, "ipfs://QmAgent1");
+
+        assertEq(uint8(agentIdentity.getAgentStatus(agentId)), uint8(TAGITAgentIdentity.AgentStatus.INACTIVE));
+
+        vm.expectEmit(true, true, false, false);
+        emit AgentActivated(agentId, registrant1);
+
+        vm.prank(registrant1);
+        agentIdentity.activate(agentId);
+
+        assertEq(uint8(agentIdentity.getAgentStatus(agentId)), uint8(TAGITAgentIdentity.AgentStatus.ACTIVE));
+        assertTrue(agentIdentity.isActiveAgent(agentId));
+    }
+
+    function test_activate_revertAlreadyActive() public {
+        uint256 agentId = _registerAndActivate(registrant1, agentWallet1, "ipfs://QmAgent1");
+
+        vm.prank(registrant1);
+        vm.expectRevert(abi.encodeWithSelector(TAGITAgentIdentity.AgentNotInactive.selector, agentId));
+        agentIdentity.activate(agentId);
+    }
+
+    function test_activate_revertSuspended() public {
+        uint256 agentId = _registerAndActivate(registrant1, agentWallet1, "ipfs://QmAgent1");
+
+        vm.prank(owner);
+        agentIdentity.suspendAgent(agentId);
+
+        vm.prank(registrant1);
+        vm.expectRevert(abi.encodeWithSelector(TAGITAgentIdentity.AgentNotInactive.selector, agentId));
+        agentIdentity.activate(agentId);
+    }
+
+    function test_activate_revertDecommissioned() public {
+        uint256 agentId = _registerAndActivate(registrant1, agentWallet1, "ipfs://QmAgent1");
+
+        vm.prank(registrant1);
+        agentIdentity.decommissionAgent(agentId);
+
+        vm.prank(registrant1);
+        vm.expectRevert(abi.encodeWithSelector(TAGITAgentIdentity.AgentNotInactive.selector, agentId));
+        agentIdentity.activate(agentId);
+    }
+
+    function test_activate_revertNotRegistrant() public {
+        vm.prank(registrant1);
+        uint256 agentId = agentIdentity.register(agentWallet1, "ipfs://QmAgent1");
+
+        vm.prank(registrant2);
+        vm.expectRevert(abi.encodeWithSelector(TAGITAgentIdentity.NotRegistrant.selector, registrant2, agentId));
+        agentIdentity.activate(agentId);
+    }
+
+    function test_activate_revertWhenPaused() public {
+        vm.prank(registrant1);
+        uint256 agentId = agentIdentity.register(agentWallet1, "ipfs://QmAgent1");
+
+        vm.prank(owner);
+        agentIdentity.pause();
+
+        vm.prank(registrant1);
+        vm.expectRevert();
+        agentIdentity.activate(agentId);
     }
 
     // ============================================
@@ -335,8 +410,7 @@ contract TAGITAgentIdentityTest is Test {
     // ============================================
 
     function test_suspendAgent_success() public {
-        vm.prank(registrant1);
-        uint256 agentId = agentIdentity.register(agentWallet1, "ipfs://QmAgent1");
+        uint256 agentId = _registerAndActivate(registrant1, agentWallet1, "ipfs://QmAgent1");
 
         vm.expectEmit(true, false, false, true);
         emit AgentStatusChanged(
@@ -438,6 +512,15 @@ contract TAGITAgentIdentityTest is Test {
     // ============================================
     // HELPERS
     // ============================================
+
+    /// @notice Helper: register an agent and immediately activate it (no staking configured)
+    function _registerAndActivate(address registrant_, address wallet_, string memory uri_) internal returns (uint256) {
+        vm.prank(registrant_);
+        uint256 agentId = agentIdentity.register(wallet_, uri_);
+        vm.prank(registrant_);
+        agentIdentity.activate(agentId);
+        return agentId;
+    }
 
     function _getTypedDataHash(bytes32 structHash) internal view returns (bytes32) {
         bytes32 domainSeparator = keccak256(
