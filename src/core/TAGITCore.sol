@@ -222,6 +222,12 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
      */
     error ArrayLengthMismatch(uint256 recipientsLength, uint256 metadataLength);
 
+    /// @notice Asset is not in a flaggable state (must be BOUND, ACTIVATED, or CLAIMED)
+    error NotFlaggable(uint256 tokenId, State current);
+
+    /// @notice Caller is not the current owner of the asset (secondary-market resale requires ownership)
+    error NotAssetOwner(uint256 tokenId, address caller, address owner);
+
     // ============================================
     // EVENTS
     // ============================================
@@ -251,6 +257,15 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
      * @custom:security Enables full lifecycle tracking and audit
      */
     event StateChanged(uint256 indexed tokenId, State from, State to, address actor);
+
+    /**
+     * @notice Emitted on a secondary-market resale of a CLAIMED asset (owner changes, state stays CLAIMED)
+     * @param tokenId Asset token ID
+     * @param from Previous owner (seller)
+     * @param to New owner (buyer)
+     * @custom:security Owner-gated; the only sanctioned consumer-to-consumer transfer path
+     */
+    event AssetResold(uint256 indexed tokenId, address indexed from, address indexed to);
 
     /**
      * @notice Emitted when NFC tag is bound to asset
@@ -408,9 +423,17 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
     /// @notice Metadata hash cannot be zero
     error InvalidMetadataHash();
 
+    /// @notice Pre-flag lifecycle state per token (recall/recovery upgrade)
+    /// @dev Set by flag() to the state held immediately before flagging; read by
+    ///      resolve() to restore that exact state (guarantees no forward-skip).
+    ///      Cleared on resolve()/recycle(). Absent (State.NONE) for tokens flagged
+    ///      before this upgrade → resolve() defaults those to CLAIMED for
+    ///      backward-compatibility (legacy flags were only ever from CLAIMED).
+    mapping(uint256 => State) private _preFlagState;
+
     /// @notice Storage gap for future upgrades (ERC-7201 compatible)
-    /// @dev Reserve 32 slots for future storage variables (reduced from 34: -1 mapping, -1 string)
-    uint256[32] private __gap;
+    /// @dev Reserve 31 slots for future storage variables (reduced from 32: -1 _preFlagState mapping)
+    uint256[31] private __gap;
 
     // ============================================
     // CONSTRUCTOR (disabled for proxy)
@@ -581,8 +604,7 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
         }
 
         // PATCH-03: CustodyTransfer audit trail
-        bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.NONE), address(0), block.number - 1));
-        emit CustodyTransfer(tokenId, uint8(State.NONE), uint8(State.MINTED), address(0), to, block.timestamp, prevHash);
+        _logCustody(tokenId, State.NONE, State.MINTED, address(0), to);
     }
 
     /**
@@ -636,10 +658,7 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
             emit StateChanged(tokenId, State.NONE, State.MINTED, msg.sender);
 
             // PATCH-03: CustodyTransfer audit trail
-            bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.NONE), address(0), block.number - 1));
-            emit CustodyTransfer(
-                tokenId, uint8(State.NONE), uint8(State.MINTED), address(0), recipients[i], block.timestamp, prevHash
-            );
+            _logCustody(tokenId, State.NONE, State.MINTED, address(0), recipients[i]);
 
             tokenIds[i] = tokenId;
         }
@@ -711,10 +730,7 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
         emit StateChanged(tokenId, State.MINTED, State.BOUND, msg.sender);
 
         // PATCH-03: CustodyTransfer audit trail
-        bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.MINTED), asset.owner, block.number - 1));
-        emit CustodyTransfer(
-            tokenId, uint8(State.MINTED), uint8(State.BOUND), asset.owner, asset.owner, block.timestamp, prevHash
-        );
+        _logCustody(tokenId, State.MINTED, State.BOUND, asset.owner, asset.owner);
     }
 
     /**
@@ -755,10 +771,7 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
         emit StateChanged(tokenId, State.BOUND, State.ACTIVATED, msg.sender);
 
         // PATCH-03: CustodyTransfer audit trail
-        bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.BOUND), asset.owner, block.number - 1));
-        emit CustodyTransfer(
-            tokenId, uint8(State.BOUND), uint8(State.ACTIVATED), asset.owner, asset.owner, block.timestamp, prevHash
-        );
+        _logCustody(tokenId, State.BOUND, State.ACTIVATED, asset.owner, asset.owner);
     }
 
     /**
@@ -819,10 +832,7 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
         emit StateChanged(tokenId, State.ACTIVATED, State.CLAIMED, msg.sender);
 
         // PATCH-03: CustodyTransfer audit trail
-        bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.ACTIVATED), previousOwner, block.number - 1));
-        emit CustodyTransfer(
-            tokenId, uint8(State.ACTIVATED), uint8(State.CLAIMED), previousOwner, newOwner, block.timestamp, prevHash
-        );
+        _logCustody(tokenId, State.ACTIVATED, State.CLAIMED, previousOwner, newOwner);
     }
 
     /**
@@ -844,9 +854,13 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
         // Verify token exists (owner will be address(0) if not minted)
         if (asset.owner == address(0)) revert TokenNotFound(tokenId);
 
-        // Verify asset is in CLAIMED state (can only flag consumer-owned assets)
-        if (asset.state != State.CLAIMED) {
-            revert InvalidState(tokenId, asset.state, State.CLAIMED);
+        // Verify asset is in a flaggable state. Any state with a physical tag bound
+        // can be flagged: BOUND/ACTIVATED (manufacturer recall, pre-sale theft) and
+        // CLAIMED (consumer lost/stolen). MINTED has no physical good; FLAGGED/RECYCLED
+        // are not re-flaggable.
+        State prevState = asset.state;
+        if (prevState != State.BOUND && prevState != State.ACTIVATED && prevState != State.CLAIMED) {
+            revert NotFlaggable(tokenId, prevState);
         }
 
         // NIST IR-4: Circuit breaker check for mass flagging attacks
@@ -856,6 +870,8 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
         // ============================================
         // EFFECTS
         // ============================================
+        // Remember the exact pre-flag state so resolve() restores it (no forward-skip).
+        _preFlagState[tokenId] = prevState;
         // Update asset state to FLAGGED
         asset.state = State.FLAGGED;
         asset.timestamp = uint64(block.timestamp);
@@ -863,13 +879,10 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
         // ============================================
         // INTERACTIONS
         // ============================================
-        emit StateChanged(tokenId, State.CLAIMED, State.FLAGGED, msg.sender);
+        emit StateChanged(tokenId, prevState, State.FLAGGED, msg.sender);
 
         // PATCH-03: CustodyTransfer audit trail
-        bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.CLAIMED), asset.owner, block.number - 1));
-        emit CustodyTransfer(
-            tokenId, uint8(State.CLAIMED), uint8(State.FLAGGED), asset.owner, asset.owner, block.timestamp, prevHash
-        );
+        _logCustody(tokenId, prevState, State.FLAGGED, asset.owner, asset.owner);
     }
 
     /**
@@ -979,15 +992,31 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
             revert RecipientMismatch(tokenId, _resolveRecipient[tokenId], newOwner);
         }
 
+        // Restore the EXACT state held before flag() — guarantees flag()+resolve() is
+        // state-neutral and can never be used to skip a forward transition. Tokens
+        // flagged before this upgrade have no stored value (State.NONE) and were
+        // necessarily flagged from CLAIMED under the old guard → default to CLAIMED.
+        State stored = _preFlagState[tokenId];
+        State restoredState =
+            (stored == State.BOUND || stored == State.ACTIVATED || stored == State.CLAIMED) ? stored : State.CLAIMED;
+
+        // Owner semantics: a CLAIMED (consumer) asset is reassigned to the rightful
+        // owner the resolvers approved. A manufacturing-phase asset (BOUND/ACTIVATED)
+        // returns to its CURRENT owner (the manufacturer) — resolvers cannot redirect
+        // unsold inventory, so newOwner must equal the current owner.
+        address previousOwner = asset.owner;
+        if (restoredState != State.CLAIMED && newOwner != previousOwner) {
+            revert RecipientMismatch(tokenId, previousOwner, newOwner);
+        }
+
         // ============================================
         // EFFECTS (ALL state changes BEFORE transfer)
         // ============================================
-        address previousOwner = asset.owner;
-
-        // Update asset state to CLAIMED (recovery success)
-        asset.state = State.CLAIMED;
+        // Restore pre-flag state (recovery success) and clear the marker.
+        asset.state = restoredState;
         asset.timestamp = uint64(block.timestamp);
         asset.owner = newOwner;
+        delete _preFlagState[tokenId];
 
         // Clear resolve approval state and increment nonce to invalidate stale approvals
         _resolveApprovalCount[tokenId] = 0;
@@ -997,18 +1026,18 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
         // ============================================
         // INTERACTIONS (External calls LAST)
         // ============================================
-        // Transfer ERC721 token ownership
+        // Transfer ERC721 ownership only when it actually changes (no-op for a
+        // manufacturer recall where the asset returns to the same owner).
         // NOTE: This must happen AFTER all state changes per Checks-Effects-Interactions
-        _transfer(previousOwner, newOwner, tokenId);
+        if (newOwner != previousOwner) {
+            _transfer(previousOwner, newOwner, tokenId);
+        }
 
         // Emit state change event
-        emit StateChanged(tokenId, State.FLAGGED, State.CLAIMED, msg.sender);
+        emit StateChanged(tokenId, State.FLAGGED, restoredState, msg.sender);
 
         // PATCH-03: CustodyTransfer audit trail
-        bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.FLAGGED), previousOwner, block.number - 1));
-        emit CustodyTransfer(
-            tokenId, uint8(State.FLAGGED), uint8(State.CLAIMED), previousOwner, newOwner, block.timestamp, prevHash
-        );
+        _logCustody(tokenId, State.FLAGGED, restoredState, previousOwner, newOwner);
     }
 
     /**
@@ -1032,9 +1061,12 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
         // Verify token exists (owner will be address(0) if not minted)
         if (asset.owner == address(0)) revert TokenNotFound(tokenId);
 
-        // Verify asset is in CLAIMED or FLAGGED state (can only recycle end-of-lifecycle assets)
+        // Verify asset is recyclable. Any live state may be retired/scrapped:
+        // MINTED (void a twin minted in error), BOUND/ACTIVATED (scrap defective or
+        // unsold inventory), CLAIMED (consumer end-of-life), FLAGGED (unrecoverable).
+        // Only RECYCLED (terminal) and NONE (non-existent) are rejected.
         State currentState = asset.state;
-        if (currentState != State.CLAIMED && currentState != State.FLAGGED) {
+        if (currentState == State.NONE || currentState == State.RECYCLED) {
             revert InvalidState(tokenId, currentState, State.CLAIMED);
         }
 
@@ -1044,6 +1076,8 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
         // Update asset state to RECYCLED (terminal state)
         asset.state = State.RECYCLED;
         asset.timestamp = uint64(block.timestamp);
+        // Clear any pre-flag marker (e.g. flagged → recycled) to avoid stale data.
+        delete _preFlagState[tokenId];
 
         // ============================================
         // INTERACTIONS
@@ -1051,10 +1085,74 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
         emit StateChanged(tokenId, currentState, State.RECYCLED, msg.sender);
 
         // PATCH-03: CustodyTransfer audit trail
-        bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(currentState), asset.owner, block.number - 1));
-        emit CustodyTransfer(
-            tokenId, uint8(currentState), uint8(State.RECYCLED), asset.owner, asset.owner, block.timestamp, prevHash
-        );
+        _logCustody(tokenId, currentState, State.RECYCLED, asset.owner, asset.owner);
+    }
+
+    /**
+     * @notice Secondary-market resale: transfer a CLAIMED asset to a new consumer owner.
+     * @dev The only sanctioned consumer-to-consumer transfer path. Direct ERC721
+     *      transfers are blocked by the _update() override, so ownership can only move
+     *      through lifecycle functions; this provides the resale primitive. State stays
+     *      CLAIMED — only the owner changes. Caller MUST be the current asset owner
+     *      (peer-to-peer resale; marketplace/operator-approval support is a follow-up).
+     *      Follows Checks-Effects-Interactions; ReentrancyGuard protects the _transfer.
+     * @param tokenId The asset token ID to resell
+     * @param to Address of the buyer (new owner)
+     * @custom:security Owner-gated (not capability-gated) — any owner may sell their own asset
+     * @custom:security ALL state changes occur BEFORE the ERC721 transfer (CEI)
+     * @custom:emits AssetResold
+     * @custom:emits CustodyTransfer
+     */
+    function transferAsset(uint256 tokenId, address to) external nonReentrant {
+        // ============================================
+        // CHECKS
+        // ============================================
+        Asset storage asset = _assets[tokenId];
+
+        // Verify token exists
+        if (asset.owner == address(0)) revert TokenNotFound(tokenId);
+
+        // Only a CLAIMED asset can be resold (consumer phase)
+        if (asset.state != State.CLAIMED) {
+            revert InvalidState(tokenId, asset.state, State.CLAIMED);
+        }
+
+        // Caller must be the current owner
+        if (msg.sender != asset.owner) {
+            revert NotAssetOwner(tokenId, msg.sender, asset.owner);
+        }
+
+        // Buyer must be a real, different address (prevent burns / no-op self-resale)
+        if (to == address(0)) revert ZeroAddress();
+        if (to == asset.owner) revert InvalidTransition(State.CLAIMED, State.CLAIMED);
+
+        // ============================================
+        // EFFECTS (state changes BEFORE transfer)
+        // ============================================
+        address seller = asset.owner;
+        asset.owner = to;
+        asset.timestamp = uint64(block.timestamp);
+
+        // ============================================
+        // INTERACTIONS (external call LAST)
+        // ============================================
+        _transfer(seller, to, tokenId);
+
+        emit AssetResold(tokenId, seller, to);
+
+        // CustodyTransfer audit trail (state unchanged: CLAIMED → CLAIMED, owner changes)
+        _logCustody(tokenId, State.CLAIMED, State.CLAIMED, seller, to);
+    }
+
+    /**
+     * @notice Emit the CustodyTransfer audit-trail event (PATCH-03) for a transition.
+     * @dev Deduplicates the identical prevHash + emit logic used by every lifecycle
+     *      function (keeps the implementation under the EIP-170 size limit). Behavior
+     *      is byte-identical to the previous inline emissions.
+     */
+    function _logCustody(uint256 tokenId, State from, State to, address fromOwner, address toOwner) private {
+        bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(from), fromOwner, block.number - 1));
+        emit CustodyTransfer(tokenId, uint8(from), uint8(to), fromOwner, toOwner, block.timestamp, prevHash);
     }
 
     // ============================================

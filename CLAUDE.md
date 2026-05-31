@@ -343,20 +343,25 @@ enum State {
 }
 ```
 
-### Valid Transitions ONLY:
+### Valid Transitions ONLY (updated 2026-05-30 — recall/scrap/resale upgrade):
 
 ```
-NONE → MINTED        (mint)
-MINTED → BOUND       (bindTag)
-BOUND → ACTIVATED    (activate)
-ACTIVATED → CLAIMED  (claim)
-CLAIMED → FLAGGED    (flag)
-FLAGGED → CLAIMED    (resolve - recovery success)
-FLAGGED → RECYCLED   (recycle - unrecoverable)
-CLAIMED → RECYCLED   (recycle - end of life)
+NONE → MINTED                          (mint)
+MINTED → BOUND                         (bindTag)
+BOUND → ACTIVATED                      (activate)
+ACTIVATED → CLAIMED                    (claim)
+CLAIMED → CLAIMED (new owner)          (transferAsset — secondary-market resale, owner-gated)
+{BOUND|ACTIVATED|CLAIMED} → FLAGGED    (flag — recall, pre-sale theft, or lost/stolen)
+FLAGGED → {its exact pre-flag state}   (resolve — recovery; restores BOUND/ACTIVATED/CLAIMED)
+{MINTED|BOUND|ACTIVATED|CLAIMED|FLAGGED} → RECYCLED  (recycle — void / scrap / end-of-life)
 ```
 
-**INVARIANT**: State can ONLY move forward except for recovery (FLAGGED → CLAIMED).
+**INVARIANT**: The only backward movement is recovery. `flag()` can be entered from any
+state with a bound tag (BOUND/ACTIVATED/CLAIMED); `resolve()` restores the **exact** state
+held immediately before the flag (stored in `_preFlagState`), so `flag()+resolve()` is
+**state-neutral** and can never be used to skip a forward transition (e.g. it cannot bypass
+`claim()`'s capability check). Manufacturing-phase recovery (BOUND/ACTIVATED) returns the asset
+to its current owner; consumer (CLAIMED) recovery reassigns to the resolver-approved owner.
 
 ## BIDGES Badge System
 
@@ -456,7 +461,8 @@ function invariant_tagBindingUnique() public {
 }
 
 function invariant_stateOnlyForward() public {
-    // State never decreases (except FLAGGED → CLAIMED)
+    // Forward-only except recovery: resolve() restores the EXACT pre-flag state,
+    // so flag()+resolve() round-trips (state-neutral) and never skips a transition.
 }
 ```
 
