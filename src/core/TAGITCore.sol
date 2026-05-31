@@ -604,8 +604,7 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
         }
 
         // PATCH-03: CustodyTransfer audit trail
-        bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.NONE), address(0), block.number - 1));
-        emit CustodyTransfer(tokenId, uint8(State.NONE), uint8(State.MINTED), address(0), to, block.timestamp, prevHash);
+        _logCustody(tokenId, State.NONE, State.MINTED, address(0), to);
     }
 
     /**
@@ -659,10 +658,7 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
             emit StateChanged(tokenId, State.NONE, State.MINTED, msg.sender);
 
             // PATCH-03: CustodyTransfer audit trail
-            bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.NONE), address(0), block.number - 1));
-            emit CustodyTransfer(
-                tokenId, uint8(State.NONE), uint8(State.MINTED), address(0), recipients[i], block.timestamp, prevHash
-            );
+            _logCustody(tokenId, State.NONE, State.MINTED, address(0), recipients[i]);
 
             tokenIds[i] = tokenId;
         }
@@ -734,10 +730,7 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
         emit StateChanged(tokenId, State.MINTED, State.BOUND, msg.sender);
 
         // PATCH-03: CustodyTransfer audit trail
-        bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.MINTED), asset.owner, block.number - 1));
-        emit CustodyTransfer(
-            tokenId, uint8(State.MINTED), uint8(State.BOUND), asset.owner, asset.owner, block.timestamp, prevHash
-        );
+        _logCustody(tokenId, State.MINTED, State.BOUND, asset.owner, asset.owner);
     }
 
     /**
@@ -778,10 +771,7 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
         emit StateChanged(tokenId, State.BOUND, State.ACTIVATED, msg.sender);
 
         // PATCH-03: CustodyTransfer audit trail
-        bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.BOUND), asset.owner, block.number - 1));
-        emit CustodyTransfer(
-            tokenId, uint8(State.BOUND), uint8(State.ACTIVATED), asset.owner, asset.owner, block.timestamp, prevHash
-        );
+        _logCustody(tokenId, State.BOUND, State.ACTIVATED, asset.owner, asset.owner);
     }
 
     /**
@@ -842,10 +832,7 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
         emit StateChanged(tokenId, State.ACTIVATED, State.CLAIMED, msg.sender);
 
         // PATCH-03: CustodyTransfer audit trail
-        bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.ACTIVATED), previousOwner, block.number - 1));
-        emit CustodyTransfer(
-            tokenId, uint8(State.ACTIVATED), uint8(State.CLAIMED), previousOwner, newOwner, block.timestamp, prevHash
-        );
+        _logCustody(tokenId, State.ACTIVATED, State.CLAIMED, previousOwner, newOwner);
     }
 
     /**
@@ -895,10 +882,7 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
         emit StateChanged(tokenId, prevState, State.FLAGGED, msg.sender);
 
         // PATCH-03: CustodyTransfer audit trail
-        bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(prevState), asset.owner, block.number - 1));
-        emit CustodyTransfer(
-            tokenId, uint8(prevState), uint8(State.FLAGGED), asset.owner, asset.owner, block.timestamp, prevHash
-        );
+        _logCustody(tokenId, prevState, State.FLAGGED, asset.owner, asset.owner);
     }
 
     /**
@@ -1053,10 +1037,7 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
         emit StateChanged(tokenId, State.FLAGGED, restoredState, msg.sender);
 
         // PATCH-03: CustodyTransfer audit trail
-        bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.FLAGGED), previousOwner, block.number - 1));
-        emit CustodyTransfer(
-            tokenId, uint8(State.FLAGGED), uint8(restoredState), previousOwner, newOwner, block.timestamp, prevHash
-        );
+        _logCustody(tokenId, State.FLAGGED, restoredState, previousOwner, newOwner);
     }
 
     /**
@@ -1104,10 +1085,7 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
         emit StateChanged(tokenId, currentState, State.RECYCLED, msg.sender);
 
         // PATCH-03: CustodyTransfer audit trail
-        bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(currentState), asset.owner, block.number - 1));
-        emit CustodyTransfer(
-            tokenId, uint8(currentState), uint8(State.RECYCLED), asset.owner, asset.owner, block.timestamp, prevHash
-        );
+        _logCustody(tokenId, currentState, State.RECYCLED, asset.owner, asset.owner);
     }
 
     /**
@@ -1163,8 +1141,18 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
         emit AssetResold(tokenId, seller, to);
 
         // CustodyTransfer audit trail (state unchanged: CLAIMED → CLAIMED, owner changes)
-        bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(State.CLAIMED), seller, block.number - 1));
-        emit CustodyTransfer(tokenId, uint8(State.CLAIMED), uint8(State.CLAIMED), seller, to, block.timestamp, prevHash);
+        _logCustody(tokenId, State.CLAIMED, State.CLAIMED, seller, to);
+    }
+
+    /**
+     * @notice Emit the CustodyTransfer audit-trail event (PATCH-03) for a transition.
+     * @dev Deduplicates the identical prevHash + emit logic used by every lifecycle
+     *      function (keeps the implementation under the EIP-170 size limit). Behavior
+     *      is byte-identical to the previous inline emissions.
+     */
+    function _logCustody(uint256 tokenId, State from, State to, address fromOwner, address toOwner) private {
+        bytes32 prevHash = keccak256(abi.encode(tokenId, uint8(from), fromOwner, block.number - 1));
+        emit CustodyTransfer(tokenId, uint8(from), uint8(to), fromOwner, toOwner, block.timestamp, prevHash);
     }
 
     // ============================================
