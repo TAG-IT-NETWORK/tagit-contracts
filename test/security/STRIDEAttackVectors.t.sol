@@ -492,20 +492,17 @@ contract STRIDEAttackVectors is Test {
         );
         tagitCore.claim(mintedId, user1);
 
-        // flag on MINTED -> revert (requires CLAIMED)
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                TAGITCore.InvalidState.selector, mintedId, TAGITCore.State.MINTED, TAGITCore.State.CLAIMED
-            )
-        );
+        // flag on MINTED -> revert (no tag bound; not flaggable)
+        vm.expectRevert(abi.encodeWithSelector(TAGITCore.NotFlaggable.selector, mintedId, TAGITCore.State.MINTED));
         tagitCore.flag(mintedId);
 
-        // recycle on MINTED -> revert (requires CLAIMED or FLAGGED)
-        vm.expectRevert();
-        tagitCore.recycle(mintedId);
+        // NOTE (recall/scrap upgrade): recycle from MINTED is now VALID (void a twin
+        // minted in error). flag/recycle from BOUND and ACTIVATED are likewise valid
+        // (manufacturer recall / pre-sale theft / scrap defective stock). Those are
+        // intentional new branches, not forward-skip attacks, so their revert
+        // assertions are removed here. The genuine forward-skips below still revert.
 
-        // ---- BOUND: can only activate; everything else should fail ----
-        // claim on BOUND -> revert (requires ACTIVATED)
+        // ---- BOUND: claim (skip activate) is still an invalid forward-skip ----
         vm.expectRevert(
             abi.encodeWithSelector(
                 TAGITCore.InvalidState.selector, boundId, TAGITCore.State.BOUND, TAGITCore.State.ACTIVATED
@@ -513,32 +510,7 @@ contract STRIDEAttackVectors is Test {
         );
         tagitCore.claim(boundId, user1);
 
-        // flag on BOUND -> revert (requires CLAIMED)
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                TAGITCore.InvalidState.selector, boundId, TAGITCore.State.BOUND, TAGITCore.State.CLAIMED
-            )
-        );
-        tagitCore.flag(boundId);
-
-        // recycle on BOUND -> revert
-        vm.expectRevert();
-        tagitCore.recycle(boundId);
-
-        // ---- ACTIVATED: can only claim; everything else should fail ----
-        // flag on ACTIVATED -> revert (requires CLAIMED)
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                TAGITCore.InvalidState.selector, activatedId, TAGITCore.State.ACTIVATED, TAGITCore.State.CLAIMED
-            )
-        );
-        tagitCore.flag(activatedId);
-
-        // recycle on ACTIVATED -> revert
-        vm.expectRevert();
-        tagitCore.recycle(activatedId);
-
-        // activate on ACTIVATED -> revert (requires BOUND)
+        // ---- ACTIVATED: re-activate is still invalid (requires BOUND) ----
         vm.expectRevert(
             abi.encodeWithSelector(
                 TAGITCore.InvalidState.selector, activatedId, TAGITCore.State.ACTIVATED, TAGITCore.State.BOUND
@@ -580,12 +552,8 @@ contract STRIDEAttackVectors is Test {
         );
         tagitCore.claim(flaggedId, user2);
 
-        // flag on FLAGGED -> revert (requires CLAIMED)
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                TAGITCore.InvalidState.selector, flaggedId, TAGITCore.State.FLAGGED, TAGITCore.State.CLAIMED
-            )
-        );
+        // flag on FLAGGED -> revert (already flagged; not re-flaggable)
+        vm.expectRevert(abi.encodeWithSelector(TAGITCore.NotFlaggable.selector, flaggedId, TAGITCore.State.FLAGGED));
         tagitCore.flag(flaggedId);
 
         vm.stopPrank();
