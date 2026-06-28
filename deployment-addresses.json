@@ -131,7 +131,9 @@
         "url": "https://sepolia-optimism.etherscan.io",
         "verified": true,
         "verifiedAt": "2026-04-02T00:00:00Z"
-      }
+      },
+      "status": "archived",
+      "archivedNote": "Deprecated 2026-06-27 — superseded by Base Sepolia. Retained for history only."
     },
     "arbitrum-sepolia": {
       "chainId": 421614,
@@ -258,12 +260,14 @@
         "url": "https://sepolia.arbiscan.io",
         "verified": true,
         "verifiedAt": "2026-04-02T00:00:00Z"
-      }
+      },
+      "status": "archived",
+      "archivedNote": "Deprecated 2026-06-27 — superseded by Base Sepolia. Retained for history only."
     },
     "base-sepolia": {
       "chainId": 84532,
       "deployedAt": "2026-03-31T00:00:00Z",
-      "note": "v2 redeployment - fixed Token->Staking init order + added wTAG/wTAGStaking",
+      "note": "PRIMARY / canonical home (as of 2026-06-27). v2 redeployment 2026-03-31; TAGITCore implementation upgraded 2026-05-30 to 0xA7f34FD595eBc397Fe04DcE012dbcf0fbbD2A78D (lifecycle FSM). VerificationEscrow + ReputationStaking are NOT yet deployed on Base. Some addresses (CCIPAdapter, TAGITAgentIdentity, TAGITCore impl) coincide with op-sepolia entries via deterministic CREATE by the same deployer — expected, not errors.",
       "deployer": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D",
       "contracts": {
         "IdentityBadge": {
@@ -283,7 +287,7 @@
         },
         "TAGITCore": {
           "proxy": "0x3adC7eFdB58Ae85483Eff5D4966D916185F31D1d",
-          "implementation": "0x5C383ECB1B367579c7806014c32092cBD71a17f7",
+          "implementation": "0xA7f34FD595eBc397Fe04DcE012dbcf0fbbD2A78D",
           "type": "UUPS"
         },
         "TAGITToken": {
@@ -377,10 +381,6 @@
           "address": "0xBd4c4848C9fF09B7955a193E3b96456344D9acBe",
           "type": "Non-upgradeable",
           "note": "wTAG staking wrapper - delegates to TAGITStaking. BASE ONLY."
-        },
-        "VerificationEscrow": {
-          "address": "0x4c9aACfcb64169E3BC187c227c4C0e0a5CFDA1cF",
-          "type": "Non-upgradeable"
         }
       },
       "configuration": {
@@ -398,7 +398,9 @@
         "verified": true,
         "verifiedAt": "2026-03-31T00:00:00Z",
         "note": "All 39 contracts verified via forge verify-contract"
-      }
+      },
+      "status": "primary",
+      "startBlock": 39611546
     }
   }
 }
