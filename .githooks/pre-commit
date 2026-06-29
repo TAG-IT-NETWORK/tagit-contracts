@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# TAG IT pre-commit: block secrets in staged changes (no-op if gitleaks not installed).
+# tagit-contracts is pure Foundry (no husky/node), so hooks live in .githooks/.
+# Activate once per clone:  git config core.hooksPath .githooks
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --redact --no-banner --config .gitleaks.toml || {
+    echo "❌ gitleaks: a potential secret is staged — commit blocked."
+    echo "   Remove it, or add an allowlist entry to .gitleaks.toml if it is a false positive."
+    exit 1
+  }
+else
+  echo "⚠️  gitleaks not installed — skipping local secret scan (CI enforces). Install: brew install gitleaks"
+fi

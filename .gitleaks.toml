@@ -1,0 +1,25 @@
+# TAG IT — gitleaks configuration (tagit-contracts)
+# Extends the built-in ruleset and allowlists Foundry test/broadcast non-secrets.
+title = "TAG IT gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "TAG IT known false positives (Foundry)"
+paths = [
+  '''(^|/)\.env\.example$''',
+  '''(^|/)[^/]*\.example$''',
+  # Broadcast artifacts + deployment registries hold PUBLIC addresses/tx data, not secrets
+  '''(^|/)broadcast/''',
+  '''(^|/)deployment-addresses\.json$''',
+  # Test fixtures commonly embed the public Anvil keys
+  '''(^|/)test/''',
+]
+regexes = [
+  # GOV_MIL badge keccak constant — a public hash, not a secret
+  '''0x9a2f77c9[0-9a-fA-F]{56}''',
+  # Well-known public Anvil/Hardhat test private keys
+  '''0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80''',
+  '''0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d''',
+]
