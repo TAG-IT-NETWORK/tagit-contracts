@@ -142,10 +142,12 @@
         "TAGITVesting": "0x7dd4c98a2aFE60eE06bA5c136dBeb7f93DD2699D",
         "IntegrationFactory": "0xd68919371c26700dDb8252aD1825Aa02a0381a86",
         "wTAG": "0x746385e59aCB225779D64e74200e464a3f1C23d0",
-        "wTAGStaking": "0xBd4c4848C9fF09B7955a193E3b96456344D9acBe"
+        "wTAGStaking": "0xBd4c4848C9fF09B7955a193E3b96456344D9acBe",
+        "VerificationEscrow": "0x4c9aACfcb64169E3BC187c227c4C0e0a5CFDA1cF",
+        "ReputationStaking": "0x4154af74DA2B3a98096317100296966Ade15574A"
       },
       "deployedAt": "2026-03-31T00:00:00Z",
-      "note": "Primary testnet. wTAG/wTAGStaking are BASE ONLY. | PRIMARY/canonical home 2026-06-27. TAGITCore impl upgraded 2026-05-30 to 0xA7f34FD595eBc397Fe04DcE012dbcf0fbbD2A78D. VerificationEscrow + ReputationStaking NOT yet on Base. Deterministic-CREATE address overlaps with op-sepolia are expected, not errors.",
+      "note": "Primary testnet. wTAG/wTAGStaking are BASE ONLY. | PRIMARY/canonical home 2026-06-27. TAGITCore impl upgraded 2026-05-30 to 0xA7f34FD595eBc397Fe04DcE012dbcf0fbbD2A78D. Deterministic-CREATE address overlaps with op-sepolia are expected, not errors.",
       "status": "primary",
       "startBlock": 39611546
     },

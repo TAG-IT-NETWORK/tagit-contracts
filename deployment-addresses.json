@@ -267,7 +267,7 @@
     "base-sepolia": {
       "chainId": 84532,
       "deployedAt": "2026-03-31T00:00:00Z",
-      "note": "PRIMARY / canonical home (as of 2026-06-27). v2 redeployment 2026-03-31; TAGITCore implementation upgraded 2026-05-30 to 0xA7f34FD595eBc397Fe04DcE012dbcf0fbbD2A78D (lifecycle FSM). VerificationEscrow + ReputationStaking are NOT yet deployed on Base. Some addresses (CCIPAdapter, TAGITAgentIdentity, TAGITCore impl) coincide with op-sepolia entries via deterministic CREATE by the same deployer — expected, not errors.",
+      "note": "PRIMARY / canonical home (as of 2026-06-27). v2 redeployment 2026-03-31; TAGITCore implementation upgraded 2026-05-30 to 0xA7f34FD595eBc397Fe04DcE012dbcf0fbbD2A78D (lifecycle FSM). Some addresses (CCIPAdapter, TAGITAgentIdentity, TAGITCore impl) coincide with op-sepolia entries via deterministic CREATE by the same deployer — expected, not errors.",
       "deployer": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D",
       "contracts": {
         "IdentityBadge": {
@@ -381,7 +381,20 @@
           "address": "0xBd4c4848C9fF09B7955a193E3b96456344D9acBe",
           "type": "Non-upgradeable",
           "note": "wTAG staking wrapper - delegates to TAGITStaking. BASE ONLY."
+        },
+        "VerificationEscrow": {
+          "address": "0x4c9aACfcb64169E3BC187c227c4C0e0a5CFDA1cF",
+          "type": "Non-upgradeable"
+        },
+        "ReputationStaking": {
+          "address": "0x4154af74DA2B3a98096317100296966Ade15574A",
+          "type": "Non-upgradeable",
+          "note": "Agent credibility bond; deploy block 43463277"
         }
+      },
+      "_startBlocks": {
+        "VerificationEscrow": 39003336,
+        "ReputationStaking": 43463277
       },
       "configuration": {
         "TAGITCore.owner": "0xfdA2478dB73064eF770f4e5E5b97BC83801126e1",
