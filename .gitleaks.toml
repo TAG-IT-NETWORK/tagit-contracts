@@ -1,0 +1,33 @@
+# TAG IT — gitleaks configuration (tagit-contracts)
+# Extends the built-in ruleset; allowlists PUBLIC on-chain data (contract addresses,
+# keccak constants, deploy artifacts) that the default rules misflag as secrets.
+# NOTE: a real EVM private key is 64 hex chars; an address is 40 — so allowlisting
+# 40-hex addresses never hides a leaked key.
+title = "TAG IT gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "TAG IT known false positives (Foundry)"
+paths = [
+  '''(^|/)\.env\.example$''',
+  '''(^|/)[^/]*\.example$''',
+  # Broadcast artifacts + deployment registries hold PUBLIC addresses / tx data
+  '''(^|/)broadcast/''',
+  '''(^|/)deployment-addresses\.json$''',
+  '''(^|/).*[Aa]ddress(es)?.*\.(sol|json|ts)$''',
+  # Test fixtures embed the public Anvil keys
+  '''(^|/)test/''',
+  # Hand-written docs hold public addresses + keccak constants (e.g. the rotation runbook)
+  '''(^|/)docs/''',
+]
+regexes = [
+  # EVM addresses (exactly 40 hex) — public identifiers, never a 64-hex private key
+  '''0x[a-fA-F0-9]{40}\b''',
+  # GOV_MIL badge keccak constant
+  '''0x9a2f77c9[0-9a-fA-F]{56}''',
+  # Well-known public Anvil/Hardhat test private keys
+  '''0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80''',
+  '''0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d''',
+]

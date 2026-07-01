@@ -1,0 +1,25 @@
+name: gitleaks
+# Secret-scanning gate. Uses the gitleaks binary directly (no marketplace action),
+# so it is free even under a GitHub organization (the action requires a license key
+# for orgs; the binary does not).
+on:
+  pull_request:
+  push:
+    branches: ["**"]
+
+jobs:
+  scan:
+    name: secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history so committed secrets anywhere in the past are caught
+      - name: Install gitleaks
+        run: |
+          VER=$(curl -fsSL https://api.github.com/repos/gitleaks/gitleaks/releases/latest | jq -r .tag_name | sed 's/^v//')
+          curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v${VER}/gitleaks_${VER}_linux_x64.tar.gz" | tar -xz -C /tmp gitleaks
+          sudo install /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+      - name: Scan history + working tree
+        run: gitleaks detect --source . --config .gitleaks.toml --redact --verbose --exit-code 1
