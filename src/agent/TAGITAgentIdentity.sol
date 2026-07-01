@@ -9,6 +9,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ITAGITAccess} from "../interfaces/ITAGITAccess.sol";
+import {IReputationStaking} from "../interfaces/IReputationStaking.sol";
 
 /**
  * @title TAGITAgentIdentity
@@ -119,6 +120,12 @@ contract TAGITAgentIdentity is ERC721, ERC721URIStorage, Ownable, Pausable, Reen
     /// @notice Access controller not set
     error AccessControllerNotSet();
 
+    /// @notice Agent does not meet minimum credibility bond
+    error InsufficientCredibilityBond(uint256 agentId);
+
+    /// @notice Agent is not in INACTIVE status (required for activation)
+    error AgentNotInactive(uint256 agentId);
+
     /// @notice Agent is not active
     error AgentNotActive(uint256 agentId);
 
@@ -149,6 +156,12 @@ contract TAGITAgentIdentity is ERC721, ERC721URIStorage, Ownable, Pausable, Reen
 
     /// @notice Emitted when access controller is updated
     event AccessControllerUpdated(address indexed previousController, address indexed newController);
+
+    /// @notice Emitted when reputation staking contract is updated
+    event ReputationStakingUpdated(address indexed previousStaking, address indexed newStaking);
+
+    /// @notice Emitted when an agent is activated after meeting credibility bond requirements
+    event AgentActivated(uint256 indexed agentId, address indexed registrant);
 
     /// @notice Emitted when registration fee is updated
     event RegistrationFeeUpdated(uint256 oldFee, uint256 newFee);
@@ -187,6 +200,9 @@ contract TAGITAgentIdentity is ERC721, ERC721URIStorage, Ownable, Pausable, Reen
     /// @notice Registration fee in wei (can be 0)
     uint256 public registrationFee;
 
+    /// @notice Optional reputation staking contract for credibility bond enforcement
+    IReputationStaking public reputationStaking;
+
     // ============================================
     // CONSTRUCTOR
     // ============================================
@@ -213,6 +229,18 @@ contract TAGITAgentIdentity is ERC721, ERC721URIStorage, Ownable, Pausable, Reen
         address previousController = address(accessController);
         accessController = ITAGITAccess(controller);
         emit AccessControllerUpdated(previousController, controller);
+    }
+
+    /**
+     * @notice Set the ReputationStaking contract for credibility bond enforcement
+     * @param stakingContract Address of the ReputationStaking contract (address(0) to disable)
+     * @custom:security Only owner can call
+     * @custom:emits ReputationStakingUpdated
+     */
+    function setReputationStaking(address stakingContract) external onlyOwner {
+        address previousStaking = address(reputationStaking);
+        reputationStaking = IReputationStaking(stakingContract);
+        emit ReputationStakingUpdated(previousStaking, stakingContract);
     }
 
     /**
@@ -272,7 +300,7 @@ contract TAGITAgentIdentity is ERC721, ERC721URIStorage, Ownable, Pausable, Reen
      * @return agentId The ID of the newly registered agent
      * @custom:security ReentrancyGuard + Pausable + KYC check
      * @custom:security Soulbound — token cannot be transferred after mint
-     * @custom:emits AgentRegistered, AgentStatusChanged
+     * @custom:emits AgentRegistered
      */
     function register(address wallet, string calldata uri)
         external
@@ -299,9 +327,9 @@ contract TAGITAgentIdentity is ERC721, ERC721URIStorage, Ownable, Pausable, Reen
         _totalAgents++;
 
         _agents[agentId] =
-            Agent({registrant: msg.sender, wallet: wallet, registeredAt: uint64(block.timestamp), active: true});
+            Agent({registrant: msg.sender, wallet: wallet, registeredAt: uint64(block.timestamp), active: false});
 
-        _agentStatus[agentId] = AgentStatus.ACTIVE;
+        _agentStatus[agentId] = AgentStatus.INACTIVE;
         _walletToAgent[wallet] = agentId;
         _registrantAgents[msg.sender].push(agentId);
 
@@ -313,6 +341,48 @@ contract TAGITAgentIdentity is ERC721, ERC721URIStorage, Ownable, Pausable, Reen
         // INTERACTIONS
         // ============================================
         emit AgentRegistered(agentId, msg.sender, wallet, uri);
+    }
+
+    /**
+     * @notice Activate a registered agent after meeting credibility bond requirements
+     * @dev Transitions agent from INACTIVE to ACTIVE. If reputationStaking is configured,
+     *      the agent must have staked at least the minimum bond via ReputationStaking.stake().
+     *      If reputationStaking is not set (address(0)), activation succeeds unconditionally
+     *      (bypass mode for deployments without staking).
+     *      Follows Checks-Effects-Interactions pattern.
+     *
+     * Lifecycle: register() → stake() → activate()
+     *
+     * @param agentId The agent ID to activate
+     * @custom:security Only registrant, ReentrancyGuard, Pausable
+     * @custom:security Credibility bond enforced when reputationStaking is set
+     * @custom:emits AgentActivated, AgentStatusChanged
+     */
+    function activate(uint256 agentId) external nonReentrant whenNotPaused onlyRegistrant(agentId) {
+        // ============================================
+        // CHECKS
+        // ============================================
+        if (_agentStatus[agentId] != AgentStatus.INACTIVE) {
+            revert AgentNotInactive(agentId);
+        }
+
+        // Credibility bond check (skip if staking not configured)
+        if (address(reputationStaking) != address(0)) {
+            if (!reputationStaking.hasMinBond(agentId)) {
+                revert InsufficientCredibilityBond(agentId);
+            }
+        }
+
+        // ============================================
+        // EFFECTS
+        // ============================================
+        _agentStatus[agentId] = AgentStatus.ACTIVE;
+        _agents[agentId].active = true;
+
+        // ============================================
+        // INTERACTIONS
+        // ============================================
+        emit AgentActivated(agentId, msg.sender);
         emit AgentStatusChanged(agentId, AgentStatus.INACTIVE, AgentStatus.ACTIVE);
     }
 
@@ -479,6 +549,13 @@ contract TAGITAgentIdentity is ERC721, ERC721URIStorage, Ownable, Pausable, Reen
         if (_agents[agentId].registrant == address(0)) revert AgentNotFound(agentId);
         if (_agentStatus[agentId] != AgentStatus.SUSPENDED) {
             revert AgentAlreadyInStatus(agentId, _agentStatus[agentId]);
+        }
+
+        // Credibility bond check (skip if staking not configured)
+        if (address(reputationStaking) != address(0)) {
+            if (!reputationStaking.hasMinBond(agentId)) {
+                revert InsufficientCredibilityBond(agentId);
+            }
         }
 
         // ============================================

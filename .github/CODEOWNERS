@@ -1,0 +1,31 @@
+# CODEOWNERS — TAG IT Network / tagit-contracts
+# Custody/treasury-sensitive modules require review from @ArtemKozytskii.
+#
+# NOTE: GitHub applies the LAST matching pattern. This is enforced ONLY when
+# branch protection on `main` has "Require review from Code Owners" enabled.
+# Unlisted paths (e.g. src/token/) are intentionally left open for the
+# tokenomics contributor to work in without owner review.
+
+# ── Treasury (custody of funds) ───────────────────────────────
+/src/treasury/                        @ArtemKozytskii
+/src/interfaces/ITAGITTreasury.sol    @ArtemKozytskii
+
+# ── Programs (rewards / loyalty / staking payouts) ────────────
+/src/programs/                        @ArtemKozytskii
+/src/interfaces/ITAGITPrograms.sol    @ArtemKozytskii
+
+# ── Core (asset lifecycle state machine) ──────────────────────
+/src/core/                            @ArtemKozytskii
+
+# ── Access / BIDGES (capabilities + identity badges) ──────────
+/src/access/                          @ArtemKozytskii
+/src/interfaces/ITAGITAccess.sol      @ArtemKozytskii
+/src/interfaces/ICapabilityBadge.sol  @ArtemKozytskii
+/src/interfaces/IIdentityBadge.sol    @ArtemKozytskii
+
+# ── Recovery (AIRP lost/stolen) ───────────────────────────────
+/src/recovery/                        @ArtemKozytskii
+/src/interfaces/IRecovery.sol         @ArtemKozytskii
+
+# ── Protect this policy file itself ───────────────────────────
+/.github/CODEOWNERS                   @ArtemKozytskii

@@ -172,11 +172,7 @@ contract TAGITCoreLifecycleGapsTest is Test {
         uint256 tokenId = _mintToRecycled();
 
         vm.prank(manufacturer);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                TAGITCore.InvalidState.selector, tokenId, TAGITCore.State.RECYCLED, TAGITCore.State.CLAIMED
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(TAGITCore.NotFlaggable.selector, tokenId, TAGITCore.State.RECYCLED));
         tagitCore.flag(tokenId);
     }
 
@@ -422,7 +418,8 @@ contract TAGITCoreLifecycleGapsTest is Test {
         vm.stopPrank();
     }
 
-    function test_bound_revert_flag_typedError() public {
+    /// @dev Recall upgrade: a BOUND asset CAN now be flagged (manufacturer recall / pre-sale theft).
+    function test_bound_flag_succeeds() public {
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(user1, METADATA);
 
@@ -430,17 +427,15 @@ contract TAGITCoreLifecycleGapsTest is Test {
         (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, tagHash);
         tagitCore.bindTag(tokenId, tagHash, cr, sig);
 
-        // BOUND → FLAGGED should revert (must be CLAIMED first)
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                TAGITCore.InvalidState.selector, tokenId, TAGITCore.State.BOUND, TAGITCore.State.CLAIMED
-            )
-        );
-        tagitCore.flag(tokenId);
+        tagitCore.flag(tokenId); // BOUND -> FLAGGED now valid
         vm.stopPrank();
+
+        (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
+        assertEq(uint8(state), uint8(TAGITCore.State.FLAGGED), "BOUND asset can be flagged");
     }
 
-    function test_bound_revert_recycle_typedError() public {
+    /// @dev Scrap upgrade: a BOUND asset CAN now be recycled (scrap defective/unsold stock).
+    function test_bound_recycle_succeeds() public {
         vm.startPrank(manufacturer);
         uint256 tokenId = tagitCore.mint(user1, METADATA);
 
@@ -448,9 +443,10 @@ contract TAGITCoreLifecycleGapsTest is Test {
         (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, tagHash);
         tagitCore.bindTag(tokenId, tagHash, cr, sig);
 
-        // BOUND → RECYCLED should revert
-        vm.expectRevert();
-        tagitCore.recycle(tokenId);
+        tagitCore.recycle(tokenId); // BOUND -> RECYCLED now valid
         vm.stopPrank();
+
+        (,, TAGITCore.State state,,) = tagitCore.getAsset(tokenId);
+        assertEq(uint8(state), uint8(TAGITCore.State.RECYCLED), "BOUND asset can be scrapped");
     }
 }

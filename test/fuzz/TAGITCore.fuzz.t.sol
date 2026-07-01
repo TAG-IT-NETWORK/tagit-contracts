@@ -289,18 +289,20 @@ contract TAGITCoreFuzzTest is Test {
         fromState = uint8(bound(fromState, 0, 6));
         toState = uint8(bound(toState, 0, 6));
 
-        // Define valid transitions (fromState -> toState):
-        // (0->1) NONE->MINTED: via mint
-        // (1->2) MINTED->BOUND: via bindTag
-        // (2->3) BOUND->ACTIVATED: via activate
-        // (3->4) ACTIVATED->CLAIMED: via claim
-        // (4->5) CLAIMED->FLAGGED: via flag
-        // (5->4) FLAGGED->CLAIMED: via resolve (only backward transition)
-        // (4->6) CLAIMED->RECYCLED: via recycle
-        // (5->6) FLAGGED->RECYCLED: via recycle
+        // Define valid transitions (fromState -> toState) — post recall/resale upgrade:
+        // (0->1) NONE->MINTED: mint
+        // (1->2) MINTED->BOUND: bindTag
+        // (2->3) BOUND->ACTIVATED: activate
+        // (3->4) ACTIVATED->CLAIMED: claim
+        // (2/3/4 ->5) BOUND/ACTIVATED/CLAIMED->FLAGGED: flag (recall, pre-sale theft, lost/stolen)
+        // (5->2/3/4) FLAGGED->BOUND/ACTIVATED/CLAIMED: resolve (restores exact pre-flag state)
+        // (1..5 ->6) MINTED/BOUND/ACTIVATED/CLAIMED/FLAGGED->RECYCLED: recycle (void / scrap / end-of-life)
         bool isValidTransition = (fromState == 0 && toState == 1) || (fromState == 1 && toState == 2)
-            || (fromState == 2 && toState == 3) || (fromState == 3 && toState == 4) || (fromState == 4 && toState == 5)
-            || (fromState == 5 && toState == 4) || (fromState == 4 && toState == 6) || (fromState == 5 && toState == 6);
+            || (fromState == 2 && toState == 3) || (fromState == 3 && toState == 4) || (fromState == 2 && toState == 5)
+            || (fromState == 3 && toState == 5) || (fromState == 4 && toState == 5) || (fromState == 5 && toState == 2)
+            || (fromState == 5 && toState == 3) || (fromState == 5 && toState == 4) || (fromState == 1 && toState == 6)
+            || (fromState == 2 && toState == 6) || (fromState == 3 && toState == 6) || (fromState == 4 && toState == 6)
+            || (fromState == 5 && toState == 6);
 
         // Skip valid transitions (tested by other fuzz tests)
         if (isValidTransition) return;

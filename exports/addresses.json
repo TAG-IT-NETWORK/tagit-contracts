@@ -46,7 +46,9 @@
         "VerificationEscrow": "0x698D4DbaE56BC7e36E2Ab34bd47aB97461219726"
       },
       "deployedAt": "2026-01-08T00:00:00Z",
-      "lastUpdated": "2026-04-02T00:00:00Z"
+      "lastUpdated": "2026-04-02T00:00:00Z",
+      "status": "archived",
+      "archivedNote": "Deprecated 2026-06-27 — superseded by Base Sepolia. History only."
     },
     "arbitrum-sepolia": {
       "chainId": 421614,
@@ -93,7 +95,9 @@
         "VerificationEscrow": "0xF78C7d5bdED8eA0B159b0223a631679E91508C04"
       },
       "deployedAt": "2026-04-02T00:00:00Z",
-      "note": "Full stack redeployment. Supersedes hackathon deployment (Mar 2026)."
+      "note": "Full stack redeployment. Supersedes hackathon deployment (Mar 2026).",
+      "status": "archived",
+      "archivedNote": "Deprecated 2026-06-27 — superseded by Base Sepolia. History only."
     },
     "base-sepolia": {
       "chainId": 84532,
@@ -102,7 +106,7 @@
       "blockExplorer": "https://sepolia.basescan.org",
       "contracts": {
         "TAGITCore": "0x3adC7eFdB58Ae85483Eff5D4966D916185F31D1d",
-        "TAGITCoreImplementation": "0x5C383ECB1B367579c7806014c32092cBD71a17f7",
+        "TAGITCoreImplementation": "0xA7f34FD595eBc397Fe04DcE012dbcf0fbbD2A78D",
         "TimelockController": "0xfdA2478dB73064eF770f4e5E5b97BC83801126e1",
         "TAGITAccess": "0xb56A1D91995C212342FaA843468F03521340A1D6",
         "IdentityBadge": "0xebdAC9A0663c02a7297681b078aaD893EF345030",
@@ -137,12 +141,15 @@
         "TAGITBurnerImplementation": "0x6811E98bDD40A45Cc325c8553F146945BA53e17F",
         "TAGITVesting": "0x7dd4c98a2aFE60eE06bA5c136dBeb7f93DD2699D",
         "IntegrationFactory": "0xd68919371c26700dDb8252aD1825Aa02a0381a86",
-        "VerificationEscrow": "0x4c9aACfcb64169E3BC187c227c4C0e0a5CFDA1cF",
         "wTAG": "0x746385e59aCB225779D64e74200e464a3f1C23d0",
-        "wTAGStaking": "0xBd4c4848C9fF09B7955a193E3b96456344D9acBe"
+        "wTAGStaking": "0xBd4c4848C9fF09B7955a193E3b96456344D9acBe",
+        "VerificationEscrow": "0x4c9aACfcb64169E3BC187c227c4C0e0a5CFDA1cF",
+        "ReputationStaking": "0x4154af74DA2B3a98096317100296966Ade15574A"
       },
       "deployedAt": "2026-03-31T00:00:00Z",
-      "note": "Primary testnet. wTAG/wTAGStaking are BASE ONLY."
+      "note": "Primary testnet. wTAG/wTAGStaking are BASE ONLY. | PRIMARY/canonical home 2026-06-27. TAGITCore impl upgraded 2026-05-30 to 0xA7f34FD595eBc397Fe04DcE012dbcf0fbbD2A78D. Deterministic-CREATE address overlaps with op-sepolia are expected, not errors.",
+      "status": "primary",
+      "startBlock": 39611546
     },
     "op-mainnet": {
       "chainId": 10,
@@ -151,7 +158,8 @@
       "blockExplorer": "https://optimistic.etherscan.io",
       "contracts": {},
       "deployedAt": null,
-      "note": "Planned for Phase 4 after DAO approval"
+      "note": "OP Mainnet plan superseded — future production mainnet will be Base Mainnet (chainId 8453), post-DAO. Not yet deployed.",
+      "status": "archived"
     }
   },
   "stateEnum": {

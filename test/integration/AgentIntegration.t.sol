@@ -5,9 +5,25 @@ import {Test, console2} from "@forge-std/Test.sol";
 import {TAGITAgentIdentity} from "../../src/agent/TAGITAgentIdentity.sol";
 import {TAGITAgentReputation} from "../../src/agent/TAGITAgentReputation.sol";
 import {TAGITAgentValidation} from "../../src/agent/TAGITAgentValidation.sol";
+import {ReputationStaking} from "../../src/agent/ReputationStaking.sol";
 import {TAGITAccess} from "../../src/access/TAGITAccess.sol";
 import {IdentityBadge} from "../../src/access/IdentityBadge.sol";
 import {CapabilityBadge} from "../../src/access/CapabilityBadge.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+/**
+ * @title MockTAGITForIntegration
+ * @notice Minimal ERC20 mock for ReputationStaking integration tests
+ */
+contract MockTAGITForIntegration is ERC20 {
+    constructor() ERC20("TAG IT Token", "TAGIT") {
+        _mint(msg.sender, 1_000_000 * 1e18);
+    }
+
+    function mint(address to, uint256 amount) external {
+        _mint(to, amount);
+    }
+}
 
 /**
  * @title AgentIntegrationTest
@@ -89,6 +105,10 @@ contract AgentIntegrationTest is Test {
         vm.prank(operator1);
         uint256 agentId = identity.register(agentWallet1, "ipfs://QmSageAgent");
         assertEq(agentId, 1);
+
+        // Activate agent (register creates INACTIVE; activate transitions to ACTIVE)
+        vm.prank(operator1);
+        identity.activate(agentId);
         assertTrue(identity.isActiveAgent(agentId));
 
         // Step 2: Set metadata
@@ -141,6 +161,10 @@ contract AgentIntegrationTest is Test {
         vm.prank(operator1);
         uint256 agentId = identity.register(agentWallet1, "ipfs://QmDefenseAgent");
 
+        // Activate agent (register creates INACTIVE; activate transitions to ACTIVE)
+        vm.prank(operator1);
+        identity.activate(agentId);
+
         // Request defense-grade validation (3-of-5 quorum)
         vm.prank(operator1);
         uint256 requestId = validation.validationRequest(agentId, true);
@@ -170,10 +194,14 @@ contract AgentIntegrationTest is Test {
         // Operator 1 registers Agent A
         vm.prank(operator1);
         uint256 agentA = identity.register(agentWallet1, "ipfs://QmAgentA");
+        vm.prank(operator1);
+        identity.activate(agentA);
 
         // Operator 2 registers Agent B
         vm.prank(operator2);
         uint256 agentB = identity.register(agentWallet2, "ipfs://QmAgentB");
+        vm.prank(operator2);
+        identity.activate(agentB);
 
         assertEq(agentA, 1);
         assertEq(agentB, 2);
@@ -289,6 +317,8 @@ contract AgentIntegrationTest is Test {
     function test_gas_giveFeedback() public {
         vm.prank(operator1);
         uint256 agentId = identity.register(agentWallet1, "ipfs://QmAgent1");
+        vm.prank(operator1);
+        identity.activate(agentId);
 
         vm.prank(user1);
         uint256 gasBefore = gasleft();
@@ -300,6 +330,8 @@ contract AgentIntegrationTest is Test {
     function test_gas_validationResponse() public {
         vm.prank(operator1);
         uint256 agentId = identity.register(agentWallet1, "ipfs://QmAgent1");
+        vm.prank(operator1);
+        identity.activate(agentId);
 
         vm.prank(operator1);
         uint256 requestId = validation.validationRequest(agentId, false);
@@ -309,5 +341,196 @@ contract AgentIntegrationTest is Test {
         validation.validationResponse(requestId, 80, "Good agent");
         uint256 gasUsed = gasBefore - gasleft();
         console2.log("Gas for validation response (with finalize):", gasUsed);
+    }
+
+    // ============================================
+    // REPUTATION STAKING INTEGRATION TESTS
+    // ============================================
+
+    function test_e2e_registerStakeActivate_happyPath() public {
+        // Deploy MockTAGIT token, mint to operator1
+        vm.prank(owner);
+        MockTAGITForIntegration tagToken = new MockTAGITForIntegration();
+        vm.prank(owner);
+        tagToken.transfer(operator1, 10_000 * 1e18);
+
+        // Deploy ReputationStaking
+        address treasuryAddr = makeAddr("treasury");
+        vm.prank(owner);
+        ReputationStaking staking = new ReputationStaking(address(tagToken), treasuryAddr, owner);
+
+        // Wire contracts together
+        vm.prank(owner);
+        staking.setAgentIdentity(address(identity));
+        vm.prank(owner);
+        identity.setReputationStaking(address(staking));
+
+        // Register agent (status: INACTIVE)
+        vm.prank(operator1);
+        uint256 agentId = identity.register(agentWallet1, "ipfs://QmStakedAgent");
+        assertEq(uint8(identity.getAgentStatus(agentId)), uint8(TAGITAgentIdentity.AgentStatus.INACTIVE));
+        assertFalse(identity.isActiveAgent(agentId));
+
+        // Approve staking contract and stake minBond
+        vm.prank(operator1);
+        tagToken.approve(address(staking), type(uint256).max);
+        vm.prank(operator1);
+        staking.stake(agentId, 100 * 1e18);
+
+        // Activate agent (should succeed with bond met)
+        vm.prank(operator1);
+        identity.activate(agentId);
+
+        // Verify final state
+        assertTrue(identity.isActiveAgent(agentId));
+        assertEq(staking.getStake(agentId), 100 * 1e18);
+        assertTrue(staking.hasMinBond(agentId));
+    }
+
+    function test_e2e_activateWithoutStaking_reverts() public {
+        // Deploy MockTAGIT token
+        vm.prank(owner);
+        MockTAGITForIntegration tagToken = new MockTAGITForIntegration();
+
+        // Deploy ReputationStaking
+        address treasuryAddr = makeAddr("treasury");
+        vm.prank(owner);
+        ReputationStaking staking = new ReputationStaking(address(tagToken), treasuryAddr, owner);
+
+        // Wire contracts together
+        vm.prank(owner);
+        staking.setAgentIdentity(address(identity));
+        vm.prank(owner);
+        identity.setReputationStaking(address(staking));
+
+        // Register agent (status: INACTIVE)
+        vm.prank(operator1);
+        uint256 agentId = identity.register(agentWallet1, "ipfs://QmUnstakedAgent");
+
+        // Activate without staking should revert
+        vm.prank(operator1);
+        vm.expectRevert(abi.encodeWithSelector(TAGITAgentIdentity.InsufficientCredibilityBond.selector, agentId));
+        identity.activate(agentId);
+    }
+
+    function test_e2e_activateBypassMode_succeeds() public {
+        // Do NOT set reputationStaking (defaults to address(0) — bypass mode)
+        // Register agent
+        vm.prank(operator1);
+        uint256 agentId = identity.register(agentWallet1, "ipfs://QmBypassAgent");
+
+        // Activate should succeed without staking when reputationStaking == address(0)
+        vm.prank(operator1);
+        identity.activate(agentId);
+
+        assertTrue(identity.isActiveAgent(agentId));
+    }
+
+    function test_e2e_fullLifecycleWithStaking() public {
+        // Deploy MockTAGIT token, mint to operator1
+        vm.prank(owner);
+        MockTAGITForIntegration tagToken = new MockTAGITForIntegration();
+        vm.prank(owner);
+        tagToken.transfer(operator1, 10_000 * 1e18);
+
+        // Deploy ReputationStaking
+        address treasuryAddr = makeAddr("treasury");
+        vm.prank(owner);
+        ReputationStaking staking = new ReputationStaking(address(tagToken), treasuryAddr, owner);
+
+        // Wire contracts together
+        vm.prank(owner);
+        staking.setAgentIdentity(address(identity));
+        vm.prank(owner);
+        identity.setReputationStaking(address(staking));
+
+        // Step 1: Register agent (INACTIVE)
+        vm.prank(operator1);
+        uint256 agentId = identity.register(agentWallet1, "ipfs://QmFullLifecycleAgent");
+        assertFalse(identity.isActiveAgent(agentId));
+
+        // Step 2: Stake credibility bond
+        vm.prank(operator1);
+        tagToken.approve(address(staking), type(uint256).max);
+        vm.prank(operator1);
+        staking.stake(agentId, 200 * 1e18);
+
+        // Step 3: Activate
+        vm.prank(operator1);
+        identity.activate(agentId);
+        assertTrue(identity.isActiveAgent(agentId));
+
+        // Step 4: Give feedback
+        vm.prank(user1);
+        reputation.giveFeedback(agentId, 5, "Excellent staked agent!");
+
+        TAGITAgentReputation.ReputationSummary memory repSummary = reputation.getSummary(agentId);
+        assertEq(repSummary.activeFeedback, 1);
+
+        // Step 5: Request and complete validation
+        vm.prank(operator1);
+        uint256 requestId = validation.validationRequest(agentId, false);
+        vm.prank(validator1);
+        validation.validationResponse(requestId, 85, "Well-staked agent");
+
+        (bool isValidated, uint256 score,) = validation.getValidationStatus(agentId);
+        assertTrue(isValidated);
+        assertEq(score, 85);
+
+        // Step 6: Decommission agent
+        vm.prank(operator1);
+        identity.decommissionAgent(agentId);
+        assertFalse(identity.isActiveAgent(agentId));
+
+        // Step 7: Unstake and verify tokens returned
+        uint256 balanceBefore = tagToken.balanceOf(operator1);
+        vm.prank(operator1);
+        staking.unstake(agentId);
+
+        assertEq(tagToken.balanceOf(operator1), balanceBefore + 200 * 1e18);
+        assertEq(staking.getStake(agentId), 0);
+    }
+
+    function test_e2e_reactivateWithInsufficientBond_reverts() public {
+        // Deploy MockTAGIT token, mint to operator1
+        vm.prank(owner);
+        MockTAGITForIntegration tagToken = new MockTAGITForIntegration();
+        vm.prank(owner);
+        tagToken.transfer(operator1, 10_000 * 1e18);
+
+        // Deploy ReputationStaking
+        address treasuryAddr = makeAddr("treasury");
+        vm.prank(owner);
+        ReputationStaking staking = new ReputationStaking(address(tagToken), treasuryAddr, owner);
+
+        // Wire contracts together
+        vm.prank(owner);
+        staking.setAgentIdentity(address(identity));
+        vm.prank(owner);
+        identity.setReputationStaking(address(staking));
+
+        // Register + stake + activate
+        vm.prank(operator1);
+        uint256 agentId = identity.register(agentWallet1, "ipfs://QmSlashedAgent");
+        vm.prank(operator1);
+        tagToken.approve(address(staking), type(uint256).max);
+        vm.prank(operator1);
+        staking.stake(agentId, 100 * 1e18);
+        vm.prank(operator1);
+        identity.activate(agentId);
+
+        // Owner suspends agent
+        vm.prank(owner);
+        identity.suspendAgent(agentId);
+
+        // Owner slashes bond below minimum
+        vm.prank(owner);
+        staking.slash(agentId, 100 * 1e18);
+        assertFalse(staking.hasMinBond(agentId));
+
+        // Reactivation should revert — bond insufficient
+        vm.prank(owner);
+        vm.expectRevert(abi.encodeWithSelector(TAGITAgentIdentity.InsufficientCredibilityBond.selector, agentId));
+        identity.reactivateAgent(agentId);
     }
 }

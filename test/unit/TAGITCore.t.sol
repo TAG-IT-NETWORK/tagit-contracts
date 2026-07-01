@@ -686,27 +686,17 @@ contract TAGITCoreTest is Test {
     }
 
     /**
-     * @notice Test flag reverts when asset is not in CLAIMED state
-     * @dev Should revert with InvalidState error
+     * @notice Test flag reverts from a non-flaggable state (MINTED has no tag bound)
+     * @dev Post recall upgrade, flag is valid from BOUND/ACTIVATED/CLAIMED; MINTED
+     *      (and FLAGGED/RECYCLED) are not flaggable and revert with NotFlaggable.
      */
     function test_flag_revert_invalidState() public {
-        // Mint and bind asset (not yet claimed)
-        vm.startPrank(manufacturer);
-        uint256 tokenId = tagitCore.mint(user1, METADATA_1);
-        {
-            (bytes memory cr, bytes memory sig) = _oracleSign(tokenId, TAG_HASH_1);
-            tagitCore.bindTag(tokenId, TAG_HASH_1, cr, sig);
-        }
-        tagitCore.activate(tokenId);
-        vm.stopPrank();
-
-        // Try to flag (state is ACTIVATED, not CLAIMED)
+        // Mint only — MINTED has no physical tag bound, so it is not flaggable
         vm.prank(manufacturer);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                TAGITCore.InvalidState.selector, tokenId, TAGITCore.State.ACTIVATED, TAGITCore.State.CLAIMED
-            )
-        );
+        uint256 tokenId = tagitCore.mint(user1, METADATA_1);
+
+        vm.prank(manufacturer);
+        vm.expectRevert(abi.encodeWithSelector(TAGITCore.NotFlaggable.selector, tokenId, TAGITCore.State.MINTED));
         tagitCore.flag(tokenId);
     }
 
@@ -1006,16 +996,23 @@ contract TAGITCoreTest is Test {
     }
 
     /**
-     * @notice Test recycle reverts if asset not in CLAIMED or FLAGGED state
+     * @notice Test recycle reverts from the terminal RECYCLED state
+     * @dev Post upgrade, recycle is valid from any live state (MINTED..FLAGGED);
+     *      only RECYCLED (terminal) and non-existent tokens revert.
      */
     function test_recycle_revert_invalidState() public {
-        // Create asset in MINTED state (not CLAIMED or FLAGGED)
+        // Drive to RECYCLED, then a second recycle must revert (terminal)
         vm.prank(manufacturer);
         uint256 tokenId = tagitCore.mint(user1, METADATA_1);
-
-        // Try to recycle non-claimed/non-flagged asset
         vm.prank(manufacturer);
-        vm.expectRevert();
+        tagitCore.recycle(tokenId); // MINTED -> RECYCLED (void)
+
+        vm.prank(manufacturer);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TAGITCore.InvalidState.selector, tokenId, TAGITCore.State.RECYCLED, TAGITCore.State.CLAIMED
+            )
+        );
         tagitCore.recycle(tokenId);
     }
 
