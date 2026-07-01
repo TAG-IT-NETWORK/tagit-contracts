@@ -21,7 +21,9 @@ jobs:
 
       - name: Run coverage
         run: |
-          forge coverage --report summary 2>&1 | tee coverage-output.txt
+          # Exclude gas-budget benchmarks: coverage disables the optimizer, which
+          # inflates measured gas and makes hard gas assertions fail spuriously.
+          forge coverage --report summary --no-match-test 'gasEfficiency' 2>&1 | tee coverage-output.txt
 
       - name: Check coverage threshold
         run: |
