@@ -20,8 +20,12 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
 
-      - name: Build contracts
+      # Deploy profile (via-ir) — the shipped codegen; TAGITCore only fits
+      # EIP-170 under it (see foundry.toml [profile.deploy] comment).
+      - name: Build contracts (EIP-170 size gate, deploy profile)
         run: forge build --sizes
+        env:
+          FOUNDRY_PROFILE: deploy
 
   test:
     name: Tests
