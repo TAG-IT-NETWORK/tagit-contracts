@@ -30,8 +30,17 @@ jobs:
       - name: Run Forge fmt
         run: forge fmt --check
 
-      - name: Run Forge build
+      # Size gate runs on the DEPLOY profile (via-ir): that is the codegen that
+      # actually ships, and TAGITCore only fits EIP-170 under it. Tests below
+      # stay on the default/ci profile (legacy codegen) — via-ir CSE-caches
+      # block.timestamp across vm.warp and breaks time-dependent tests.
+      - name: Run Forge build (EIP-170 size gate, deploy profile)
         run: forge build --sizes
+        env:
+          FOUNDRY_PROFILE: deploy
+
+      - name: Run Forge build
+        run: forge build
 
       - name: Run Forge tests
         run: forge test -vvv
