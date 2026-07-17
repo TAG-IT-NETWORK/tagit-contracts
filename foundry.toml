@@ -6,6 +6,18 @@ solc = "0.8.28"
 optimizer = true
 optimizer_runs = 200
 via_ir = false
+
+# ── Deploy profile (FOUNDRY_PROFILE=deploy) ─────────────────────────────────
+# TAGITCore exceeds the EIP-170 runtime limit under legacy codegen since the
+# batch lifecycle functions (25,308–26,076 B at runs 1–200 vs 24,576 max);
+# via-ir emits 22,601 B (+1,975 B margin). Tests stay on legacy codegen
+# because under via-ir solc CSE-caches block.timestamp across vm.warp(), so
+# 13 time-dependent tests read stale time (exact 2x-elapsed failures — a
+# test-harness artifact, not a contract defect; the batch lifecycle suite
+# passes 51/51 under via-ir). ALL deploy/upgrade broadcasts of TAGITCore MUST
+# use FOUNDRY_PROFILE=deploy or CREATE reverts with max-code-size-exceeded.
+# Pre-mainnet follow-up: make the suite warp-robust so via-ir can be global,
+# or extract the per-item lifecycle helpers into an external library.
 remappings = [
     "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
     "@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/",
@@ -13,6 +25,9 @@ remappings = [
     "@account-abstraction/=lib/account-abstraction/contracts/",
     "@chainlink/ccip/=lib/chainlink-local/lib/chainlink-ccip/chains/evm/contracts/"
 ]
+
+[profile.deploy]
+via_ir = true
 
 # Test configuration - Pre-mainnet hardening (SEC-005)
 [fuzz]

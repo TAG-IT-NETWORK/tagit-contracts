@@ -86,6 +86,11 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
     /// @dev Prevents block gas limit DoS attacks on batchMint
     uint256 public constant MAX_BATCH_SIZE = 100;
 
+    /// @dev Domain separator for batch bind oracle attestations. Binds the signed
+    ///      digest to this protocol version, chain, and contract instance so a batch
+    ///      attestation can never be replayed on another chain or deployment.
+    bytes32 public constant BATCH_BIND_DOMAIN = keccak256("TAGIT_BATCH_BIND_V1");
+
     // ============================================
     // DATA STRUCTURES
     // ============================================
@@ -208,6 +213,11 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
      * @param maximum Maximum allowed batch size
      */
     error BatchTooLarge(uint256 provided, uint256 maximum);
+
+    /**
+     * @notice Batch operation called with empty arrays
+     */
+    error EmptyBatch();
 
     /**
      * @notice External ERC721 transfers are disabled (PATCH-09)
@@ -689,6 +699,28 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
         // ============================================
         // CHECKS
         // ============================================
+        _checkBindable(tokenId, tagHash);
+
+        // PATCH-06: Verify oracle ECDSA signature
+        if (trustedOracle == address(0)) revert OracleNotSet();
+        bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
+        bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
+        address recovered = ECDSA.recover(ethHash, oracleSignature);
+        if (recovered != trustedOracle) revert InvalidOracleSignature();
+
+        // ============================================
+        // EFFECTS + INTERACTIONS
+        // ============================================
+        _applyBind(tokenId, tagHash);
+    }
+
+    /**
+     * @dev Shared per-item bind validation (single + batch paths). Reverts if the
+     *      token does not exist, is not MINTED, or the tag hash is zero or already
+     *      bound. Extracted to keep single/batch behavior identical and the runtime
+     *      bytecode under the EIP-170 limit.
+     */
+    function _checkBindable(uint256 tokenId, bytes32 tagHash) private view {
         Asset storage asset = _assets[tokenId];
 
         // Verify token exists (owner will be address(0) if not minted)
@@ -704,17 +736,15 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
 
         // Verify tag is not already bound to another asset
         if (_tagToToken[tagHash] != 0) revert TagAlreadyBound(tagHash);
+    }
 
-        // PATCH-06: Verify oracle ECDSA signature
-        if (trustedOracle == address(0)) revert OracleNotSet();
-        bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
-        bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
-        address recovered = ECDSA.recover(ethHash, oracleSignature);
-        if (recovered != trustedOracle) revert InvalidOracleSignature();
+    /**
+     * @dev Shared per-item bind effects and events (single + batch paths).
+     *      CEI: all storage writes precede event emissions; no external calls.
+     */
+    function _applyBind(uint256 tokenId, bytes32 tagHash) private {
+        Asset storage asset = _assets[tokenId];
 
-        // ============================================
-        // EFFECTS
-        // ============================================
         // Update asset state to BOUND
         asset.state = State.BOUND;
         asset.timestamp = uint64(block.timestamp);
@@ -723,14 +753,75 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
         _tagToToken[tagHash] = tokenId;
         _tokenToTag[tokenId] = tagHash;
 
-        // ============================================
-        // INTERACTIONS
-        // ============================================
         emit TagBound(tokenId, tagHash);
         emit StateChanged(tokenId, State.MINTED, State.BOUND, msg.sender);
 
         // PATCH-03: CustodyTransfer audit trail
         _logCustody(tokenId, State.MINTED, State.BOUND, asset.owner, asset.owner);
+    }
+
+    /**
+     * @notice Bind NFC tags to multiple minted assets with a single oracle attestation
+     * @dev Batch variant of bindTag() for assembly-line tag programming. Capped at
+     *      MAX_BATCH_SIZE (100) to prevent block gas limit DoS. Atomic: any invalid
+     *      item reverts the entire batch. The oracle signs ONE digest covering the
+     *      full batch, domain-separated for replay protection:
+     *      keccak256(abi.encode(BATCH_BIND_DOMAIN, block.chainid, address(this),
+     *      tokenIds, tagHashes, responseHashes)) where
+     *      responseHashes[i] = keccak256(challengeResponses[i]).
+     * @param tokenIds Asset token IDs to bind (each must be in MINTED state)
+     * @param tagHashes Keccak256 hash of each NFC tag UID (non-zero, globally unique)
+     * @param challengeResponses Each NFC chip's response to the oracle challenge
+     * @param oracleSignature ECDSA signature from trusted oracle over the batch digest
+     * @custom:security Single ECDSA.recover over a domain-separated batch digest
+     *                  (chain id + contract address prevent cross-chain/deployment replay)
+     * @custom:security MAX_BATCH_SIZE prevents block gas limit DoS
+     * @custom:security ReentrancyGuard prevents reentrancy attacks
+     * @custom:security Tag uniqueness enforced via _tagToToken, including within the batch
+     *                  (mapping is written as the loop progresses)
+     * @custom:security State validation prevents re-binding; duplicate tokenIds in one
+     *                  batch revert via the MINTED-state check on the second occurrence
+     * @custom:emits TagBound, StateChanged, CustodyTransfer (per token)
+     */
+    function batchBind(
+        uint256[] calldata tokenIds,
+        bytes32[] calldata tagHashes,
+        bytes[] calldata challengeResponses,
+        bytes calldata oracleSignature
+    ) external nonReentrant requiresCapability(BINDER_CAPABILITY) {
+        // ============================================
+        // CHECKS (batch level)
+        // ============================================
+        if (tokenIds.length == 0) revert EmptyBatch();
+        if (tokenIds.length > MAX_BATCH_SIZE) {
+            revert BatchTooLarge(tokenIds.length, MAX_BATCH_SIZE);
+        }
+        if (tokenIds.length != tagHashes.length) {
+            revert ArrayLengthMismatch(tokenIds.length, tagHashes.length);
+        }
+        if (tokenIds.length != challengeResponses.length) {
+            revert ArrayLengthMismatch(tokenIds.length, challengeResponses.length);
+        }
+
+        // PATCH-06 (batch): verify the oracle attested to this exact batch
+        if (trustedOracle == address(0)) revert OracleNotSet();
+        bytes32[] memory responseHashes = new bytes32[](challengeResponses.length);
+        for (uint256 i = 0; i < challengeResponses.length; i++) {
+            responseHashes[i] = keccak256(challengeResponses[i]);
+        }
+        bytes32 messageHash =
+            keccak256(abi.encode(BATCH_BIND_DOMAIN, block.chainid, address(this), tokenIds, tagHashes, responseHashes));
+        bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
+        address recovered = ECDSA.recover(ethHash, oracleSignature);
+        if (recovered != trustedOracle) revert InvalidOracleSignature();
+
+        // ============================================
+        // CHECKS + EFFECTS + INTERACTIONS (per token)
+        // ============================================
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            _checkBindable(tokenIds[i], tagHashes[i]);
+            _applyBind(tokenIds[i], tagHashes[i]);
+        }
     }
 
     /**
@@ -745,6 +836,16 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
      * @custom:emits StateChanged
      */
     function activate(uint256 tokenId) external nonReentrant requiresCapability(ACTIVATOR_CAPABILITY) {
+        _activateOne(tokenId);
+    }
+
+    /**
+     * @dev Shared per-item activation (single + batch paths). Checks BOUND state,
+     *      applies effects, then emits — CEI preserved; no external calls.
+     *      Extracted to keep single/batch behavior identical and the runtime
+     *      bytecode under the EIP-170 limit.
+     */
+    function _activateOne(uint256 tokenId) private {
         // ============================================
         // CHECKS
         // ============================================
@@ -772,6 +873,36 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
 
         // PATCH-03: CustodyTransfer audit trail
         _logCustody(tokenId, State.BOUND, State.ACTIVATED, asset.owner, asset.owner);
+    }
+
+    /**
+     * @notice Activate multiple bound assets after QA approval of a production run
+     * @dev Batch variant of activate() for assembly-line workflows. Capped at
+     *      MAX_BATCH_SIZE (100) to prevent block gas limit DoS. Atomic: any invalid
+     *      item reverts the entire batch. Each activation follows the same logic
+     *      as single activate().
+     * @param tokenIds Asset token IDs to activate (each must be in BOUND state)
+     * @custom:security MAX_BATCH_SIZE prevents block gas limit DoS
+     * @custom:security ReentrancyGuard prevents reentrancy attacks
+     * @custom:security State validation ensures proper workflow (must bind before activate);
+     *                  duplicate tokenIds in one batch revert via the BOUND-state check
+     * @custom:emits StateChanged, CustodyTransfer (per token)
+     */
+    function batchActivate(uint256[] calldata tokenIds) external nonReentrant requiresCapability(ACTIVATOR_CAPABILITY) {
+        // ============================================
+        // CHECKS (batch level)
+        // ============================================
+        if (tokenIds.length == 0) revert EmptyBatch();
+        if (tokenIds.length > MAX_BATCH_SIZE) {
+            revert BatchTooLarge(tokenIds.length, MAX_BATCH_SIZE);
+        }
+
+        // ============================================
+        // CHECKS + EFFECTS + INTERACTIONS (per token)
+        // ============================================
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            _activateOne(tokenIds[i]);
+        }
     }
 
     /**
@@ -846,6 +977,17 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
      * @custom:emits StateChanged
      */
     function flag(uint256 tokenId) external nonReentrant requiresCapability(FLAGGER_CAPABILITY) {
+        _flagOne(tokenId);
+    }
+
+    /**
+     * @dev Shared per-item flagging (single + batch paths). Checks flaggable state,
+     *      counts against the NIST IR-4 circuit breaker, records the pre-flag state
+     *      for resolve(), applies effects, then emits — CEI preserved; no external
+     *      calls. Extracted to keep single/batch behavior identical and the runtime
+     *      bytecode under the EIP-170 limit.
+     */
+    function _flagOne(uint256 tokenId) private {
         // ============================================
         // CHECKS
         // ============================================
@@ -883,6 +1025,43 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
 
         // PATCH-03: CustodyTransfer audit trail
         _logCustody(tokenId, prevState, State.FLAGGED, asset.owner, asset.owner);
+    }
+
+    /**
+     * @notice Flag multiple assets in one transaction (product recall)
+     * @dev Batch variant of flag() for recalling an affected production batch.
+     *      Capped at MAX_BATCH_SIZE (100) to prevent block gas limit DoS. Atomic:
+     *      any invalid item reverts the entire batch. Each item follows the same
+     *      logic as single flag(), INCLUDING the per-item circuit breaker check —
+     *      a batch counts against the same mass-flagging threshold as individual
+     *      calls, so batching cannot be used to bypass NIST IR-4 protection.
+     *      Recalls larger than the breaker threshold (default 50/hour) must be
+     *      split across windows or the owner must raise the threshold first via
+     *      setFlagCircuitBreakerThreshold().
+     * @param tokenIds Asset token IDs to flag (each must be BOUND, ACTIVATED, or CLAIMED)
+     * @custom:security MAX_BATCH_SIZE prevents block gas limit DoS
+     * @custom:security ReentrancyGuard prevents reentrancy attacks
+     * @custom:security Per-item circuit breaker check preserves NIST IR-4 mass-flagging
+     *                  protection; duplicate tokenIds revert via the flaggable-state check
+     * @custom:emits StateChanged, CustodyTransfer (per token)
+     */
+    function batchFlag(uint256[] calldata tokenIds) external nonReentrant requiresCapability(FLAGGER_CAPABILITY) {
+        // ============================================
+        // CHECKS (batch level)
+        // ============================================
+        if (tokenIds.length == 0) revert EmptyBatch();
+        if (tokenIds.length > MAX_BATCH_SIZE) {
+            revert BatchTooLarge(tokenIds.length, MAX_BATCH_SIZE);
+        }
+
+        // ============================================
+        // CHECKS + EFFECTS + INTERACTIONS (per token)
+        // ============================================
+        // Circuit breaker runs per item inside _flagOne — deliberately, so batchFlag
+        // counts against the same NIST IR-4 threshold as N single flag() calls.
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            _flagOne(tokenIds[i]);
+        }
     }
 
     /**

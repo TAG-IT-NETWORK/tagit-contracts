@@ -1,56 +1,44 @@
-# Current Task: HACK-T03 — Deploy TAGITPaymaster to Arbitrum Sepolia
-Date: 2026-03-02
-Status: COMPLETE
+# Current Task: Batch lifecycle functions (batchBind / batchActivate / batchFlag)
+Date: 2026-07-16 (completed 2026-07-17)
+Status: Review
 
 ## Objective
-Deploy TAGITPaymaster (ERC-4337 gasless paymaster) to Arbitrum Sepolia for the
-Arbitrum Open House NYC Hackathon (March 6-8).
+Add atomic batch variants of bindTag/activate/flag to TAGITCore for the admin assembly-line (bulk chip programming) and recall workflows.
 
-## Plan (Approved: Yes)
-- [x] Step 1: Read codebase (CLAUDE.md, TAGITPaymaster.sol, DeployArbitrumSepolia.s.sol)
-- [x] Step 2: Verify function selectors against actual TAGITCore contract
-- [x] Step 3: Create deploy script `script/deploy/DeployPaymasterArbitrum.s.sol`
-- [x] Step 4: Create fork test `test/deploy/DeployPaymasterArbitrum.t.sol`
-- [x] Step 5: Update `exports/addresses.json` with arbitrum-sepolia stub
-- [x] Step 6: `forge build` — compiles clean
-- [x] Step 7: Fork test — 21/21 passing
-- [x] Step 8: Dry-run — executes correctly
-- [x] Step 9: Fund deployer with 0.5 ETH on Arbitrum Sepolia
-- [x] Step 10: Broadcast `--broadcast --verify` — SUCCESS
-- [x] Step 11: Update `exports/addresses.json` with actual addresses
-- [x] Step 12: On-chain verification — all checks pass
-- [x] Step 13: Git commit
+## Plan (Approved: Yes — Artemus approved scope 2026-07-16: batchBind + batchActivate + batchFlag; batchRecycle/batchResolve deferred)
+- [x] Step 1: Implement batchBind with single domain-separated oracle attestation
+- [x] Step 2: Implement batchActivate (BOUND→ACTIVATED per production run)
+- [x] Step 3: Implement batchFlag (recall; per-item circuit-breaker check preserved)
+- [x] Step 4: Tests — 51 new (unit + fuzz + atomicity + breaker interaction + gas compare: batch 14.2% cheaper)
+- [x] Step 5: slither (no new findings) + solidity-auditor (logic PASS; EIP-170 breach found→fixed) + full suite 1995/1995
+- [ ] Step 6: PR, then UUPS implementation upgrade on Base Sepolia (FOUNDRY_PROFILE=deploy!) + registry update
 
-## Deployed Addresses (Arbitrum Sepolia - Chain 421614)
-| Contract | Address | Arbiscan |
-|----------|---------|----------|
-| TAGITPaymaster (impl) | `0x4c9aACfcb64169E3BC187c227c4C0e0a5CFDA1cF` | [Verified](https://sepolia.arbiscan.io/address/0x4c9aACfcb64169E3BC187c227c4C0e0a5CFDA1cF) |
-| TAGITPaymaster (proxy) | `0xBbB9f7dB1C38Af7998b511d8026042755Eb4F4C4` | [Verified](https://sepolia.arbiscan.io/address/0xBbB9f7dB1C38Af7998b511d8026042755Eb4F4C4) |
-| EntryPoint v0.7 | `0x0000000071727De22E5E9d8BAf0edAc6f37da032` | Canonical |
+## EIP-170 resolution (auditor finding)
+Legacy codegen: 26,076 B (-1,500 vs limit) even after dedup refactor (_checkBindable/_applyBind/_activateOne/_flagOne shared by single+batch); runs=1 still -732. Resolution: `[profile.deploy]` via_ir=true → 22,601 B (+1,975). via-ir NOT global: solc CSE-caches block.timestamp across vm.warp → 13 time-dependent tests read stale time (2x-elapsed artifact; batch suite passes 51/51 via-ir). Pre-mainnet: warp-robust tests or external-library extraction.
 
-## On-Chain Verification
-- Governor: `0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D` (deployer)
-- Owner: `0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D` (deployer)
-- EntryPoint: `0x0000000071727De22E5E9d8BAf0edAc6f37da032` (canonical v0.7)
-- Paused: false
-- Version: 1.0.0
-- Protocol Deposit: 0.05 ETH
-- EntryPoint Balance: 0.05 ETH
-- Stake: 0.01 ETH (86400s unstake delay)
-- bindTag (0xf1313d45): sponsored=true
-- activate (0xb260c42a): sponsored=true
-- claim (0xddd5e1b2): sponsored=true
-- mint (0x2cfd3005): sponsored=true
-- random (0xdeadbeef): sponsored=false
+## Files to Modify
+- [x] `src/core/TAGITCore.sol` — 3 new external functions, EmptyBatch error, BATCH_BIND_DOMAIN constant (no storage layout changes — upgrade-safe)
+- [ ] `test/unit/TAGITCoreBatchLifecycle.t.sol` — new test suite (agent in progress)
 
-## Files Created/Modified
-- [x] `script/deploy/DeployPaymasterArbitrum.s.sol` — NEW
-- [x] `test/deploy/DeployPaymasterArbitrum.t.sol` — NEW (21 tests)
-- [x] `exports/addresses.json` — MODIFIED (added arbitrum-sepolia)
-- [x] `tasks/TODO.md` — MODIFIED
+## Security Checklist
+- [x] STRIDE: Spoofing → capability checks + oracle sig (batch digest incl. chainid+address(this) — stronger than single-bind digest); Tampering → any array mutation invalidates sig; Repudiation → per-token events unchanged (indexer-compatible); DoS → MAX_BATCH_SIZE=100 + per-item flag circuit breaker; Elevation → same capability gates as singles
+- [x] ReentrancyGuard on all three
+- [x] Checks-Effects-Interactions per item; batch-level checks first
+- [x] Custom errors only (new: EmptyBatch)
+- [x] Input validation: lengths, size cap, zero-hash, uniqueness incl. intra-batch
+- [x] Events emit for all state changes (per token, same events as singles)
+
+## Verification
+- [x] `forge build` — clean
+- [ ] `forge test` — full suite green (regression run done, checking; new tests pending)
+- [ ] `forge coverage` — ≥85%
+- [ ] `slither .` — 0 high/critical (auditor agent running)
+- [ ] Gas: batch cheaper than N singles (target report in tests)
+
+## Notes
+- batchFlag deliberately calls _flagCircuitBreaker.check() per item — batching must not bypass NIST IR-4 mass-flag protection. Recalls >50/hr: raise threshold via setFlagCircuitBreakerThreshold or split.
+- Digest spec (for services + admin hook parity): keccak256(abi.encode(keccak256("TAGIT_BATCH_BIND_V1"), block.chainid, address(this), tokenIds, tagHashes, responseHashes)), responseHashes[i]=keccak256(challengeResponses[i]), EIP-191 personal-sign.
+- Single bindTag digest unchanged (no domain separation there) — parity kept for existing relayer; hardening it is a separate decision.
 
 ---
-
-# Previous Task: SEC-AUD-001 — Full Audit Remediation
-Date: 2026-02-27
-Status: COMPLETE
+(Previous task HACK-T03 Paymaster deploy — COMPLETE 2026-03-02 — archived in git history of this file.)
