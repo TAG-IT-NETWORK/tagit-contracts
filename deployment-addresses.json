@@ -133,28 +133,28 @@
         "verifiedAt": "2026-04-02T00:00:00Z"
       },
       "status": "archived",
-      "archivedNote": "Deprecated 2026-06-27 — superseded by Base Sepolia. Retained for history only."
+      "archivedNote": "Deprecated 2026-06-27 \u2014 superseded by Base Sepolia. Retained for history only."
     },
     "arbitrum-sepolia": {
       "chainId": 421614,
       "deployedAt": "2026-04-02T00:00:00Z",
-      "note": "Full stack redeployment — supersedes hackathon deployment (Mar 2026)",
+      "note": "Full stack redeployment \u2014 supersedes hackathon deployment (Mar 2026)",
       "deployer": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D",
       "contracts": {
         "IdentityBadge": {
-          "address": "0x76965313af612bac577e137d8190fb1e3523a307",
+          "address": "0x76965313aF612bac577E137D8190fB1E3523a307",
           "type": "ERC-5192 Soulbound"
         },
         "CapabilityBadge": {
-          "address": "0xb639d0b53338f83c25883271ea4c1adc60f14f7a",
+          "address": "0xB639d0B53338F83c25883271ea4c1aDc60F14f7A",
           "type": "ERC-1155"
         },
         "TAGITAccess": {
-          "address": "0x801c45774fc70dc6ade30cc0a2f524cadadcddc7",
+          "address": "0x801c45774fC70DC6ADe30CC0a2F524CadadCDdC7",
           "type": "BIDGES Facade"
         },
         "TimelockController": {
-          "address": "0x239b1e5782403a9f8a4bdf10b7c86a17be473cb7"
+          "address": "0x239b1e5782403A9f8A4BDf10B7C86a17Be473CB7"
         },
         "TAGITCore": {
           "proxy": "0x5952f5af2429e6f973FE40aD6bEad5c770837233",
@@ -249,8 +249,8 @@
         }
       },
       "configuration": {
-        "TAGITCore.owner": "0x239b1e5782403a9f8a4bdf10b7c86a17be473cb7",
-        "TAGITCore.accessController": "0x801c45774fc70dc6ade30cc0a2f524cadadcddc7",
+        "TAGITCore.owner": "0x239b1e5782403A9f8A4BDf10B7C86a17Be473CB7",
+        "TAGITCore.accessController": "0x801c45774fC70DC6ADe30CC0a2F524CadadCDdC7",
         "TAGITCore.trustedOracle": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D",
         "TimelockController.delay": "60 seconds",
         "EntryPoint": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
@@ -262,12 +262,12 @@
         "verifiedAt": "2026-04-02T00:00:00Z"
       },
       "status": "archived",
-      "archivedNote": "Deprecated 2026-06-27 — superseded by Base Sepolia. Retained for history only."
+      "archivedNote": "Deprecated 2026-06-27 \u2014 superseded by Base Sepolia. Retained for history only."
     },
     "base-sepolia": {
       "chainId": 84532,
       "deployedAt": "2026-03-31T00:00:00Z",
-      "note": "PRIMARY / canonical home (as of 2026-06-27). v2 redeployment 2026-03-31; TAGITCore implementation upgraded 2026-05-30 to 0xA7f34FD595eBc397Fe04DcE012dbcf0fbbD2A78D (lifecycle FSM). Some addresses (CCIPAdapter, TAGITAgentIdentity, TAGITCore impl) coincide with op-sepolia entries via deterministic CREATE by the same deployer — expected, not errors.",
+      "note": "PRIMARY / canonical home (as of 2026-06-27). v2 redeployment 2026-03-31; TAGITCore implementation upgraded 2026-05-30 to 0xA7f34FD595eBc397Fe04DcE012dbcf0fbbD2A78D (lifecycle FSM). Some addresses (CCIPAdapter, TAGITAgentIdentity, TAGITCore impl) coincide with op-sepolia entries via deterministic CREATE by the same deployer \u2014 expected, not errors.",
       "deployer": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D",
       "contracts": {
         "IdentityBadge": {
@@ -286,43 +286,43 @@
           "address": "0xfdA2478dB73064eF770f4e5E5b97BC83801126e1"
         },
         "TAGITCore": {
-          "proxy": "0x3adC7eFdB58Ae85483Eff5D4966D916185F31D1d",
-          "implementation": "0xA7f34FD595eBc397Fe04DcE012dbcf0fbbD2A78D",
+          "proxy": "0x3aDc7EFDb58Ae85483eFf5D4966D916185f31d1D",
+          "implementation": "0x2377B7f33aFf34c58DDF6DeA7eD4dCaD616CA14C",
           "type": "UUPS"
         },
         "TAGITToken": {
           "proxy": "0x5f98B83cD7Aef769cc51D2FB739BA49D561170DE",
-          "implementation": "0xa412b5C203f74E88f434C405e694528F04cACf59",
+          "implementation": "0xA412b5C203F74e88F434C405E694528f04CaCf59",
           "type": "UUPS"
         },
         "TAGITStaking": {
-          "proxy": "0xb22F5688559d07e3A12dBB89F0481B967407F267",
-          "implementation": "0x06861990FD9EDA0d47C8F005b09DDa502977B2EF",
+          "proxy": "0xB22F5688559D07e3a12DBB89f0481b967407F267",
+          "implementation": "0x06861990fD9EDA0d47c8f005b09ddA502977b2Ef",
           "type": "UUPS"
         },
         "TAGITGovernor": {
-          "proxy": "0xCF67Df870ECcbB7838c3Ab7876467c89d84DCe89",
-          "implementation": "0x1fB00d79E6bAfF059e1c5fA034E4D59B766E0d44",
+          "proxy": "0xCF67DF870EccBB7838c3ab7876467c89d84dce89",
+          "implementation": "0x1FB00D79E6Baff059E1C5FA034e4D59b766E0D44",
           "type": "UUPS"
         },
         "TAGITTreasury": {
-          "proxy": "0xa4A3720d705334f409Dd24836Cc75D642125f759",
-          "implementation": "0x3837A9BfC98F624be5587a7f10980cCa5f68c4C8",
+          "proxy": "0xa4a3720d705334f409DD24836CC75d642125f759",
+          "implementation": "0x3837A9bFc98F624bE5587a7F10980Cca5f68c4C8",
           "type": "ERC1967"
         },
         "TAGITRecovery": {
-          "proxy": "0x6Bc3c69367E586810a3b317fA9F0406504E95866",
-          "implementation": "0xe2f49Bb534894f83421cbD18e747039F3866E14F",
+          "proxy": "0x6BC3C69367E586810A3B317fA9F0406504e95866",
+          "implementation": "0xE2f49Bb534894F83421cbd18E747039F3866E14f",
           "type": "UUPS"
         },
         "TAGITPrograms": {
-          "proxy": "0x62a3CF048E66Be0119F0CcD97eC964B726B9A982",
-          "implementation": "0x26D0B3b5Ff2061Fb38ce1Aa66433a8F4439e46a8",
+          "proxy": "0x62a3CF048E66BE0119F0ccD97Ec964B726B9a982",
+          "implementation": "0x26D0B3B5FF2061fB38ce1aA66433a8F4439e46a8",
           "type": "UUPS"
         },
         "TAGITPaymaster": {
-          "proxy": "0x6fFfA92eFb419e812d5c9C9D0c1b1A0F5C6FFd1c",
-          "implementation": "0x4609a869a813E7E596BF5Bf5cbC08F8092Ce6340",
+          "proxy": "0x6fFFa92efb419E812d5c9C9D0c1B1a0f5c6fFd1C",
+          "implementation": "0x4609a869a813E7E596bF5Bf5cBC08F8092Ce6340",
           "type": "UUPS"
         },
         "TAGITAccount": {
@@ -330,8 +330,8 @@
           "type": "Implementation Singleton"
         },
         "TAGITAccountFactory": {
-          "proxy": "0x3eD2C0e92f0E52dC68D04172Ad37Df4724893AD3",
-          "implementation": "0x6122B891f27bD1C492664C6CA1527e988a5CF8fA",
+          "proxy": "0x3ed2c0E92F0e52dC68d04172aD37df4724893aD3",
+          "implementation": "0x6122B891f27bd1C492664c6Ca1527E988A5cF8Fa",
           "type": "UUPS"
         },
         "CCIPAdapter": {
@@ -350,18 +350,18 @@
           "address": "0x34766dBa7040C2c8817f1Ee1e448209826DD607e"
         },
         "RoboticAuthorizer": {
-          "proxy": "0x5c38684D87E826589eC5ED401d94C9671CAe9F40",
-          "implementation": "0x95F35f612eE3e3F188FEF0Aa272458c5D44169ED",
+          "proxy": "0x5C38684d87e826589Ec5Ed401D94C9671caE9f40",
+          "implementation": "0x95f35F612EE3e3F188FEf0aa272458C5d44169ED",
           "type": "UUPS"
         },
         "TAGITEmissions": {
-          "proxy": "0x0672fcc5B753786c2Cd1805494fF094CB5d6e579",
-          "implementation": "0x11D1eaB20030092577F23e0939c6CBC0D9124e8A",
+          "proxy": "0x0672fcC5b753786C2cD1805494fF094CB5d6E579",
+          "implementation": "0x11D1EAB20030092577f23e0939c6Cbc0d9124e8A",
           "type": "UUPS"
         },
         "TAGITBurner": {
-          "proxy": "0xcB8abCe0770c499B789481f8C6c20fa0d6980D2A",
-          "implementation": "0x6811E98bDD40A45Cc325c8553F146945BA53e17F",
+          "proxy": "0xCB8AbCe0770C499B789481F8c6C20Fa0d6980d2a",
+          "implementation": "0x6811e98Bdd40A45Cc325C8553F146945bA53E17F",
           "type": "UUPS"
         },
         "TAGITVesting": {

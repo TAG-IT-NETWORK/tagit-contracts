@@ -7,8 +7,35 @@ out/
 /broadcast/*/31337/
 /broadcast/**/dry-run/
 
-# Docs
-docs/
+# Generated docs (forge doc / mdbook output only — real docs under docs/ ARE tracked)
+docs/book/
+docs/src/
+docs/book.css
+docs/book.toml
+docs/solidity.min.js
 
 # Dotenv file
 .env
+.env.*
+!.env.example
+
+# Coverage output (never commit — generate in CI)
+lcov.info
+coverage/
+coverage-*.txt
+coverage-*.json
+
+# Static-analysis scratch output
+crytic-export/
+slither-report.json
+*.sarif
+
+# Vendored tool binaries — install via CI, never commit
+tools/
+*.exe
+*.zip
+
+# OS / editor noise
+.DS_Store
+.claude/settings.local.json
+.serena/
