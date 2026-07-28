@@ -4,7 +4,8 @@
 **Prepared by:** TAG IT Network engineering
 **Date:** 2026-07-27
 **Repository:** `https://github.com/TAG-IT-NETWORK/tagit-contracts` (public)
-**Frozen commit for this engagement:** `<COMMIT_SHA>`
+**Frozen commit for this engagement:** tag **`v0.1.0-audit`** on `main`
+Resolve it to a SHA with `git rev-parse v0.1.0-audit`. The tag is annotated and will not be moved; if the scope has to change mid-engagement we will cut `v0.1.1-audit` and tell you, rather than re-pointing this one.
 **Toolchain:** forge 1.5.1-stable (commit `b0a9dd9`), solc 0.8.28, optimizer on, `optimizer_runs = 200`
 
 ---
@@ -41,8 +42,7 @@ Companion documents in this repository, all of which are in scope for your readi
 
 ### 1.1 What is being audited
 
-The audit target is the tree at commit `<COMMIT_SHA>` on branch `audit-prep/p0-manifest-and-false-evidence`
-(to be tagged before handover). The clone you receive contains **53 tracked `.sol` files under `src/`**.
+The audit target is the tree at tag `v0.1.0-audit` on `main`. The clone you receive contains **53 tracked `.sol` files under `src/`**.
 Reproduce the list with:
 
 ```bash
@@ -729,7 +729,7 @@ are not buying them.
 ```bash
 git clone --recurse-submodules https://github.com/TAG-IT-NETWORK/tagit-contracts.git
 cd tagit-contracts
-git checkout <COMMIT_SHA>
+git checkout v0.1.0-audit
 git submodule update --init --recursive
 ```
 
@@ -825,7 +825,7 @@ OP_MAINNET_RPC_URL      # referenced by dead fork-test config; we have never dep
 
 ## 8. Contact and change control
 
-The commit `<COMMIT_SHA>` is frozen for the duration of the engagement. If we need to change anything in
+The tag `v0.1.0-audit` is frozen for the duration of the engagement. If we need to change anything in
 `src/` mid-audit we will raise it with you first and re-tag rather than moving the branch under you.
 
 Corrections to this document are welcome and will be treated as findings. If any statement here turns out
