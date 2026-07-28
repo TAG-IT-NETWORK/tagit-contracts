@@ -1,9 +1,28 @@
-name: Fork Tests (OP Sepolia)
+# QUARANTINED 2026-07-27 — this workflow does not test what its name claims.
+#
+# It targets OP Sepolia, which was deprecated on 2026-06-27 and is marked
+# "status": "archived" in deployment-addresses.json. The live chain is Base
+# Sepolia (84532). Worse, test/fork/ForkBase.t.sol:89 asserts
+# block.chainid == 10 — OP *Mainnet* — and pins FORK_BLOCK = 125000000, so
+# the --fork-url passed below is ignored: ForkBase calls vm.createFork()
+# itself against OP_MAINNET_RPC_URL.
+#
+# It has failed 40 consecutive scheduled runs since 2026-06-17 with
+# "403 OPT_SEPOLIA is not enabled for this app" — the Alchemy app lost the
+# network. A daily red X on a public repo, for a chain we no longer use.
+#
+# The schedule is removed rather than the workflow deleted: the code-exists
+# check below is worth keeping once retargeted. Retargeting to Base Sepolia
+# requires a BASE_SEPOLIA_RPC_URL repo secret (does not exist yet) and a
+# rewrite of ForkBase.t.sol to chainid 84532 with Base constants. Tracked as
+# Wave 1. Until then this runs on demand only and its result should not be
+# read as coverage of the live deployment.
+#
+# See KNOWN-ISSUES.md (KI-06) and AUDIT-SCOPE.md §5.
+name: Fork Tests (OP Sepolia) — QUARANTINED, targets an archived chain
 
 on:
-  schedule:
-    - cron: '0 6 * * *'  # Daily at 6am UTC
-  workflow_dispatch:       # Manual trigger
+  workflow_dispatch:       # Manual only. Schedule removed 2026-07-27, see above.
 
 jobs:
   fork-test:
