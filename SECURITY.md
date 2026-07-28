@@ -1,6 +1,3 @@
-Written to `/Users/artem/Developer/tagit/tagit-contracts/SECURITY.md`. Complete file content:
-
-```markdown
 # Security Policy — tagit-contracts
 
 **Repo:** `TAG-IT-NETWORK/tagit-contracts` (public)
@@ -104,7 +101,7 @@ tracked and **are** deployed. This is tracked as KI-15.
 
 ## Supported versions
 
-There are **no tagged releases** (`git tag` returns nothing) and no semantic versioning of this
+The first tagged release is **`v0.1.0-audit`** (superseded by `v0.1.1-audit`), cut for this audit. There is otherwise no semantic versioning of this
 repository today. The only artifacts we support are:
 
 | Artifact | Status |
@@ -257,4 +254,3 @@ confident do not exist", because we do not have the evidence to make that claim.
 
 *Related: [`KNOWN-ISSUES.md`](./KNOWN-ISSUES.md) — our own pre-audit disclosure.
 [`deployment-addresses.json`](./deployment-addresses.json) — canonical, chain-verified addresses.*
-```

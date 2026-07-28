@@ -39,3 +39,7 @@ tools/
 .DS_Store
 .claude/settings.local.json
 .serena/
+
+# Agent scaffolding — not part of the audited source
+.claude/
+tasks/
