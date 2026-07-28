@@ -1,7 +1,3 @@
-File written to `/Users/artem/Developer/tagit/tagit-contracts/KNOWN-ISSUES.md`. Complete content:
-
----
-
 # KNOWN ISSUES — tagit-contracts
 
 **Prepared for:** Hacken, pre-engagement disclosure
@@ -427,6 +423,12 @@ unverified except where this document shows a specific `cast` read.
 **Severity:** Medium
 
 **Location:** `src/account/TAGITAccount.sol:547-556`
+
+**Current blast radius — checked on chain 2026-07-28.** `TAGITAccountFactory.totalAccounts()` on
+Base Sepolia returns **0**: no `TAGITAccount` clone has been deployed, so no user can call this
+today. The severity is Medium rather than High for that reason alone. It becomes a
+user-funds-visible correctness bug the moment the first account is created, because the caller
+receives an `AllAssetsExported` event and reasonably concludes their assets moved.
 
 **Description.**
 
@@ -884,7 +886,7 @@ engagement starts and hand you both the JSON and a per-finding triage, not a pro
 
 **Severity:** Medium
 
-**Location:** working tree of `/Users/artem/Developer/tagit/tagit-contracts`
+**Location:** the maintainer's working tree (untracked; not present in any clone)
 
 **Description.**
 `git status --porcelain src/` shows three untracked production files:

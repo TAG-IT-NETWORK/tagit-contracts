@@ -18,9 +18,10 @@ Three rules were applied while writing it, and we would like to be held to them:
    not be measured, the document says **not measured** and states the command that would settle it.
    Nothing is estimated and then presented as fact.
 2. **Weaknesses are disclosed up front, in §5 and throughout.** This includes findings that reflect
-   badly on us — a permanently un-upgradeable treasury, a 60-second timelock whose proposer is also
-   its canceller, an access-control modifier that fails open, and a test suite that exercises
-   different bytecode than production ships. We would rather hand you the list than have you bill us
+   badly on us — a treasury that can never be upgraded, a 60-second timelock whose proposer is also
+   its canceller, an access-control modifier that fails open when its controller is unset (latent
+   today, reachable in one owner transaction — §3.2 states the precondition precisely), and a test
+   suite that exercises different bytecode than production ships. We would rather hand you the list than have you bill us
    to rediscover it.
 3. **A prior version of our audit-prep material claimed 87% test coverage. That figure was false.**
    The documents asserting it were deleted on 2026-07-27. The measured figure is **63.82%** (§5.2).
@@ -322,12 +323,21 @@ Capability IDs in production are `uint256(keccak256("MINTER"))` and friends
 (`TAGITCore.sol:71-79`): `MINTER`, `BINDER`, `ACTIVATOR`, `CLAIMER`, `FLAGGER`, `RESOLVER`, `RECYCLER`,
 `VIEWER`, `AUDITOR`.
 
-**Two disclosures about BIDGES, both verified on chain:**
+**Two disclosures about BIDGES. Both were checked against chain state; read each for whether it describes a live condition or a reachable one:**
 
-1. **`requiresCapability` fails open.** `TAGITCore.sol:550-557` skips the capability check entirely when
-   `accessController == address(0)`, and `setAccessController` (`:537`) explicitly permits `address(0)`.
-   A single owner transaction makes mint / bind / activate / claim / flag / resolve / recycle
-   permissionless. The comment calls this "backward compatibility."
+1. **`requiresCapability` fails open — latent, not currently active.** `TAGITCore.sol:550-557` skips the
+   capability check entirely when `accessController == address(0)`, and `setAccessController` (`:537`)
+   accepts `address(0)` with no zero-address guard. The in-code comment calls this
+   "backward compatibility."
+
+   **On-chain state, checked 2026-07-28:** `accessController()` returns
+   `0xb56A1D91995C212342FaA843468F03521340A1D6` (TAGITAccess) — **non-zero, so the bypass branch is
+   not being taken today.** We are disclosing a reachable condition, not a live bypass. The exposure
+   is that reaching it costs exactly one `onlyOwner` transaction, and `TAGITCore`'s owner is the
+   Timelock whose `minDelay` is 60 seconds and whose PROPOSER, EXECUTOR and CANCELLER are all the
+   same EOA (§4). So: one key, ~60 seconds, and mint / bind / activate / claim / flag / resolve /
+   recycle become permissionless — with no second party able to cancel. We would rather state the
+   precondition precisely than let the phrase "fails open" imply the system is open right now.
 2. **The capability IDs documented in `CLAUDE.md` are not the ones in production.** `CLAUDE.md:384-391`
    documents numeric IDs 100–108; `balanceOf(deployer, 100..108)` is 0 across the board. The keccak IDs
    above are what is actually used. `CLAUDE.md` is wrong; `security/PRIVILEGE-MATRIX.md` §5.2 records
@@ -553,18 +563,19 @@ Per-file coverage is **not measured**. To produce it: `forge coverage --report l
 Test suite size, measured:
 
 ```bash
-grep -rhoE 'function (test|testFuzz|test_)[A-Za-z0-9_]*' test/ | wc -l   # 1,983
-grep -rhoE 'function invariant_[A-Za-z0-9_]*' test/ | wc -l              #    12
+# Count only TRACKED files, so the number reproduces on the clone you receive.
+git ls-files 'test/**/*.sol' | xargs grep -hoE 'function (test|testFuzz|test_)[A-Za-z0-9_]*' | wc -l   # 1828
+git ls-files 'test/**/*.sol' | xargs grep -hoE 'function invariant_[A-Za-z0-9_]*' | wc -l              #   12
 ```
 
-→ **1,995 test functions** across 80 tracked test files. The suite reports 0 failures on the default
+→ **1840 test functions** across 80 tracked test files. (A working tree that still holds the three untracked source files of §1.4 also carries 2 untracked test files and reports 1,995; that number does not reproduce on a clone and should be ignored.) The suite reports 0 failures on the default
 profile as of 2026-07-27; verify with `forge test`. Fuzzing is configured at `runs = 100000`,
 `max_test_rejects = 65536`, `seed = 0x333`; invariants at `runs = 256`, `depth = 500`,
 `fail_on_revert = true`.
 
 ### 5.3 High test count, moderate coverage — read them together
 
-1,995 tests against 63.82% coverage means the tests are concentrated. We have not measured which
+1840 tests against 63.82% coverage means the tests are concentrated. We have not measured which
 contracts are thin. If you want a targeted starting point, the per-file lcov split above is the fastest
 way to find where the tests are not.
 

@@ -134,7 +134,7 @@ are untracked (see below). Grouped as follows.
 | Robotics | `src/robot/` | `RoboticAuthorizer` — machine-actor action policy, zones, safety classes |
 | Mirror | `src/mirror/` | `TAGITStateAnchor` (**not deployed**) |
 | Libraries | `src/libraries/` | `CircuitBreaker`, `Constants`, `DrainDetector`, `RateLimiter`, `ReplayProtection`, `RobotTypes` |
-| Interfaces | `src/interfaces/` | 20 interface files |
+| Interfaces | `src/interfaces/` | 18 interface files |
 
 Contracts present in `src/` but absent from the Base Sepolia manifest: `OfferEscrow`,
 `TAGITStateAnchor`, `TAGITCoreDemo`, `Voucher`.
@@ -277,14 +277,14 @@ Do not report a vulnerability in a public GitHub issue. Follow [SECURITY.md](./S
 
 ## License
 
-MIT. Every Solidity file under `src/` carries `SPDX-License-Identifier: MIT` — all 56, no
+MIT. Every Solidity file under `src/` carries `SPDX-License-Identifier: MIT` — all 53 in a fresh clone (56 counting the three untracked files described above), no
 exceptions:
 
 ```bash
 grep -rL 'SPDX-License-Identifier: MIT' src --include='*.sol'   # returns nothing
 ```
 
-There is no `LICENSE` file at the repository root as of this commit; the SPDX headers are the only
+A `LICENSE` file (MIT) is at the repository root, matching the SPDX headers. Prior to 2026-07-27 the headers were the only
 statement of licence. That is being fixed.
 
 ---
