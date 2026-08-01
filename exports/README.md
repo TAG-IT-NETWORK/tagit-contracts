@@ -179,7 +179,7 @@ Access control controller combining identity + capability checks.
 import { ethers } from 'ethers';
 
 // 1. Setup
-const provider = new ethers.JsonRpcProvider('https://sepolia.optimism.io');
+const provider = new ethers.JsonRpcProvider('https://sepolia.base.org');
 const signer = new ethers.Wallet(PRIVATE_KEY, provider);
 
 const tagitCore = new ethers.Contract(TAGIT_CORE_ADDRESS, TAGITCoreABI, signer);
@@ -220,23 +220,28 @@ console.log('State:', asset[2]); // 4 = CLAIMED
 
 ## Network Addresses
 
-### OP Sepolia (Testnet)
+### Base Sepolia (84532) — the only live chain
 
 | Contract | Address |
 |----------|---------|
-| TAGITCore (proxy) | `0x8BdE22da889306d422802728cb98B6Da42ed8e1a` |
-| TAGITCore (impl) | `0x92c8e84a32D24b26B5Cf07d9a8CeD4DA8c055192` |
-| TimelockController | `0x1B2bdd6f0a3C9127397dE51C36Dc237b097410a8` |
-| TAGITAccess | `0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9` |
-| IdentityBadge | `0x26F2EBb84664EF1eF8554e15777EBEc6611256A6` |
-| CapabilityBadge | `0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505` |
-| TAGITCore (deprecated) | `0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe` |
+| TAGITCore (proxy) | `0x3aDc7EFDb58Ae85483eFf5D4966D916185f31d1D` |
+| TAGITCore (impl) | `0x2377B7f33aFf34c58DDF6DeA7eD4dCaD616CA14C` |
+| TimelockController | `0xfdA2478dB73064eF770f4e5E5b97BC83801126e1` |
+| TAGITAccess | `0xb56A1D91995C212342FaA843468F03521340A1D6` |
+| IdentityBadge | `0xebdAC9A0663c02a7297681b078aaD893EF345030` |
+| CapabilityBadge | `0xb05d22706B08A3F6409601de520cf7A6dbCB573d` |
 
 > **Governance:** All TAGITCore admin operations go through the TimelockController. Verified on-chain 2026-08-01: `getMinDelay()` returns **300s on OP Sepolia** and **60s on Base Sepolia**. Must be raised to 48 hours before mainnet.
 
-### OP Mainnet
+### Base Mainnet
 
-*Not yet deployed*
+*Not yet deployed.*
+
+### Archived
+
+OP Sepolia (11155420) and Arbitrum Sepolia (421614) were deprecated 2026-06-27 and
+carry `"status": "archived"` in `deployment-addresses.json`. Their addresses remain
+in that file as deployment history. Do not integrate against them.
 
 ---
 
@@ -253,12 +258,12 @@ console.log('State:', asset[2]); // 4 = CLAIMED
 
 All contracts are verified and source code is available:
 
-- [TAGITCore (proxy)](https://sepolia-optimism.etherscan.io/address/0x8BdE22da889306d422802728cb98B6Da42ed8e1a#code)
-- [TAGITCore (impl)](https://sepolia-optimism.etherscan.io/address/0x92c8e84a32D24b26B5Cf07d9a8CeD4DA8c055192#code)
-- [TimelockController](https://sepolia-optimism.etherscan.io/address/0x1B2bdd6f0a3C9127397dE51C36Dc237b097410a8#code)
-- [TAGITAccess](https://sepolia-optimism.etherscan.io/address/0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9#code)
-- [CapabilityBadge](https://sepolia-optimism.etherscan.io/address/0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505#code)
-- [IdentityBadge](https://sepolia-optimism.etherscan.io/address/0x26F2EBb84664EF1eF8554e15777EBEc6611256A6#code)
+- [TAGITCore (proxy)](https://sepolia.basescan.org/address/0x3aDc7EFDb58Ae85483eFf5D4966D916185f31d1D#code)
+- [TAGITCore (impl)](https://sepolia.basescan.org/address/0x2377B7f33aFf34c58DDF6DeA7eD4dCaD616CA14C#code)
+- [TimelockController](https://sepolia.basescan.org/address/0xfdA2478dB73064eF770f4e5E5b97BC83801126e1#code)
+- [TAGITAccess](https://sepolia.basescan.org/address/0xb56A1D91995C212342FaA843468F03521340A1D6#code)
+- [IdentityBadge](https://sepolia.basescan.org/address/0xebdAC9A0663c02a7297681b078aaD893EF345030#code)
+- [CapabilityBadge](https://sepolia.basescan.org/address/0xb05d22706B08A3F6409601de520cf7A6dbCB573d#code)
 
 ---
 

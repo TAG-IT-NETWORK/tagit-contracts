@@ -9,6 +9,11 @@ import {TAGITStateAnchor} from "../../src/mirror/TAGITStateAnchor.sol";
  * @author TAG IT Network <dev@tagit.network>
  * @notice Deploys TAGITStateAnchor to the mirror chain for cross-chain state verification.
  *
+ * @dev SUNSET NOTICE (2026-08-01): this script mirrors between OP Sepolia and Arbitrum
+ *      Sepolia. BOTH are "status": "archived". TAGITStateAnchor is also explicitly out of
+ *      audit scope (AUDIT-SCOPE.md 1.5). Retained as deployment history; do not use it to
+ *      deploy anything new. Base Sepolia (84532) is the only live chain.
+ *
  * @dev Deploy to OP Sepolia (mirror) when Arbitrum Sepolia is primary:
  *   forge script script/deploy/DeployStateAnchor.s.sol \
  *     --rpc-url $OP_SEPOLIA_RPC_URL --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY
