@@ -2,13 +2,13 @@
 # ============================================
 # TAG IT Network - Contract Verification Script
 # ============================================
-# Verifies deployed contracts on OP Sepolia (chainid: 11155420)
+# Verifies deployed contracts on Base Sepolia (chainid: 84532) — the only live chain.
 #
 # Usage: ./scripts/verify-contracts.sh
 #
 # Requirements:
-# - ETHERSCAN_API_KEY environment variable (Optimism Etherscan)
-# - OP_SEPOLIA_RPC_URL environment variable (optional, has default)
+# - BASESCAN_API_KEY environment variable (Basescan)
+# - BASE_SEPOLIA_RPC_URL environment variable (optional, has default)
 # ============================================
 
 set -e
@@ -21,19 +21,22 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # ============================================
-# DEPLOYED CONTRACT ADDRESSES (OP Sepolia)
-# Deployment Date: January 6, 2026 (NIST CSF 2.0 Phase 12)
-# NIST Controls: CircuitBreaker (IR-4), RateLimiter (AC-7), Forta Events (SI-4)
+# DEPLOYED CONTRACT ADDRESSES (Base Sepolia 84532)
+# Retargeted 2026-08-01. The previous values were OP Sepolia — archived
+# 2026-06-27 — and TAGIT_CORE pointed at 0x8B02b62F…, which exports/README.md
+# lists as "TAGITCore (deprecated)". So this script verified a superseded
+# contract on a dead chain. Addresses below come from deployment-addresses.json
+# and each was confirmed to carry code on Base Sepolia.
 # ============================================
-IDENTITY_BADGE="0x26F2EBb84664EF1eF8554e15777EBEc6611256A6"
-CAPABILITY_BADGE="0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505"
-TAGIT_ACCESS="0x0611FE60f6E37230bDaf04c5F2Ac2dc9012130a9"
-TAGIT_CORE="0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe"
+IDENTITY_BADGE="0xebdAC9A0663c02a7297681b078aaD893EF345030"
+CAPABILITY_BADGE="0xb05d22706B08A3F6409601de520cf7A6dbCB573d"
+TAGIT_ACCESS="0xb56A1D91995C212342FaA843468F03521340A1D6"
+TAGIT_CORE="0x3aDc7EFDb58Ae85483eFf5D4966D916185f31d1D"
 
 # Chain configuration
-CHAIN_ID="11155420"
-CHAIN_NAME="optimism-sepolia"
-RPC_URL="${OP_SEPOLIA_RPC_URL:-https://sepolia.optimism.io}"
+CHAIN_ID="84532"
+CHAIN_NAME="base-sepolia"
+RPC_URL="${BASE_SEPOLIA_RPC_URL:-https://sepolia.base.org}"
 
 # ============================================
 # FUNCTIONS
@@ -62,12 +65,12 @@ print_info() {
 }
 
 check_env() {
-    if [ -z "$ETHERSCAN_API_KEY" ]; then
-        print_error "ETHERSCAN_API_KEY environment variable is not set"
+    if [ -z "$BASESCAN_API_KEY" ]; then
+        print_error "BASESCAN_API_KEY environment variable is not set"
         echo "Get an API key from: https://optimistic.etherscan.io/myapikey"
         exit 1
     fi
-    print_success "ETHERSCAN_API_KEY is set"
+    print_success "BASESCAN_API_KEY is set"
 }
 
 verify_contract() {
@@ -81,7 +84,7 @@ verify_contract() {
     local output
     output=$(forge verify-contract \
         --chain "$CHAIN_NAME" \
-        --etherscan-api-key "$ETHERSCAN_API_KEY" \
+        --etherscan-api-key "$BASESCAN_API_KEY" \
         --watch \
         "$address" \
         "$contract_path" 2>&1) || true

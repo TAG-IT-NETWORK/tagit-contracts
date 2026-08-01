@@ -1,32 +1,38 @@
-# QUARANTINED 2026-07-27 — this workflow does not test what its name claims.
+# Fork tests against Base Sepolia (84532) — the only live chain.
 #
-# It targets OP Sepolia, which was deprecated on 2026-06-27 and is marked
-# "status": "archived" in deployment-addresses.json. The live chain is Base
-# Sepolia (84532). Worse, test/fork/ForkBase.t.sol:89 asserts
-# block.chainid == 10 — OP *Mainnet* — and pins FORK_BLOCK = 125000000, so
-# the --fork-url passed below is ignored: ForkBase calls vm.createFork()
-# itself against OP_MAINNET_RPC_URL.
+# UN-QUARANTINED 2026-08-01. This was quarantined on 2026-07-27 because it
+# targeted OP Sepolia (archived 2026-06-27) while test/fork/ForkBase.t.sol
+# separately asserted block.chainid == 10 (OP *Mainnet*, never deployed to) and
+# pinned FORK_BLOCK = 125000000 — so the --fork-url passed here was ignored and
+# the job had failed 40 consecutive scheduled runs with
+# "403 OPT_SEPOLIA is not enabled for this app" (KI-06).
 #
-# It has failed 40 consecutive scheduled runs since 2026-06-17 with
-# "403 OPT_SEPOLIA is not enabled for this app" — the Alchemy app lost the
-# network. A daily red X on a public repo, for a chain we no longer use.
+# Both halves are now fixed: ForkBase.t.sol asserts chainid 84532, pins a Base
+# Sepolia block, and reads BASE_SEPOLIA_RPC_URL. Every address and CCIP selector
+# in it was verified live against the chain.
 #
-# The schedule is removed rather than the workflow deleted: the code-exists
-# check below is worth keeping once retargeted. Retargeting to Base Sepolia
-# requires a BASE_SEPOLIA_RPC_URL repo secret (does not exist yet) and a
-# rewrite of ForkBase.t.sol to chainid 84532 with Base constants. Tracked as
-# Wave 1. Until then this runs on demand only and its result should not be
-# read as coverage of the live deployment.
-#
-# See KNOWN-ISSUES.md (KI-06) and AUDIT-SCOPE.md §5.
-name: Fork Tests (OP Sepolia) — QUARANTINED, targets an archived chain
+# The BASE_SEPOLIA_RPC_URL repo secret is still worth adding — the public
+# endpoint below is rate-limited — but unlike the old OP secret it is no longer
+# a blocker: the public fallback works.
+name: Fork Tests (Base Sepolia)
 
 on:
-  workflow_dispatch:       # Manual only. Schedule removed 2026-07-27, see above.
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "test/fork/**"
+      - "src/**"
+      - "foundry.toml"
+      - ".github/workflows/fork-test.yml"
+  schedule:
+    # Weekly, not daily. These hit a public RPC and test third-party state
+    # (Chainlink CCIP, the ERC-4337 EntryPoint); a daily red X for someone
+    # else's outage is what got the previous version ignored.
+    - cron: "0 6 * * 1"
 
 jobs:
   fork-test:
-    name: Test against live OP Sepolia state
+    name: Test against live Base Sepolia state
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,34 +44,41 @@ jobs:
 
       - name: Run fork tests
         env:
-          OP_SEPOLIA_RPC_URL: ${{ secrets.OP_SEPOLIA_RPC_URL }}
+          BASE_SEPOLIA_RPC_URL: ${{ secrets.BASE_SEPOLIA_RPC_URL }}
         run: |
-          if [ -z "$OP_SEPOLIA_RPC_URL" ]; then
-            echo "::warning::OP_SEPOLIA_RPC_URL not set, using public endpoint"
-            export OP_SEPOLIA_RPC_URL="https://sepolia.optimism.io"
+          if [ -z "$BASE_SEPOLIA_RPC_URL" ]; then
+            echo "::warning::BASE_SEPOLIA_RPC_URL not set, using the public endpoint (rate limited)"
+            export BASE_SEPOLIA_RPC_URL="https://sepolia.base.org"
           fi
-          forge test --fork-url "$OP_SEPOLIA_RPC_URL" -v --fuzz-runs 1000
+          # ForkBase.t.sol calls vm.createFork() itself from BASE_SEPOLIA_RPC_URL,
+          # so no --fork-url is passed here. Passing one previously created the
+          # illusion that this job controlled the target chain; it did not.
+          forge test --match-path "test/fork/*" -v --fuzz-runs 1000
 
       - name: Verify deployed contracts have code
         env:
-          OP_SEPOLIA_RPC_URL: ${{ secrets.OP_SEPOLIA_RPC_URL }}
+          BASE_SEPOLIA_RPC_URL: ${{ secrets.BASE_SEPOLIA_RPC_URL }}
         run: |
-          RPC="${OP_SEPOLIA_RPC_URL:-https://sepolia.optimism.io}"
+          RPC="${BASE_SEPOLIA_RPC_URL:-https://sepolia.base.org}"
+          # Base Sepolia addresses from deployment-addresses.json, canonical
+          # EIP-55, each confirmed to carry code on 2026-08-01.
           CONTRACTS=(
-            "TAGITCore:0x8BdE22da889306d422802728cb98B6Da42ed8e1a"
-            "TAGITTreasury:0xf6f5e2e03f6e28aE9Dc17bCc814a0cf758c887c9"
-            "TAGITPaymaster:0x4339c46D63231063250834D9b3fa4E51FdB8026e"
-            "TAGITRecovery:0x6138a80c06A5e6a3CB6cc491A3a2c4DF4adD1600"
+            "TAGITCore:0x3aDc7EFDb58Ae85483eFf5D4966D916185f31d1D"
+            "TAGITTreasury:0xa4a3720d705334f409DD24836CC75d642125f759"
+            "TAGITPaymaster:0x6fFFa92efb419E812d5c9C9D0c1B1a0f5c6fFd1C"
+            "TAGITRecovery:0x6BC3C69367E586810A3B317fA9F0406504e95866"
           )
 
+          FAILED=0
           for entry in "${CONTRACTS[@]}"; do
             NAME="${entry%%:*}"
             ADDR="${entry##*:}"
             CODE=$(cast code "$ADDR" --rpc-url "$RPC" 2>/dev/null || echo "0x")
             if [ "$CODE" = "0x" ] || [ -z "$CODE" ]; then
-              echo "::error::$NAME ($ADDR) has no code!"
-              exit 1
+              echo "::error::$NAME ($ADDR) has no code on Base Sepolia"
+              FAILED=1
             else
-              echo "$NAME: OK (${#CODE} bytes)"
+              echo "$NAME: OK (${#CODE} chars)"
             fi
           done
+          exit $FAILED

@@ -9,6 +9,11 @@ import {RoboticAuthorizer} from "../../src/robot/RoboticAuthorizer.sol";
  * @title DeployRoboticAuthorizer
  * @author TAG IT Network <dev@tagit.network>
  * @notice Deploy standalone RoboticAuthorizer proxy (multi-chain)
+ * @dev SUNSET NOTICE (2026-08-01): the Arbitrum Sepolia (421614) branch below targets a
+ *      chain marked "status": "archived" in deployment-addresses.json. It is retained
+ *      because this script selects addresses by chain ID and removing the branch would
+ *      change the selection logic. Base Sepolia (84532) is the only live chain.
+ *
  * @dev Automatically selects addresses based on chain ID.
  *
  *   # Arbitrum Sepolia
