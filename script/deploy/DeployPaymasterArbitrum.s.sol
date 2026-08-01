@@ -110,7 +110,7 @@ contract DeployPaymasterArbitrum is Script {
         console2.log("  mint     (0x2cfd3005) - maxGas=500k, dailyLimit=50");
         console2.log("");
         console2.log("Next steps:");
-        console2.log("  1. Update exports/addresses.json with Arbitrum Sepolia addresses");
+        console2.log("  1. Update deployment-addresses.json with Arbitrum Sepolia addresses");
         console2.log("  2. Verify on Arbiscan:");
         console2.log("     forge verify-contract <PROXY> TAGITPaymaster --chain-id 421614");
         console2.log("  3. Fund deployer with testnet ETH if needed");
