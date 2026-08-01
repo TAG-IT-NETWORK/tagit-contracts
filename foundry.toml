@@ -43,19 +43,16 @@ fail_on_revert = true
 # Gas reporting
 gas_reports = ["*"]
 
-# RPC endpoints for fork testing and deployment
+# RPC endpoints for fork testing and deployment.
+# Base Sepolia (84532) is the only live chain. OP Sepolia (11155420) and Arbitrum
+# Sepolia (421614) were removed 2026-08-01 — both are "status": "archived".
 [rpc_endpoints]
-optimism = "${OP_MAINNET_RPC_URL}"
-optimism_sepolia = "${OP_SEPOLIA_RPC_URL}"
-arbitrum_sepolia = "${ARBITRUM_SEPOLIA_RPC_URL}"
 base_sepolia = "${BASE_SEPOLIA_RPC_URL}"
 base = "${BASE_MAINNET_RPC_URL}"
 ethereum = "${ETH_MAINNET_RPC_URL}"
 
 # Etherscan verification (multi-chain)
 [etherscan]
-arbitrum_sepolia = { key = "${ARBISCAN_API_KEY}", url = "https://api-sepolia.arbiscan.io/api", chain = 421614 }
-optimism_sepolia = { key = "${ETHERSCAN_API_KEY}", url = "https://api-sepolia-optimistic.etherscan.io/api", chain = 11155420 }
 base_sepolia = { key = "${BASESCAN_API_KEY}", url = "https://api-sepolia.basescan.org/api", chain = 84532 }
 base = { key = "${BASESCAN_API_KEY}", url = "https://api.basescan.org/api", chain = 8453 }
 
