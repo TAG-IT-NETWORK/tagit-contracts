@@ -8,7 +8,7 @@ import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IER
 
 /**
  * @title TokenForkTest
- * @notice Fork tests for token interactions on OP Mainnet
+ * @notice Fork tests for token interactions on Base Sepolia
  * @dev Verifies real token contracts work as expected
  */
 contract TokenForkTest is ForkBase {
@@ -18,7 +18,6 @@ contract TokenForkTest is ForkBase {
 
     IERC20 public weth;
     IERC20 public usdc;
-    IERC20 public opToken;
 
     // ============================================
     // SETUP
@@ -29,7 +28,6 @@ contract TokenForkTest is ForkBase {
 
         weth = IERC20(WETH);
         usdc = IERC20(USDC);
-        opToken = IERC20(OP_TOKEN);
     }
 
     // ============================================
@@ -37,7 +35,7 @@ contract TokenForkTest is ForkBase {
     // ============================================
 
     /**
-     * @notice Verify WETH is deployed on OP Mainnet
+     * @notice Verify WETH is deployed on Base Sepolia
      */
     function test_wethIsLive() public view {
         assertTrue(_hasCode(WETH), "WETH should have code");
@@ -49,7 +47,7 @@ contract TokenForkTest is ForkBase {
     }
 
     /**
-     * @notice Verify USDC is deployed on OP Mainnet
+     * @notice Verify USDC is deployed on Base Sepolia
      */
     function test_usdcIsLive() public view {
         assertTrue(_hasCode(USDC), "USDC should have code");
@@ -58,18 +56,6 @@ contract TokenForkTest is ForkBase {
         IERC20Metadata usdcMeta = IERC20Metadata(USDC);
         assertEq(usdcMeta.decimals(), 6, "USDC should have 6 decimals");
         assertGt(usdc.totalSupply(), 0, "USDC should have supply");
-    }
-
-    /**
-     * @notice Verify OP Token is deployed on OP Mainnet
-     */
-    function test_opTokenIsLive() public view {
-        assertTrue(_hasCode(OP_TOKEN), "OP Token should have code");
-
-        // Verify metadata
-        IERC20Metadata opMeta = IERC20Metadata(OP_TOKEN);
-        assertEq(opMeta.decimals(), 18, "OP should have 18 decimals");
-        assertGt(opToken.totalSupply(), 0, "OP should have supply");
     }
 
     // ============================================
@@ -82,7 +68,6 @@ contract TokenForkTest is ForkBase {
     function test_tokenMetadata() public view {
         IERC20Metadata wethMeta = IERC20Metadata(WETH);
         IERC20Metadata usdcMeta = IERC20Metadata(USDC);
-        IERC20Metadata opMeta = IERC20Metadata(OP_TOKEN);
 
         // WETH
         string memory wethName = wethMeta.name();
@@ -97,10 +82,6 @@ contract TokenForkTest is ForkBase {
         assertTrue(bytes(usdcSymbol).length > 0, "USDC should have symbol");
 
         // OP
-        string memory opName = opMeta.name();
-        string memory opSymbol = opMeta.symbol();
-        assertTrue(bytes(opName).length > 0, "OP should have name");
-        assertTrue(bytes(opSymbol).length > 0, "OP should have symbol");
     }
 
     // ============================================
@@ -114,12 +95,10 @@ contract TokenForkTest is ForkBase {
         // Should be able to query balances for any address
         uint256 wethBalance = weth.balanceOf(user1);
         uint256 usdcBalance = usdc.balanceOf(user1);
-        uint256 opBalance = opToken.balanceOf(user1);
 
         // Fresh addresses should have 0 balance
         assertEq(wethBalance, 0, "User1 WETH balance should be 0");
         assertEq(usdcBalance, 0, "User1 USDC balance should be 0");
-        assertEq(opBalance, 0, "User1 OP balance should be 0");
     }
 
     /**
@@ -129,11 +108,9 @@ contract TokenForkTest is ForkBase {
         // Should be able to query allowances
         uint256 wethAllowance = weth.allowance(user1, user2);
         uint256 usdcAllowance = usdc.allowance(user1, user2);
-        uint256 opAllowance = opToken.allowance(user1, user2);
 
         assertEq(wethAllowance, 0, "Initial allowance should be 0");
         assertEq(usdcAllowance, 0, "Initial allowance should be 0");
-        assertEq(opAllowance, 0, "Initial allowance should be 0");
     }
 
     // ============================================
@@ -174,24 +151,6 @@ contract TokenForkTest is ForkBase {
 
         assertEq(usdc.balanceOf(user1), 0, "User1 balance should be 0");
         assertEq(usdc.balanceOf(user2), amount, "User2 should have USDC");
-    }
-
-    /**
-     * @notice Deal OP and transfer
-     */
-    function test_dealAndTransferOp() public {
-        uint256 amount = 1000 ether;
-
-        // Deal OP to user1
-        _dealToken(OP_TOKEN, user1, amount);
-        assertEq(opToken.balanceOf(user1), amount, "User1 should have OP");
-
-        // Transfer to user2
-        vm.prank(user1);
-        opToken.transfer(user2, amount);
-
-        assertEq(opToken.balanceOf(user1), 0, "User1 balance should be 0");
-        assertEq(opToken.balanceOf(user2), amount, "User2 should have OP");
     }
 
     // ============================================
@@ -313,7 +272,6 @@ contract TokenForkTest is ForkBase {
     function test_totalSupplies() public view {
         uint256 wethSupply = weth.totalSupply();
         uint256 usdcSupply = usdc.totalSupply();
-        uint256 opSupply = opToken.totalSupply();
 
         // WETH should have significant supply (wrapped ETH)
         assertGt(wethSupply, 1000 ether, "WETH supply should be significant");
@@ -322,12 +280,10 @@ contract TokenForkTest is ForkBase {
         assertGt(usdcSupply, 1_000_000 * 1e6, "USDC supply should be > 1M");
 
         // OP should have significant supply
-        assertGt(opSupply, 1_000_000 ether, "OP supply should be > 1M");
 
         // Log supplies for reference
         console2.log("WETH Supply:", wethSupply / 1e18, "ETH");
         console2.log("USDC Supply:", usdcSupply / 1e6, "USDC");
-        console2.log("OP Supply:", opSupply / 1e18, "OP");
     }
 
     // ============================================
@@ -341,23 +297,19 @@ contract TokenForkTest is ForkBase {
         // Deal multiple tokens to user1
         _dealToken(WETH, user1, 5 ether);
         _dealToken(USDC, user1, 10_000 * 1e6);
-        _dealToken(OP_TOKEN, user1, 500 ether);
 
         assertEq(weth.balanceOf(user1), 5 ether, "Has WETH");
         assertEq(usdc.balanceOf(user1), 10_000 * 1e6, "Has USDC");
-        assertEq(opToken.balanceOf(user1), 500 ether, "Has OP");
 
         // Transfer each to different recipients
         vm.startPrank(user1);
         weth.transfer(deployer, 2 ether);
         usdc.transfer(governor, 5_000 * 1e6);
-        opToken.transfer(user2, 250 ether);
         vm.stopPrank();
 
         // Verify final balances
         assertEq(weth.balanceOf(user1), 3 ether, "Remaining WETH");
         assertEq(usdc.balanceOf(user1), 5_000 * 1e6, "Remaining USDC");
-        assertEq(opToken.balanceOf(user1), 250 ether, "Remaining OP");
     }
 
     /**
@@ -368,16 +320,13 @@ contract TokenForkTest is ForkBase {
 
         _dealToken(WETH, user1, 10 ether);
         _dealToken(USDC, user1, 20_000 * 1e6);
-        _dealToken(OP_TOKEN, user1, 1000 ether);
 
         vm.startPrank(user1);
         weth.approve(spender, type(uint256).max);
         usdc.approve(spender, type(uint256).max);
-        opToken.approve(spender, type(uint256).max);
         vm.stopPrank();
 
         assertEq(weth.allowance(user1, spender), type(uint256).max, "WETH approved");
         assertEq(usdc.allowance(user1, spender), type(uint256).max, "USDC approved");
-        assertEq(opToken.allowance(user1, spender), type(uint256).max, "OP approved");
     }
 }
