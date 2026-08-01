@@ -7,13 +7,15 @@ This folder contains ABIs and addresses for integrating with TAG IT smart contra
 ### 1. Import Addresses
 
 ```typescript
-import addresses from './addresses.json';
+import addresses from '../deployment-addresses.json';
 
-const network = 'op-sepolia';
+const network = 'base-sepolia';  // the live chain (84532)
 const contracts = addresses.networks[network].contracts;
 
-// TAGITCore is behind a UUPS proxy — always use the proxy address
-console.log(contracts.TAGITCore);  // 0x8BdE22da889306d422802728cb98B6Da42ed8e1a
+// Entries come in two shapes: UUPS contracts are { proxy, implementation, type },
+// everything else is { address, ... }. Read the field, not the entry.
+// TAGITCore is behind a UUPS proxy — always use the proxy address.
+console.log(contracts.TAGITCore.proxy);  // 0x3aDc7EFDb58Ae85483eFf5D4966D916185f31d1D
 ```
 
 ### 2. Import ABIs
@@ -29,13 +31,13 @@ import CapabilityBadgeABI from './abis/CapabilityBadge.json';
 ```typescript
 import { ethers } from 'ethers';
 import TAGITCoreABI from './abis/TAGITCore.json';
-import addresses from './addresses.json';
+import addresses from '../deployment-addresses.json';
 
-const provider = new ethers.JsonRpcProvider(addresses.networks['op-sepolia'].rpcUrl);
+const provider = new ethers.JsonRpcProvider('https://sepolia.base.org');
 const signer = await provider.getSigner();
 
 const tagitCore = new ethers.Contract(
-  addresses.networks['op-sepolia'].contracts.TAGITCore,
+  addresses.networks['base-sepolia'].contracts.TAGITCore.proxy,
   TAGITCoreABI,
   signer
 );
@@ -51,21 +53,21 @@ TAGITCore uses the **UUPS proxy pattern** (EIP-1822) with a **TimelockController
 
 - **Proxy contract**: The address callers interact with. Holds all storage and delegates calls to the implementation.
 - **Implementation contract**: The logic contract behind the proxy. Can be upgraded without changing the proxy address.
-- **TimelockController**: Owns the proxy. All admin operations (upgrades, config changes) require a **48-hour delay** before execution.
+- **TimelockController**: Owns the proxy. All admin operations (upgrades, config changes) require a delay before execution. **On the deployed testnets that delay is currently 60s (Base Sepolia) / 300s (OP Sepolia)** — read it live with `getMinDelay()` rather than trusting a number in docs. 48 hours is the mainnet target, not the current value.
 
 ### Key Points for Integrators
 
 - Always interact with the **proxy address** (`contracts.TAGITCore` / `contracts.TAGITCoreProxy`). The proxy address never changes.
 - The implementation address can change after upgrades. Call `getImplementation()` on the proxy to read the current logic contract.
 - ABI remains the same — the proxy transparently delegates to the implementation.
-- Upgrades are governed: a proposal must be scheduled on the TimelockController and can only execute after the 48-hour delay.
+- Upgrades are governed: a proposal must be scheduled on the TimelockController and can only execute after `getMinDelay()` has elapsed.
 
 ### Upgrade Flow
 
 ```
-1. Proposer schedules upgradeToAndCall on TimelockController (48hr delay starts)
+1. Proposer schedules upgradeToAndCall on TimelockController (getMinDelay() starts)
 2. UpgradeScheduled event emitted — off-chain monitors can alert
-3. After 48hr delay, executor calls TimelockController.execute()
+3. After the delay elapses, executor calls TimelockController.execute()
 4. TimelockController calls proxy.upgradeToAndCall(newImpl, "")
 5. Proxy storage slot updated to point to new implementation
 ```
@@ -113,7 +115,7 @@ Digital Twin NFT with lifecycle state machine, deployed behind UUPS proxy.
 | `setAccessController` | `setAccessController(address accessController)` | Set BIDGES access controller |
 | `setNFCOracle` | `setNFCOracle(address oracle)` | Set trusted NFC oracle for bindTag |
 
-All admin functions require a 48-hour governance delay via TimelockController.
+All admin functions are gated by the TimelockController's `getMinDelay()`. See the note above: this is 60s on Base Sepolia today, not 48 hours.
 
 #### State Enum
 
@@ -230,7 +232,7 @@ console.log('State:', asset[2]); // 4 = CLAIMED
 | CapabilityBadge | `0x5e190F6Ebde4BD1e11a5566a1e81a933cdDf3505` |
 | TAGITCore (deprecated) | `0x8B02b62FD388b2d7e3dF5Ec666D68Ac7c7ca02Fe` |
 
-> **Governance:** All TAGITCore admin operations go through the TimelockController with a 5-minute delay (testnet). Bump to 48 hours for mainnet.
+> **Governance:** All TAGITCore admin operations go through the TimelockController. Verified on-chain 2026-08-01: `getMinDelay()` returns **300s on OP Sepolia** and **60s on Base Sepolia**. Must be raised to 48 hours before mainnet.
 
 ### OP Mainnet
 

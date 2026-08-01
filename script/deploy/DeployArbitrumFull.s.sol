@@ -151,7 +151,7 @@ contract DeployArbitrumFull is Script {
         console2.log("Timelock delay: 60 seconds (hackathon)");
         console2.log("");
         console2.log("Next steps:");
-        console2.log("  1. Update exports/addresses.json with Arbitrum Sepolia addresses");
+        console2.log("  1. Update deployment-addresses.json with Arbitrum Sepolia addresses");
         console2.log("  2. Update tagit-dashboard/packages/contracts/src/addresses.ts");
         console2.log("  3. Mint test assets for demo");
     }

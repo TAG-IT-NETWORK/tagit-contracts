@@ -88,7 +88,7 @@ contract DeployArbitrumSepolia is Script {
         console2.log("Timelock delay: 1 minute (hackathon)");
         console2.log("");
         console2.log("Next steps:");
-        console2.log("  1. Update exports/addresses.json with Arbitrum Sepolia addresses");
+        console2.log("  1. Update deployment-addresses.json with Arbitrum Sepolia addresses");
         console2.log("  2. Verify on Arbiscan:");
         console2.log("     forge verify-contract <PROXY> TAGITCore --chain-id 421614");
         console2.log("  3. Mint test assets for demo");
