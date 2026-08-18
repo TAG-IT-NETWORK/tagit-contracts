@@ -23,6 +23,10 @@ paths = [
   '''(^|/)docs/''',
 ]
 regexes = [
+  # The revoked 2026 hackathon bearer key — dead credential documented in the
+  # key-ceremony runbook's probe-until-401 instructions (rotated 2026-08-17)
+  '''tagit-hack-2026-key''',
+
   # EVM addresses (exactly 40 hex) — public identifiers, never a 64-hex private key
   '''0x[a-fA-F0-9]{40}\b''',
   # GOV_MIL badge keccak constant
