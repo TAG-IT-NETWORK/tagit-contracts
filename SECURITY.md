@@ -1,8 +1,8 @@
 # Security Policy — tagit-contracts
 
 **Repo:** `TAG-IT-NETWORK/tagit-contracts` (public)
-**Contact:** security@tagit.network
-**Last updated:** 2026-07-27
+**Contact:** info@tagit.network
+**Last updated:** 2026-08-24
 
 ---
 
@@ -118,7 +118,21 @@ addresses that are supported, and this sentence will be replaced.
 
 ## How to report
 
-Email **security@tagit.network**.
+Email **info@tagit.network**.
+
+> **The contact address changed on 2026-08-24.** Every revision of this file before that
+> date named `security@tagit.network`. That address has been reported to bounce, and we
+> could not confirm it ever delivered — so we have moved the policy to `info@tagit.network`,
+> which is monitored, rather than leave researchers writing into a void.
+>
+> `security@tagit.network` is still burned into the NatSpec metadata of contracts already
+> deployed and verified on Basescan; we cannot change that without redeploying. If you found
+> us through an on-chain `@custom:security-contact`, use `info@tagit.network` instead.
+> `disclosure@tagit.network` and `emergency@tagit.network` have appeared in older website
+> documentation and have never existed.
+>
+> If you sent a report to `security@tagit.network` and heard nothing, we did not receive it.
+> Please resend. We are sorry — the failure was ours.
 
 Do **not** open a public GitHub issue or pull request for a suspected vulnerability, and do not
 disclose it in a public channel, chat or conference talk before we have agreed a date (see
@@ -197,7 +211,7 @@ the contracts and deployments listed above, we will:
   staff, users, or vendors, and you do not attempt to obtain credentials.
 - You give us reasonable time to respond before disclosing, per the timeline above.
 
-If you are unsure whether a specific action is in bounds, ask first at security@tagit.network.
+If you are unsure whether a specific action is in bounds, ask first at info@tagit.network.
 We would rather answer a question than argue about it afterwards. Acting in good faith on a
 mistaken belief about scope is not something we will treat as bad faith.
 
@@ -242,7 +256,7 @@ confident do not exist", because we do not have the evidence to make that claim.
 
 ## Reporting something that is not a contract vulnerability
 
-- **Leaked key or credential in this repo or its history** — email security@tagit.network with
+- **Leaked key or credential in this repo or its history** — email info@tagit.network with
   the commit SHA and path. Treat it as urgent even though the chains are testnets; the same
   operator keys may be reused.
 - **A documentation claim you believe is false** — please report it. We have found and withdrawn
