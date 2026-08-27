@@ -74,6 +74,11 @@ lower severity with reasoning — we are not quietly dropping it.
 | KI-22 | Low | `IntegrationFactory` enforces no minimum fee rate; the live signer set is 1-of-3 with two unowned addresses |
 | KI-23 | Informational | `src/core/TAGITCoreDemo.sol` is a hackathon demo contract with no tests and no deployment |
 | KI-24 | Informational | TODO/FIXME/XXX/HACK sweep results |
+| KI-25 | Critical — **REMEDIATED** | TAGIT-VDP-2026-001: AIRP ran a full bonded dispute and never moved the asset. Fixed; four adjacent findings remain open and are listed as KI-26..KI-29 |
+| KI-26 | Medium | `TAGITCore.approveResolve` first-approver-binds-recipient deadlock — no way to reset a resolve round |
+| KI-27 | Medium | The `TAGITRecovery` proxy owner is the deployer EOA, not the TimelockController |
+| KI-28 | Medium | `RESOLVER_CAPABILITY` and `FLAGGER_CAPABILITY` rosters are unpopulated — the whole recovery path is inert |
+| KI-29 | Low | `TAGITGovernor._countVote` was an empty-bodied override of an abstract OZ hook (hardened in the same change) |
 
 ---
 
@@ -660,7 +665,7 @@ Suite size, measured 2026-07-27 by grep over git-tracked test files
 |---|---|
 | `test*` / `invariant_*` / `check_*` declarations, tracked files | 1,865 |
 | Same, including the two untracked test files | 2,020 |
-| `testFuzz_*` functions, tracked | 84 |
+| `testFuzz_*` functions, tracked | 80 |
 | `invariant_*` functions | 12 |
 | `check_*` (Halmos) functions | 22 |
 | Test files, tracked | 80 |
@@ -670,7 +675,8 @@ Fuzz configuration is `runs = 100000` (`foundry.toml:34`); invariant configurati
 result is 0 failing tests; we did not re-run the suite for this document.
 
 Note that our older documents describe "20 fuzz tests × 10,000 runs". Both halves of that are now
-stale — there are 84 `testFuzz_` functions and the configured run count is 100,000.
+stale — there are 80 `testFuzz_` functions in tracked files (88 including the
+two untracked ones) and the configured run count is 100,000.
 
 **Impact.**
 Roughly a third of the codebase's lines are unexercised, and we do not currently have a
@@ -995,7 +1001,7 @@ _lastDistributedEpoch = startEpoch + epochsToDistribute - 1;
 ```
 
 `_lastDistributedEpoch` now advances only by the number actually distributed, so nothing is
-skipped. Regression tests: `test/security/EVMbenchFixes.t.sol:393-476` (seven `test_PATCH10_*`
+skipped. Regression tests: `test/security/EVMbenchFixes.t.sol:393-476` (10 `test_PATCH10_*`
 functions, including `test_PATCH10_cappedAtMaxCatchUpEpochs` and
 `test_PATCH10_multiCallCatchUp`). Deployed state confirms the patch is live:
 
@@ -1323,6 +1329,605 @@ The first two are the governance gap in KI-01, left unresolved in the deploy scr
 written. The other two are a hackathon task label in a log string, not a code smell.
 
 **Status.** Informational. `Deploy.s.sol:80-81` is tracked as part of KI-01.
+
+---
+
+# REMEDIATED IN THIS BRANCH
+
+## KI-25 — TAGIT-VDP-2026-001: AIRP ran a complete bonded dispute and then never moved the asset
+
+**Severity:** Critical. **Status: REMEDIATED** on branch `meta/t19-ops-scripts`. Disclosed in full
+because the defect was live on Base Sepolia and because the remediation changes semantics.
+
+**Reported by:** **jackbone** — the handle the reporter asked to be credited under, in their own
+words: *"No org, no GitHub link, just the handle."* Reported 2026-08-22 via `info@tagit.network`,
+after `security@tagit.network` — the address this policy published — bounced. KI-25 through KI-29 all
+trace to that one report. They also supplied a working Foundry PoC for the no-op on request, and
+accepted our severity reassessments, including correcting their own impact figure on KI-28.
+
+**The defect.** `TAGITRecovery.executeResolution()` ran the entire AIRP flow — a 100e18 TAGIT bonded
+claim, badge-weighted voting, a 66% approval threshold, a 3-vote minimum, a 7-day period, 50%
+slashing of a losing claimant's bond and quarantine bookkeeping — and then did not transfer the NFT.
+The pre-fix source carried the admission verbatim at `src/recovery/TAGITRecovery.sol:473-474`:
+
+```solidity
+// Note: In production, this would call TAGITCore.resolve()
+// to transfer the NFT to the claimant
+winner = claimant;
+```
+
+The local `winner` variable fed only the `CaseResolved` event. A claimant who **won** got their bond
+back and the asset stayed with the current holder. A claimant who **lost** was slashed 50% of a
+100e18 bond for a process that structurally could never have delivered the asset.
+
+Three structural reasons the missing call could not simply be added: `TAGITCore.resolve()` requires
+(a) `State.FLAGGED`, which `initiateRecovery()` never established, (b) `_resolveApprovalCount >= 2`,
+a deliberate 2-of-3 human multisig, and (c) `RESOLVER_CAPABILITY`, which TAGITRecovery does not hold.
+
+**Adjacent defects fixed in the same change:**
+
+- *Quarantine was decorative.* `_quarantined[tokenId]` was read by nothing outside TAGITRecovery, and
+  the declared error `CannotTransferQuarantined` was never used anywhere — dead code proving
+  enforcement was never wired. `TAGITCore.transferAsset()` is owner-gated on `state == CLAIMED` and
+  never consulted it, so a disputed asset could be sold to a third party mid-vote.
+- *A permanent lock.* `vote()` closes at `votingEndsAt`, `executeResolution()` reverted
+  `QuorumNotReached` forever below 3 votes, and `appeal()` only accepts `REJECTED`. A case that never
+  reached quorum could never leave `VOTING`: the bond stayed in `totalStakesHeld` and
+  `_tokenToCase[tokenId]` stayed set, both permanently.
+- *A sybil in the vote.* `_getVoteWeight` read the **transferable** `CapabilityBadge` (a plain
+  ERC-1155 with no `_update` override) while `_hasVoted` is keyed by address. One badge walked through
+  three EOAs produced a unanimous verdict.
+- *False NatSpec.* `TAGITRecovery.sol:230` claimed `initiateRecovery` "flags in TAGITCore" (it did
+  not); `IRecovery.sol:222` claimed `executeResolution` "Transfers asset or slashes stake" (it did not
+  transfer). Both are now true statements of what the code does.
+
+**The remediation — "AIRP is an adjudicator, not a custodian."**
+
+The governing invariant, verifiable with one grep:
+
+> **TAGITRecovery holds ZERO capabilities in TAGITCore and makes ZERO state-changing calls into
+> TAGITCore.** It calls only four `view` functions (`getAsset`, `preFlagState`,
+> `getResolveApprovalStatus`, `RESOLVE_QUORUM`) plus `IERC721.ownerOf`.
+
+The read-only surface is pinned by `src/interfaces/ITAGITCoreRecovery.sol`, which declares no
+state-changing function by design. The invariant is machine-checked by
+`test_trustBoundary_recoveryHoldsNoCapability` and re-asserted as a deployment gate in
+`script/deploy/UpgradeRecoveryVerdict.s.sol`, which aborts if TAGITRecovery ever holds a capability.
+
+Mechanism:
+
+1. **Flag-gated admission.** `initiateRecovery` now requires the asset to be **already** `FLAGGED` in
+   TAGITCore, with a pre-flag marker of `CLAIMED` or `NONE` (see item 9 — `NONE` is a legacy
+   token flagged before `_preFlagState` shipped, which `TAGITCore.resolve()` itself treats as
+   `CLAIMED`; `BOUND` and `ACTIVATED` are still rejected). AIRP neither creates nor releases the freeze — *entry to
+   quarantine is exactly as hard as exit*, so AIRP can never create a freeze it cannot release. This is
+   the deliberate cost of the design: a claimant can no longer open a case unilaterally, and a FLAGGER
+   must act first (see KI-28).
+2. **Quarantine is real.** Quarantine IS `FLAGGED`. `transferAsset()` requires `CLAIMED` and the
+   `_update()` override blocks every external ERC-721 transfer, so the mid-vote resale is closed by
+   Core's own rules rather than by bookkeeping. Pinned by
+   `test_quarantineIsReal_resaleBlockedDuringCase`, which shows the same call succeeding pre-flag.
+3. **Verdict-bound execution.** An approved verdict no longer claims to be a transfer. It moves the
+   case to the new non-terminal `ENFORCING` status, keeps the bond escrowed, and emits
+   `ResolutionPending` as an instruction to the 2-of-3 resolver quorum. `finalizeResolution()` then
+   *observes* what TAGITCore actually did and settles: `RESOLVED` if the claimant holds the asset,
+   `VOIDED` (100% refund) if the resolvers diverged. `expireEnforcement()` / `abandonEnforcement()`
+   release the escrow if the quorum never acts. **Slashing now happens only on an actual adverse vote**;
+   every machinery failure refunds 100%. All four of those paths are reached only from an APPROVED
+   verdict, so `voteCount >= MINIMUM_VOTES` holds and the item-12 anti-squat fee — which is a fee, not
+   a slash, and applies only below `FEE_EXEMPT_MIN_VOTES`, i.e. on an expiry that drew **fewer than
+   two** votes — is unreachable on any of them.
+4. **No more permanent lock.** Below `MINIMUM_VOTES` the case terminates as `EXPIRED` and is never
+   slashed. It refunds **in full** from **two** votes up — voter apathy is not claimant fraud — and
+   refunds all but `SQUAT_FEE_RATE` when **fewer than two** votes were cast; see item 12, which is the
+   defect that the unconditional 100% refund written here originally created, and item 14, which is
+   the defect that pricing it on a **zero**-vote test then left open.
+   **This holds for appealed cases too**, which
+   it did not in the first cut of this fix: `appeal()` ACCUMULATED the new bond onto the already-spent
+   one (recorded 3x while holding 2x), so every round-two exit path underflowed `totalStakesHeld` and
+   reverted with a checked-arithmetic panic — including after a WON appeal where Core had already
+   delivered the asset. `appeal()` now SETS `stakeBond` and asserts
+   `token.balanceOf(address(this)) >= totalStakesHeld` immediately after collecting. Pinned by
+   `test_regression_wonAppealFinalizesAndRefundsInFull`,
+   `test_regression_rejectedAppealSettlesCleanly` and
+   `test_regression_appealWithNoQuorumExpiresAndPaysTheFeeOnTheDoubledBond`. That last one was
+   **renamed** when item 12 made the refund on that path conditional: its former name promised a full
+   refund, which is behaviour the code no longer has, and this citation went stale for one round
+   because the rename was not followed through here.
+5. **Soulbound voting, on a dedicated namespace.** `_getVoteWeight` reads `hasIdentity()` on the
+   soulbound `IdentityBadge` (ERC-5192), never `hasCapability()`. Claimant and current holder are
+   excluded from voting. The seat ids are **70-73**, a range reserved protocol-wide for AIRP. The first
+   cut of this fix kept the old ids 1/2/10/20, which were inert under the CapabilityBadge lookup
+   (nobody holds capability ids 1/2/10/20) but are `KYC_L1`, `KYC_L2`, `MANUFACTURER` and `GOV_MIL` in
+   the single flat IdentityBadge registry — so the sybil fix silently made every KYC'd account in the
+   protocol an AIRP juror able to vote a claimant's bond away. Pinned by
+   `test_regression_plainKycUsersAreNotAirpJurors`.
+6. **Exit paths are deliberately not `whenNotPaused`,** so a tripped circuit breaker can never trap an
+   escrowed bond, while `initiateRecovery` / `vote` / `appeal` stay paused. True for appealed escrow
+   too — see item 4; pinned by `test_regression_pausedContractStillReleasesAnAppealedBond`. A pause
+   could nonetheless still destroy an appeal *right* once item 13 put a wall-clock deadline on it,
+   precisely because `appeal()` is `whenNotPaused` — that is item 15, and the window now counts
+   **unpaused seconds only**.
+7. **Appeals open a NEW voting round.** `_caseRound[caseId]` increments and the vote records are keyed
+   by `(caseId, round)`. Resetting the tally alone was not enough: the per-voter records are keyed by
+   address, so every round-one juror stayed locked out and an appealed case could never reach
+   `MINIMUM_VOTES` again — it necessarily fell into the `EXPIRED` branch and hit the underflow in item
+   4. Pinned by `test_regression_appealOpensANewRoundAndUnlocksTheRoster`.
+8. **The active-case guard covers every non-terminal status.** `ENFORCING` and `APPEALED` were missing
+   from it, so a decoy case could open over a token with a live ENFORCING verdict, repoint
+   `_tokenToCase`, and then erase the live case's link and switch `isQuarantined()` off — at **zero
+   cost**, because at the time a decoy with no votes EXPIRED with a 100% refund. That refund was
+   itself a defect and is now items 12 and 14: an expiry that drew **fewer than two** votes costs 10%,
+   so the decoy is no longer free even where a guard does not stop it outright. Independently, every clear of
+   `_tokenToCase` now goes through `_unlinkToken()`, which only clears a link that still points at the
+   terminating case. Pinned by `test_regression_secondCaseCannotOpenWhileFirstIsEnforcing` and
+   `test_regression_terminalPathNeverUnlinksAnotherCasesToken`.
+9. **The pre-flag gate mirrors `resolve()`'s own predicate.** `resolve()` computes
+   `restored = (stored is BOUND|ACTIVATED|CLAIMED) ? stored : CLAIMED`, so a marker of `NONE` — a token
+   flagged before `_preFlagState` shipped — is treated as `CLAIMED` and **is** deliverable.
+   `initiateRecovery` accepts `CLAIMED` or `NONE` and still rejects `BOUND`/`ACTIVATED`. Requiring
+   strictly `CLAIMED` locked every legacy-flagged asset out of AIRP for no reason. Pinned by
+   `test_regression_legacyFlaggedTokenIsAdmittedAndDeliverable`.
+10. **Names and comments now state what the code does.** The original defect was *a comment promising
+    behaviour the code does not deliver*, and the first cut of the fix left survivors. All corrected:
+    `vote()` reverts the new `VotingPeriodEnded` instead of `VotingStillActive` (whose name said the
+    opposite of the condition it fired on); the "Quarantine the asset" / "Re-quarantine the asset"
+    comments now say that AIRP mirrors a freeze a FLAGGER already created and that AIRP can neither
+    create nor release one; `AssetQuarantined` and `CaseResolved` NatSpec no longer claim a freeze is
+    applied or that the event is terminal; and the contract header no longer claims "ReentrancyGuard on
+    all state-changing functions" — it now names the eight guarded functions and states that the
+    owner/governor-only configuration setters are unguarded **because none of them makes an external
+    call**, so there is no reentrancy surface to close. Eight declared-but-unreachable errors were
+    deleted; see "ABI/indexer impact" for the full list and the policy now written into
+    `IRecovery.sol`. Pinned by `test_regression_voteAfterDeadlineRevertsVotingPeriodEnded`.
+11. **`enforcementWindow()` reports the window that is actually enforced.** The zero-fallback is still
+    the right call over a `reinitializer(2)`, but the public auto-getter leaked the unwritten slot, so
+    an upgraded proxy reported `0` — "no enforcement window configured" — while it was in fact
+    enforcing 30 days. The getter keeps its selector and now returns `_window()`; the raw slot is
+    exposed separately as `configuredEnforcementWindow()`. Pinned by
+    `test_enforcementWindow_zeroFallbackAfterUpgradeFromV1` and
+    `test_storageUpgradeSafety_v1LayoutToV2`.
+
+**A THIRD adversarial review then proved two more defects, both rooted in the same line.** The
+`EXPIRED` branch refunded **100%** whenever `voteCount < MINIMUM_VOTES`. That fix removed the
+permanent lock (item 4) and in doing so made a decoy case **free**, which is the root cause of both
+of the following. Each was demonstrated with a passing PoC before it was fixed.
+
+12. **A decoy case was zero-cost and infinitely repeatable (`SQUAT_FEE_RATE`).** Anyone who is not the
+    current holder could bond over a `FLAGGED` asset, cast no votes, and take the **whole** bond back
+    after `votingDuration` — having locked the real owner out of AIRP for 7 days — and then repeat
+    forever, for gas. Letting the decoy be *approved* first stretched one cycle to 37 days (7-day vote
+    + 30-day enforcement), still at zero net cost. This is a **regression in cost-to-grief introduced
+    by the item-4 fix**: before it, a no-quorum case reverted `QuorumNotReached` and could never leave
+    `VOTING`, so the same squat permanently trapped the squatter's own 100 TAGIT.
+
+    A case that expires having drawn **fewer than `FEE_EXEMPT_MIN_VOTES` (2)** votes now pays
+    `SQUAT_FEE_RATE` (**1000 bp = 10%**) of its recorded bond to the treasury and keeps the rest, and
+    emits the dedicated `AntiSquatFeeCharged` event — **not** `StakeSlashed`, whose meaning is "a jury
+    voted against you". A case that drew **two** votes is still below `MINIMUM_VOTES`, still `EXPIRES`,
+    and still refunds **in full**: that is voter apathy rather than claimant conduct, and preserving
+    the distinction is the whole point of the fee. **The threshold was first written as `voteCount == 0`
+    and that was a spec defect**, closed by item 14 — one vote is purchasable from one juror seat, so a
+    zero-vote test let a griefer buy the exemption. The rule lives in the single private
+    `_releaseEscrowAsExpired()`, which is now the ONE settlement path for every `EXPIRED` exit
+    (`executeResolution`'s no-quorum branch, `expireEnforcement`, `abandonEnforcement`), so the fee
+    cannot be present on one expiry path and quietly missing from another. On the two enforcement
+    exits it is unreachable by construction rather than by a second condition — `ENFORCING` is only
+    entered past the `voteCount >= MINIMUM_VOTES` test. The fee is a **rate on the recorded bond**, so
+    it scales to the 2x appeal bond automatically. Pinned by
+    `test_regression_repeatedSquattingNowCostsTheGrieferEveryCycle`,
+    `test_regression_oneColludingVoteNoLongerExemptsADecoy`,
+    `test_regression_twoVotesExemptADecoyButOneDoesNot` — **renamed** when item 14 moved the
+    threshold, because its former name asserted that any non-zero vote count refunded in full, which
+    is exactly the exemption item 14 removed — and
+    `test_regression_bondAccountingIsExactOnEveryTerminalPath`.
+
+    **Residuals, disclosed deliberately — what the fee does and does not buy.** The fee prices exactly
+    one thing: a decoy that drew no plural engagement. It does not make decoys impossible, and item 14
+    did not change that. Two residuals stand.
+
+    *(a) Two colluding seats still exempt a decoy.* `FEE_EXEMPT_MIN_VOTES` is a bar, not a proof of
+    honesty. A griefer who controls, rents or bribes **two** independently-granted AIRP seats (ids
+    70-73) can put two votes on every decoy, land in the apathy carve-out, and squat for gas again —
+    the same cycle item 14 closed against **one** seat, at twice the price of entry. Two is where we
+    set the bar because one seat is individually cheap while two demands collusion between two
+    separately granted seats; it is **not** the point at which the grief becomes impossible. Raising it
+    further is not free either: `MINIMUM_VOTES` is 3 and the threshold must stay strictly below quorum,
+    or the carve-out stops distinguishing apathy from fraud and starts charging honest claimants whose
+    case a jury simply ignored. **If you think two is the wrong number, say so** — it is a judgement
+    call and the cost of moving it is one constant.
+
+    *(b) The approved variant is not priced at all.* A case that a jury votes through and that then sits
+    out its 30-day enforcement window terminates via `expireEnforcement` / `abandonEnforcement` with a
+    **100% refund**, holding the asset's dispute slot for up to 37 days at zero nominal cost. We
+    accepted that on purpose. Reaching it requires `MINIMUM_VOTES` AIRP jurors to affirmatively vote
+    **for** a claim by someone who is not the holder, which is jury collusion or jury negligence — a
+    different threat, addressed by who holds seats 70-73, not by bond economics. Charging the fee
+    there would instead penalise the honest claimant whose claim the jury endorsed and whom the
+    resolver quorum then failed to serve (KI-28), which is exactly the "machinery failure is never
+    slashed" rule this design is built on. **If you think that trade is wrong, say so** — it is a
+    judgement call, not an oversight, and the cost of reversing it is one condition.
+
+13. **The appeal right could be griefed away (bounded appeal window).** `REJECTED` is deliberately
+    absent from `initiateRecovery`'s active-case guard because it is non-terminal and appealable — but
+    the `REJECTED` branch of `executeResolution` also called `_unlinkToken`, freeing the token's only
+    dispute slot **in the same transaction that created the claimant's appeal right**. `appeal()` then
+    reverts `ActiveCaseExists` if anything else holds that slot. `executeResolution` is permissionless
+    while `appeal()` is claimant-only, so an EOA appellant **cannot** atomically expire a decoy and
+    appeal in one transaction: a third party front-ran the freed slot indefinitely, for gas, and the
+    claimant who had just paid a 50% slash to earn the appeal could never use it.
+
+    A `REJECTED` case now **keeps** `_tokenToCase[tokenId]` for the length of a bounded appeal window
+    (`_appealDeadline[caseId] = block.timestamp + appealWindow()`, default **7 days**, governor-settable
+    within `[1 day, 30 days]` via `setAppealWindow`). `initiateRecovery`'s guard treats `REJECTED` as
+    occupying the slot while `block.timestamp <= appealDeadlineEffective(existingCase)`, and once the
+    window has lapsed it releases the stale link **lazily, inside `initiateRecovery`** — no cleanup
+    function, no keeper, so a slot can never be left locked by an absent third party. `appeal()` works
+    throughout the window and reverts the new `AppealWindowClosed(caseId, deadline)` after it. The
+    guard and `appeal()` read the **same private helper**, so they are exact complements by
+    construction rather than by two conditions somebody has to keep in step by hand. The deadline is
+    **recorded at rejection**, so shortening the window by governance cannot retract a right already
+    granted, and it counts **unpaused seconds only** — see item 15. `isQuarantined()` correspondingly
+    stays **true** across the window: the case really does still own the slot and the asset really is
+    still `FLAGGED`. Pinned by
+    `test_regression_thirdPartyCannotGriefAwayTheAppealRight`,
+    `test_regression_lapsedAppealWindowFreesTheSlotLazily`,
+    `test_regression_appealWindowBoundaryIsInclusive` and
+    `test_regression_guardAndAppealStayExactComplementsUnderPauseCredit`.
+
+    **The trade this window makes, quantified.** A rejected griefer now holds the token's only dispute
+    slot for `votingDuration + appealWindow` — **14 days** at defaults — where before the window
+    existed it was `votingDuration` alone, **7 days**, at the identical cost of 50% of the bond. That
+    is the price of stopping a third party from front-running an appeal right the claimant had already
+    paid that slash to earn, and it is a **token** slot, not custody: the asset never moves and stays
+    exactly as `FLAGGED` as AIRP found it. It is bounded on both sides — `APPEAL_WINDOW_MAX` caps the
+    extension at 30 days, and carrying the squat past the window means actually filing the appeal,
+    which costs a bond that doubles every round (`APPEAL_MULTIPLIER`: 1x, 2x, 4x, ...) and re-enters a
+    vote that can slash it.
+
+    `appealWindow()` follows the item-11 pattern exactly, and for the same reason: it returns the
+    **effective** value via a private zero-fallback, `configuredAppealWindow()` exposes the raw slot,
+    and a proxy upgraded from an implementation that predates slot 23 therefore applies 7 days instead
+    of giving every newly rejected case a deadline of exactly `block.timestamp` — an appeal right that
+    expires in the transaction that creates it. Pinned by
+    `test_regression_appealWindowZeroFallbackIsReportedAndApplied` (which asserts the fallback is
+    APPLIED, not merely reported) and `test_storageUpgradeSafety_v1LayoutToV2`.
+
+    One deliberate carve-out: `appeal()` treats `_appealDeadline[caseId] == 0` on a `REJECTED` case as
+    "no window was ever recorded" and allows the appeal. That is reachable only for a case rejected by
+    an implementation that predates this window — which also released its token link immediately, so it
+    never occupied anyone's slot — and closing its appeal right retroactively at upgrade time would be
+    a silent taking. Every case rejected from here on receives a non-zero deadline, so the carve-out
+    can never widen the window for a new case, and `appeal()`'s "never steal another live case's link"
+    guard still applies to it. Pinned by
+    `test_regression_appealCannotClobberAnotherLiveCasesTokenLink`.
+
+**A FOURTH adversarial review then proved three more — all of them in the economics items 12 and 13
+themselves introduced.** Two were **spec** defects rather than implementation defects: the code did
+exactly what the previous spec said, and the spec was wrong. Each was demonstrated with a passing PoC
+before it was fixed.
+
+14. **One vote dodged the anti-squat fee (`FEE_EXEMPT_MIN_VOTES = 2`).** Item 12 keyed the fee on
+    `voteCount == 0`, and `vote()` excludes only the claimant and the current holder. So **one** address
+    holding a single AIRP juror seat (ids 70-73) that a griefer controls, rents or bribes could cast one
+    vote per decoy, tip the case into the `0 < voteCount < MINIMUM_VOTES` apathy carve-out, and make
+    squatting free and infinitely repeatable — the exact state the fee exists to prevent. Proven: three
+    consecutive cycles left the griefer's balance **exactly unchanged** and the treasury at **exactly
+    zero**. Awkwardly, the same carve-out also fired when a single diligent juror voted on a decoy and
+    nobody else turned up, i.e. when the jury was doing its job.
+
+    The fee is now charged whenever `voteCount < FEE_EXEMPT_MIN_VOTES`, a named constant equal to
+    **2**, and the full refund is granted only from **two** votes up. One vote is purchasable from one
+    seat; two requires collusion between two independently-granted seats. `MINIMUM_VOTES` is 3, so the
+    threshold still sits **strictly below quorum** and the apathy principle — *voter apathy is not
+    claimant fraud* — survives for every case that drew real, plural engagement. What this does and
+    does not buy is priced in item 12's residuals. Pinned by
+    `test_regression_oneColludingVoteNoLongerExemptsADecoy` and
+    `test_regression_twoVotesExemptADecoyButOneDoesNot`.
+
+15. **A pause spanning the appeal window destroyed the appeal right (pause-aware deadline).**
+    `appeal()` carries `whenNotPaused` and item 13's `_appealDeadline` was an absolute wall-clock
+    instant that nothing ever extended. Before the window existed the appeal right was unbounded, so a
+    pause merely **delayed** it; with the window a pause that outlasts it **consumes** it outright —
+    and the claimant had already paid a 50% slash to earn that right. Reachable two ways: owner
+    `pause()`, and the `CircuitBreaker` auto-trip inside `initiateRecovery` / `appeal`, which calls
+    `_pause()` **directly**. The breaker's 4-hour cooldown does **not** clear `Pausable` — only
+    `unpause()` (owner-only) does — so ordinary volume could pause the contract and the owner would
+    have had to notice and unpause within 7 days or the right was gone. That contradicted the rule
+    item 6 states: a tripped breaker can never trap a bond.
+
+    The window now counts **unpaused seconds only**, in O(1) with no iteration over cases. Three
+    appended slots do it: `_pausedAt` (25) records when the current pause began, `_pauseCredit` (26)
+    accumulates the seconds spent paused all time, and `_pauseCreditAtRejection` (27) records the
+    credit reading at each rejection. The effective deadline is the recorded deadline plus whatever
+    credit accrued since, including a pause still in progress, exposed through **one private helper**
+    that `appeal()` and `initiateRecovery`'s guard both consult — and mirrored on chain as the public
+    `appealDeadlineEffective(caseId)`, exactly as `appealWindow()` exposes the effective window. Credit
+    can never exceed the wall time elapsed since the rejection, so this can extend a window but never
+    resurrect one that already lapsed in fully unpaused time. **Both `_pause()` and `_unpause()` are
+    overridden**, not the external `pause()`, precisely because the breaker's direct `_pause()` is the
+    path that made this urgent; that path is pinned by its own test.
+
+    That "can never exceed the wall time elapsed since the rejection" property was **false in the
+    first cut of this mechanism**, and two independent reviewers proved it with PoCs before it
+    shipped. The stamp recorded raw `_pauseCredit`, which deliberately excludes a pause still in
+    progress (only `_unpause()` banks it), while the reader added that in-progress pause in full. A
+    case rejected *during* an existing pause was therefore credited every second the contract had
+    already been paused before its window existed — 100 days of phantom credit in the PoC — and the
+    eventual unpause banked the over-credit permanently, extending the dispute-slot lock past
+    `APPEAL_WINDOW_MAX`. It needed no privileged actor: `executeResolution` is deliberately not
+    `whenNotPaused`, so the REJECTED branch is reachable mid-pause. The fix routes **both** the stamp
+    and the reading through one `_creditNow()` helper, so the baseline and the reading are measured
+    the same way and an in-progress pause sits inside the baseline rather than being added to it.
+    Pinned by `test_regression_pauseStartingBeforeRejectionDoesNotOverCredit`, which fails by exactly
+    the 100-day over-credit if the stamp is reverted to raw `_pauseCredit`.
+
+    `_pauseCreditAtRejection` is stored **offset by one**, so a stored `0` means unambiguously "never
+    recorded" rather than "recorded when the credit happened to be 0". A case rejected **before** this
+    upgrade therefore receives **zero** credit and keeps exactly the wall-clock deadline it was given;
+    reading its unwritten 0 as a genuine baseline would have handed it the entire pause credit accrued
+    since the upgrade, an unbounded grant nobody voted for. The residual is that such a case can still
+    lose its window to a long pause, exactly as it could before this change — bounded by the fact that
+    the live deployment has opened **zero** cases (`nextCaseId()` reads 1), so the affected set is
+    empty. Pinned by `test_regression_pauseSpanningTheWindowDoesNotDestroyTheAppealRight`,
+    `test_regression_pauseCreditExpiresAndTheSlotIsReleased` (a pause does not extend it
+    *indefinitely* either), `test_regression_guardAndAppealStayExactComplementsUnderPauseCredit`,
+    `test_regression_preUpgradeRejectionGetsNoHistoricalPauseCredit` and
+    `test_regression_circuitBreakerAutoTripAccruesPauseCredit`.
+
+16. **`setMinimumStake` had no floor, so the fee could silently round to zero
+    (`MINIMUM_STAKE_FLOOR`).** `setEnforcementWindow` and `setAppealWindow` are both bounded, but the
+    one parameter the anti-squat economics actually rest on was not. Any `minimumStake` below
+    `BASIS_POINTS / SQUAT_FEE_RATE` (**10 wei**) makes `(bond * SQUAT_FEE_RATE) / BASIS_POINTS`
+    truncate to **0**: the fee stops existing with no revert, no event and no other signal, while every
+    document still claims squatting costs 10%. Proven: governor sets `minimumStake` to 9, a griefer
+    squats, and both balances are exactly unchanged. `setMinimumStake` now reverts
+    `MinimumStakeBelowFloor(requested, MINIMUM_STAKE_FLOOR)` below that floor, which is derived from
+    the fee rate rather than written as a literal, so the two can never drift apart. Pinned by
+    `test_regression_setMinimumStakeFloorBoundsAndAuthority`.
+
+**Measured cost to TAGITCore.** Exactly one member was added — the `preFlagState(uint256)` view.
+Measured on this branch, `FOUNDRY_PROFILE=deploy forge build --sizes`:
+
+| Contract | Before | After | Delta | EIP-170 margin after |
+|---|---|---|---|---|
+| `TAGITCore` | 22,601 | **22,664** | **+63** | **1,912** |
+| `TAGITRecovery` | 12,709 | **17,709** | +5,000 | **6,867** |
+
+`forge inspect TAGITCore storage-layout` is **byte-identical** before and after. `TAGITRecovery`'s
+layout is strictly append-only: slots 0–19 are unchanged, `_enforcementWindow`, `_enforcementEndsAt`
+and `_caseRound` occupy slots 20–22, `_appealWindow` and `_appealDeadline` occupy slots 23–24 (item
+13), `_pausedAt`, `_pauseCredit` and `_pauseCreditAtRejection` occupy slots 25–27 (item 15), and
+`__gap` shrinks `[37] -> [29]` in lockstep so the contract still ends at slot 56 — a 57-slot
+footprint, unchanged. Because a v1 proxy has never written `_enforcementWindow`, the
+contract reads it through a zero-fallback (`_window()`) rather than a `reinitializer(2)` — a missed
+reinitializer call would make every `ENFORCING` case instantly expirable, and a fallback cannot be
+missed. The public getter `enforcementWindow()` returns that **effective** value; the raw slot is
+exposed separately as `configuredEnforcementWindow()`.
+
+**Exposure.** `nextCaseId()` read **1** on the live deployment — zero recovery cases were ever opened,
+so there is no migration burden and no live case to preserve. Everything is testnet-only.
+
+**ABI/indexer impact — READ THIS BEFORE UPDATING `tagit-sdk` / `tagit-indexer`.**
+
+*Events.* `CaseResolved` and `AssetQuarantined` keep their `topic0` (the `winner` parameter was renamed
+to `awardedTo`, which is not part of an event signature). `QuarantineReleased` was **deleted** —
+TAGITRecovery cannot release a TAGITCore freeze, so emitting it was itself a lie; `resolve()` already
+emits `StateChanged`. New topics: `ResolutionPending`, `ResolutionDelivered`, `CaseVoided`,
+`CaseExpired`, `EnforcementWindowUpdated`, `AppealRoundOpened`, `AntiSquatFeeCharged`,
+`AppealWindowOpened`, `AppealWindowUpdated`.
+
+> **`CaseExpired.bondReturned` is the NET amount the claimant actually received**, not the recorded
+> bond. They differ on exactly one path: a case that expired having drawn **fewer than two** votes
+> (`FEE_EXEMPT_MIN_VOTES`), where `SQUAT_FEE_RATE` went to the treasury and an `AntiSquatFeeCharged`
+> was emitted immediately before the `CaseExpired`. **That threshold moved from zero to two** (item
+> 14), so an indexer written against the earlier rule now under-reports the fee on one-vote expiries.
+> An indexer that reconstructs claimant P&L from `CaseExpired` alone is correct; one that assumed
+> `bondReturned == stakeBond` is not.
+
+> **`AntiSquatFeeCharged` is NOT `StakeSlashed`.** They are separate topics because they mean
+> different things: `StakeSlashed` is a 50% penalty following an adverse jury vote, and
+> `AntiSquatFeeCharged` is a 10% fee for occupying an asset's dispute slot without drawing **two**
+> votes. A UI that renders the fee as a fraud finding is defaming the claimant.
+
+> **`AppealWindowOpened(caseId, tokenId, deadline)` marks the interval in which the token's dispute
+> slot is NOT free.** Until `deadline`, `initiateRecovery` reverts `ActiveCaseExists` for everyone
+> else and only this case's claimant may `appeal()`. After it, the slot is claimable and the stale
+> link is cleared by the next `initiateRecovery` — there is no cleanup transaction and therefore no
+> event marking the release; read `getActiveCaseForToken` if you need the live answer.
+>
+> **The `deadline` in this event is the WALL-CLOCK deadline recorded at rejection, and the contract
+> may enforce a LATER one.** Since item 15 the window counts unpaused seconds, so every second the
+> contract spends paused after the rejection pushes the enforced instant out. No event is emitted when
+> that happens. An indexer that treats the emitted `deadline` as final will call an appeal window
+> closed while the contract still accepts an `appeal()`. Read `appealDeadlineEffective(caseId)` on
+> chain for the number the contract actually enforces; `appealDeadline(caseId)` returns the raw
+> recorded value this event carries.
+
+> **`CaseResolved` is not a terminal marker.** `REJECTED` is not terminal — `appeal()` reopens the case
+> — so one `caseId` can emit `CaseResolved` more than once. Consumers must treat the **latest** one as
+> authoritative. The doc comment previously claimed the event fired only on a terminal status; it
+> never did.
+
+> **`VoteCast` must be partitioned by round.** Vote records are now keyed by `(caseId, round)`.
+> `AppealRoundOpened(caseId, round, bond)` marks the boundary; every `VoteCast` after it belongs to
+> that round. An indexer that tallies `VoteCast` per case without partitioning will mix a closed round
+> into a live one. `caseRound(uint256)` reads the live round on chain.
+
+*Errors — a breaking ABI change, deliberate.* Eight declared-but-unreachable errors were removed
+from `IRecovery`: `CannotTransferQuarantined` (removed earlier in this change) plus `QuorumNotReached`,
+`InsufficientStake`, `VotingNotOpen`, `AssetAlreadyQuarantined`, `InsufficientAppealBond`,
+`CircuitBreakerTripped` and `RateLimitExceeded`. **None of them was ever reverted by any code path**, so
+no live revert can stop decoding — but a codegen'd SDK that references the symbols will fail to
+compile and must drop them. The last two were shadows: the real reverts come from
+`CircuitBreaker.CircuitBreakerTripped(uint256)` and `RateLimiter.RateLimitExceeded(address,uint256)`,
+which have **different signatures**, so the `IRecovery` copies could never have decoded a real revert.
+The policy is now stated in the `CUSTOM ERRORS` block of `IRecovery.sol`: an error that no path can
+revert is deleted, not kept for shape. The `CircuitTripped` / `CircuitReset` / `RateLimitHit` **events**
+are retained on purpose — the libraries emit them with identical signatures from this contract's
+context, so their `topic0` really does appear in TAGITRecovery logs.
+
+*Errors added.* `VotingPeriodEnded(uint256,uint256)` — `vote()` after `votingEndsAt` used to revert
+`VotingStillActive`, a name that stated the exact opposite of the condition it fired on.
+`VotingStillActive` keeps its correct meaning in `executeResolution()`. `EscrowUnderfunded(uint256,uint256)`
+— asserted after `appeal()` collects its bond. `AppealWindowClosed(uint256,uint256)` — `appeal()` after
+the bounded window lapsed (item 13). `InvalidAppealWindow(uint256)` — `setAppealWindow()` outside
+`[APPEAL_WINDOW_MIN, APPEAL_WINDOW_MAX]`. `MinimumStakeBelowFloor(uint256,uint256)` —
+`setMinimumStake()` below `MINIMUM_STAKE_FLOOR`, where the anti-squat fee would truncate to zero
+(item 16). **Thirteen** errors are added in total against the eight deleted; recount with
+`grep -c '^\s*error ' src/interfaces/IRecovery.sol` (25 now, 20 before).
+
+*Views added.* `caseRound(uint256)`, `hasVotedInRound(uint256,uint256,address)`,
+`getVoteInRound(uint256,uint256,address)`, `enforcementDeadline(uint256)`,
+`configuredEnforcementWindow()`, `appealDeadline(uint256)`, `appealDeadlineEffective(uint256)`,
+`appealWindow()`, `configuredAppealWindow()`. `hasVoted(caseId, voter)` and `getVote(caseId, voter)`
+now answer for the **current** round; use the `InRound` variants to read a closed one.
+`appealDeadline` is the **raw recorded** deadline and `appealDeadlineEffective` is the one the
+contract enforces — they differ by accrued pause credit (item 15), and off-chain consumers want the
+latter. `configuredEnforcementWindow` is declared on the contract but **not** on `IRecovery`; the
+other eight are on both — `enforcementDeadline` IS declared, at `IRecovery.sol:495`.
+
+*Setter added.* `setAppealWindow(uint256)` — governor-only, bounded to `[1 day, 30 days]`, governed
+exactly as `setEnforcementWindow` is.
+
+*Setter bounded.* `setMinimumStake(uint256)` keeps its selector and its governor-only authority but now
+reverts `MinimumStakeBelowFloor` below `MINIMUM_STAKE_FLOOR` (10 wei) — item 16. A governance script
+that previously set a sub-floor value silently succeeded and silently disabled the anti-squat fee; it
+now reverts.
+
+*Constants added.* `SQUAT_FEE_RATE` (1000 bp), `FEE_EXEMPT_MIN_VOTES` (2 — item 14),
+`MINIMUM_STAKE_FLOOR` (`BASIS_POINTS / SQUAT_FEE_RATE` = 10 wei — item 16),
+`APPEAL_WINDOW_DEFAULT` (7 days), `APPEAL_WINDOW_MIN` (1 day), `APPEAL_WINDOW_MAX` (30 days).
+
+*Behaviour changed, no signature change.* `isQuarantined(tokenId)` now stays **true** while a
+`REJECTED` case holds the token through its appeal window; it used to go false the instant the case
+was rejected, which was the release that made item 13 exploitable. `getActiveCaseForToken(tokenId)`
+correspondingly keeps returning the rejected case's id through that window, and may return a **stale**
+id after the window lapses until the next `initiateRecovery` sweeps it — compare against
+`appealDeadlineEffective()` if you need to distinguish "held" from "stale". Comparing against
+`appealDeadline()` is now **wrong** for that purpose: since item 15 the raw recorded deadline can pass
+while the contract still treats the slot as held, because the window counts unpaused seconds.
+
+*Views changed.* `enforcementWindow()` keeps its selector but now returns the **effective** window
+(falling back to `ENFORCEMENT_WINDOW_DEFAULT` when the slot was never written) instead of the raw slot.
+On the upgraded proxy the old getter returned `0`, which off-chain consumers reported as "no
+enforcement window configured" while the contract was in fact enforcing 30 days. Read the raw slot via
+`configuredEnforcementWindow()`.
+
+*Constants renamed.* `BADGE_VERIFIER` / `BADGE_CERTIFIED_VERIFIER` / `BADGE_MANUFACTURER` /
+`BADGE_GOVERNANCE` (values 1/2/10/20) are **gone**, replaced by `BADGE_AIRP_JUROR` (70),
+`BADGE_AIRP_SENIOR_JUROR` (71), `BADGE_AIRP_ARBITER` (72), `BADGE_AIRP_TRIBUNAL` (73). The old names
+pointed at other contracts' registry entries; the new ones name the seat they actually are.
+
+*Enum.* `CaseStatus` gained members 6/7/8 (`ENFORCING`, `EXPIRED`, `VOIDED`) — appended, never
+reordered — and any UI switching on the enum must handle them.
+
+**Verification.** `forge test`: **2,082 passed, 0 failed** across 77 suites (1,972 before this
+change). `test/recovery/TAGITRecoveryVerdict.t.sol` holds **37** tests and
+`test/recovery/TAGITRecoveryRegression.t.sol` **36** of its own (**73** when
+run — it inherits the verdict fixture). `forge inspect TAGITRecovery storage-layout` confirms slots
+0-24 are byte-for-byte where they were, that `_pausedAt` / `_pauseCredit` /
+`_pauseCreditAtRejection` are strictly appended at 25-27, and that the contract still ends at slot 56
+for an unchanged 57-slot footprint. The end-to-end
+proof that the original defect is fixed is `test_endToEndDelivery_claimantActuallyReceivesTheAsset`;
+the proof that the second-, third- and fourth-round defects (items 4-16) are fixed is the whole of
+`TAGITRecoveryRegression` — every test there began as a PoC that passed by demonstrating a bug and is
+now inverted to pass by demonstrating its absence.
+
+**What we did NOT do, deliberately.** We did not grant TAGITRecovery `RESOLVER_CAPABILITY`. Doing so
+would have let the AIRP contract satisfy Core's 2-of-3 human multisig single-handedly and would have
+put a custodial badge on a contract whose proxy owner is a hot EOA (KI-27). We accepted one extra
+human transaction instead. Please attack that trade-off.
+
+---
+
+# OPEN — ADJACENT TO KI-25, DELIBERATELY OUT OF SCOPE FOR THAT FIX
+
+These four were found while remediating KI-25. They are **not fixed**. They are listed separately
+because each is a distinct defect that the KI-25 change chose not to absorb, and we would rather you
+have our reasoning than guess at it.
+
+## KI-26 — `TAGITCore.approveResolve` first-approver-binds-recipient deadlock
+
+**Severity:** Medium. **Status:** Open, pre-existing, not introduced by KI-25.
+
+`approveResolve` (`src/core/TAGITCore.sol:1077-1125`) lets the **first** approver set
+`_resolveRecipient[tokenId]`; every later approver must match it or revert `RecipientMismatch`. There
+is no `resetResolveRound` and the nonce only advances inside a successful `resolve()`. A single
+resolver — mistaken or malicious — can therefore bind a token's resolve round to a wrong recipient and
+there is no way to clear it short of a Core upgrade.
+
+**Why KI-25 did not fix it.** It is a Core access-control defect, not a recovery-flow defect, and
+fixing it means adding a state-changing function to a contract with 1,912 bytes of EIP-170 headroom.
+It also degrades safely under the new design: `finalizeResolution` detects the mismatch
+(`ResolverRecipientMismatch`), the case can be exited via `expireEnforcement` or
+`abandonEnforcement`, and the claimant is refunded **100% with no slash**. Pinned by
+`test_finalizeResolution_revert_resolverRecipientMismatch`.
+
+**Related and already disclosed:** `requiresCapability` fails **open** when `accessController ==
+address(0)` (`src/core/TAGITCore.sol:550-558`) — see AUDIT-SCOPE §3.2. The KI-25 change adds no new
+`requiresCapability` gate and every new precondition reverts rather than proceeding, so it does not
+widen that exposure.
+
+---
+
+## KI-27 — The `TAGITRecovery` proxy owner is the deployer EOA, not the TimelockController
+
+**Severity:** Medium. **Status:** Open — an operational precondition of shipping KI-25.
+
+`TAGITCore`'s owner is already the TimelockController. `TAGITRecovery`'s is not: the proxy
+(`0x6BC3C69367E586810A3B317fA9F0406504e95866`) is owned by the deployer EOA, so its implementation can
+be swapped with **zero delay**. Under the KI-25 design this is not exploitable *through TAGITCore* —
+Recovery holds no capability there — but it does let one hot key rewrite the escrow and slashing logic
+sitting over other people's bonds.
+
+**Required before this leaves testnet:** transfer the Recovery proxy owner to the TimelockController.
+This is the same governance gap as KI-01, applied to a second contract.
+
+---
+
+## KI-28 — `RESOLVER_CAPABILITY` and `FLAGGER_CAPABILITY` rosters are unpopulated; the recovery path is inert
+
+**Severity:** Medium. **Status:** Open — an operational precondition, not a code defect.
+
+`RESOLVER_CAPABILITY` (`keccak256("RESOLVER")`) is held by **nobody** on the live deployment — not the
+Recovery proxy, not the deployer EOA, not the timelock — so `TAGITCore.resolve()` is uncallable and the
+Core-side recovery path is dead independently of KI-25. Under the new design this fails **safely**
+rather than silently: an approved case sits in `ENFORCING`, nobody can execute it, and it terminates as
+`EXPIRED` with a 100% refund. Safe, but useless.
+
+**Required to make AIRP functional:**
+
+- `RESOLVER_CAPABILITY` to **three** distinct, independently-custodied human addresses. **None** to the
+  Recovery proxy, the Core proxy, or the deployer EOA — that is the KI-25 trust boundary.
+- `FLAGGER_CAPABILITY` to **at least two** independent operators. Under the new design nothing enters
+  AIRP without a flag, so a single FLAGGER key is a censorship chokepoint on a victim's access to the
+  dispute process. This is the one genuine loss of permissionlessness KI-25 introduced, and it is a
+  deliberate trade for closing a free, unreleasable asset-freeze griefing vector.
+- `IdentityBadge` ids **70 / 71 / 72 / 73** (AIRP jury seats: JUROR 1x, SENIOR_JUROR 2x, ARBITER 3x,
+  TRIBUNAL 4x) to at least **three distinct** voters via `IdentityBadge.grantIdentity`, and
+  confirmation that `TAGITAccess.setIdentityBadge` points at the live `IdentityBadge`. `hasIdentity` is
+  zero-trust and returns `false` when unset, which makes every vote revert `NotBadgeHolder` —
+  fail-closed, and pinned by `test_unwiredIdentityBadge_failsClosed`.
+- Monitoring on `CaseVoided` and on `CaseExpired` from an `ENFORCING` case: both mean the resolver
+  quorum diverged from or ignored a verdict. A keeper is needed for `finalizeResolution` /
+  `expireEnforcement` — nothing settles a bond on its own.
+
+---
+
+## KI-29 — `TAGITGovernor._countVote` was an empty-bodied override of an abstract OZ hook
+
+**Severity:** Low. **Status:** Hardened in the same change as KI-25.
+
+`src/governance/TAGITGovernor.sol` overrode OpenZeppelin's abstract `_countVote` hook with an empty
+body. It is unreachable today — `TAGITGovernor` overrides `_castVote` and tallies through
+`_recordHouseVote` — and it cannot simply be deleted, because the base declares it abstract and the
+contract would not compile. But an empty body means any future refactor that routes voting back
+through the OZ counting path would **silently record no votes at all**.
+
+The body now reverts with a declared custom error, `CountVoteUnsupported(proposalId, account)`, and
+carries a comment explaining why it is unreachable. Fail-loud instead of fail-silent. The full
+governance suite (29 tests) passes unchanged.
 
 ---
 

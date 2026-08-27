@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {IntegrationBase} from "./IntegrationBase.t.sol";
 import {TAGITCore} from "../../src/core/TAGITCore.sol";
+import {IRecovery} from "../../src/interfaces/IRecovery.sol";
 
 /**
  * @title E2EHappyPathTest
@@ -213,32 +214,62 @@ contract E2EHappyPathTest is IntegrationBase {
     // ============================================
 
     /**
-     * @notice Full dispute journey: Claim → Vote → Resolve
+     * @notice Full dispute journey: Flag -> Claim -> Vote -> Enforce -> Deliver -> Settle
+     * @dev Before TAGIT-VDP-2026-001 was fixed this journey could not be written: the
+     *      protocol had no path from an approved verdict to the asset actually moving.
      */
     function test_fullDisputeJourney() public {
         // STEP 1: Setup - Create asset owned by consumer1
         uint256 tokenId = _mintClaimedAsset(consumer1);
 
-        // STEP 2: Consumer2 initiates recovery claim
+        // STEP 2: A FLAGGER freezes the asset. AIRP adjudicates already-frozen assets
+        //         only — it can neither create nor release a TAGITCore freeze.
+        vm.prank(lawEnforcement);
+        core.flag(tokenId);
+
+        // STEP 3: Consumer2 initiates recovery claim
         uint256 stakeBond = recovery.minimumStake();
+        uint256 claimantBalanceBefore = token.balanceOf(consumer2);
 
         vm.startPrank(consumer2);
         token.approve(address(recovery), stakeBond);
         uint256 caseId = recovery.initiateRecovery(tokenId, keccak256("ownership-proof"));
         vm.stopPrank();
 
-        // STEP 3: Verifier votes in favor of claimant
+        // STEP 4: Badge holders vote in favour of the claimant (quorum is 3 votes)
         vm.prank(verifier);
         recovery.vote(caseId, true, keccak256("verified-evidence"));
+        vm.prank(manufacturer);
+        recovery.vote(caseId, true, keccak256("provenance-matches"));
+        vm.prank(qaInspector);
+        recovery.vote(caseId, true, keccak256("governance-review"));
 
-        // STEP 4: Additional votes to reach quorum (simplified)
-        // In production, would need more voters with different badges
-
-        // STEP 5: Wait for voting period to end
+        // STEP 5: Wait for voting period to end, then tally
         vm.warp(block.timestamp + 8 days);
+        recovery.executeResolution(caseId);
 
-        // Note: Full resolution requires quorum to be met
-        // This test shows the flow structure
+        // The verdict is an INSTRUCTION, not a transfer. The asset has not moved.
+        assertEq(
+            uint8(recovery.getCase(caseId).status), uint8(IRecovery.CaseStatus.ENFORCING), "should await the quorum"
+        );
+        assertEq(core.ownerOf(tokenId), consumer1, "asset must not move on a vote alone");
+        assertEq(token.balanceOf(consumer2), claimantBalanceBefore - stakeBond, "bond still escrowed");
+
+        // STEP 6: TAGITCore's 2-of-3 human resolver quorum executes the verdict
+        vm.prank(lawEnforcement);
+        core.approveResolve(tokenId, consumer2);
+        vm.prank(lawEnforcement2);
+        core.approveResolve(tokenId, consumer2);
+        vm.prank(lawEnforcement);
+        core.resolve(tokenId, consumer2);
+
+        assertEq(core.ownerOf(tokenId), consumer2, "asset delivered to the claimant");
+
+        // STEP 7: Settle the bond by observing what TAGITCore actually did
+        recovery.finalizeResolution(caseId);
+
+        assertEq(uint8(recovery.getCase(caseId).status), uint8(IRecovery.CaseStatus.RESOLVED));
+        assertEq(token.balanceOf(consumer2), claimantBalanceBefore, "bond returned in full");
     }
 
     // ============================================

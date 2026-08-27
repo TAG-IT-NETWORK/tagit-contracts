@@ -183,6 +183,10 @@ contract CoreFlowsTest is IntegrationBase {
         // Create claimed asset owned by consumer1
         uint256 tokenId = _mintClaimedAsset(consumer1);
 
+        // AIRP adjudicates already-frozen assets only: a FLAGGER must freeze first.
+        vm.prank(lawEnforcement);
+        core.flag(tokenId);
+
         // Consumer2 claims they are the rightful owner
         uint256 stakeBond = recovery.minimumStake();
 
@@ -202,8 +206,10 @@ contract CoreFlowsTest is IntegrationBase {
      * @notice E2E: Vote on recovery case
      */
     function test_voteOnRecoveryCase() public {
-        // Setup: Create case
+        // Setup: Create case (asset must already be FLAGGED in TAGITCore)
         uint256 tokenId = _mintClaimedAsset(consumer1);
+        vm.prank(lawEnforcement);
+        core.flag(tokenId);
         uint256 stakeBond = recovery.minimumStake();
 
         vm.startPrank(consumer2);

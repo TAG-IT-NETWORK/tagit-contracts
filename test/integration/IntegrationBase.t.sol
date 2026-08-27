@@ -91,10 +91,12 @@ abstract contract IntegrationBase is Test {
     uint256 public constant BADGE_VERIFIER = 11;
     uint256 public constant BADGE_LAW_ENFORCEMENT = 21;
 
-    // Recovery voting badge IDs (must match TAGITRecovery constants)
-    uint256 public constant VOTE_BADGE_VERIFIER = 1;
-    uint256 public constant VOTE_BADGE_MANUFACTURER = 10;
-    uint256 public constant VOTE_BADGE_GOVERNANCE = 20;
+    // AIRP jury seat IDs (must match TAGITRecovery constants — reserved range 70-79).
+    // Deliberately NOT the KYC / MANUFACTURER / GOV_MIL ids: a jury seat is its own
+    // grant, so holding basic KYC or a business badge confers no AIRP voting weight.
+    uint256 public constant VOTE_BADGE_AIRP_JUROR = 70;
+    uint256 public constant VOTE_BADGE_AIRP_ARBITER = 72;
+    uint256 public constant VOTE_BADGE_AIRP_TRIBUNAL = 73;
 
     // ============================================
     // SETUP
@@ -297,9 +299,13 @@ abstract contract IntegrationBase is Test {
         identityBadge.grantIdentity(verifier, BADGE_VERIFIER);
         identityBadge.grantIdentity(lawEnforcement, BADGE_LAW_ENFORCEMENT);
 
-        // Grant recovery voting capability badges
-        capabilityBadge.grantCapability(verifier, VOTE_BADGE_VERIFIER);
-        capabilityBadge.grantCapability(manufacturer, VOTE_BADGE_MANUFACTURER);
+        // Grant AIRP jury seats on the SOULBOUND IdentityBadge. TAGITRecovery reads
+        // hasIdentity(), never hasCapability() — a transferable badge could be walked
+        // through N addresses to manufacture a unanimous verdict. Each seat is granted
+        // EXPLICITLY: the manufacturer's business badge (10) carries no jury weight.
+        identityBadge.grantIdentity(verifier, VOTE_BADGE_AIRP_JUROR);
+        identityBadge.grantIdentity(manufacturer, VOTE_BADGE_AIRP_ARBITER);
+        identityBadge.grantIdentity(qaInspector, VOTE_BADGE_AIRP_TRIBUNAL);
     }
 
     function _fundUsers() internal {

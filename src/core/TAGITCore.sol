@@ -1467,6 +1467,18 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
     // ============================================
 
     /**
+     * @notice Get the lifecycle state a token held immediately before it was flagged
+     * @dev Exposes the private _preFlagState marker so off-chain callers and the AIRP
+     *      recovery module can refuse cases that resolve() could never execute: a
+     *      BOUND/ACTIVATED pre-flag asset must resolve back to its CURRENT owner.
+     * @param tokenId The token ID to query
+     * @return The recorded pre-flag state (State.NONE if never flagged)
+     */
+    function preFlagState(uint256 tokenId) external view returns (State) {
+        return _preFlagState[tokenId];
+    }
+
+    /**
      * @notice Get asset metadata for a token
      * @param tokenId The token ID to query
      * @return assetOwner Current owner address
