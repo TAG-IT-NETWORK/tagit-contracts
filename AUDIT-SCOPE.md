@@ -343,11 +343,22 @@ Capability IDs in production are `uint256(keccak256("MINTER"))` and friends
    above are what is actually used. `CLAUDE.md` is wrong; `security/PRIVILEGE-MATRIX.md` §5.2 records
    this as a defect. Trust the code.
 
-Identity badge IDs additionally **collide across contracts**: ID 1 is simultaneously `ADMIN_BADGE`,
-`BADGE_VERIFIER` and `KYC_L1_IDENTITY`; ID 20 is `BADGE_GOVERNANCE` in `TAGITRecovery` and
-`BADGE_GOV_MIL` in `TAGITGovernor`; `TAGITPrograms` uses a fourth numbering scheme (50/51/60). The single
-live `grantIdentity(deployer, 1)` therefore conferred three unrelated privileges at once. This is a
+Identity badge IDs additionally **collide across contracts**: ID 1 is simultaneously `ADMIN_BADGE` and
+`KYC_L1_IDENTITY` (three separate agent contracts read it); ID 10 is `BADGE_MANUFACTURER` in
+`RobotTypes`, `TAGITGovernor` and `TAGITPrograms`; ID 20 is `BADGE_GOV_MIL` in `RobotTypes` and
+`TAGITGovernor`; ID 30 is simultaneously `BADGE_CHEF_BOT` (`RobotTypes`) and `BADGE_DEV`
+(`TAGITGovernor`); `TAGITPrograms` uses yet another numbering scheme (50/51/60). The single live
+`grantIdentity(deployer, 1)` therefore conferred several unrelated privileges at once. This is a
 namespace design flaw, not a one-off mistake, and we would like a recommendation on it.
+
+`TAGITRecovery` **used to be part of this collision** — its juror ids were 1/2/10/20, which was inert
+while the lookup read the transferable `CapabilityBadge` (nobody holds capability ids 1/2/10/20) but
+became live the moment KI-25 correctly moved the lookup to the soulbound `IdentityBadge`, silently
+making every KYC'd account an AIRP juror. It now uses a dedicated, documented **70-79** range
+(`BADGE_AIRP_JUROR` 70, `BADGE_AIRP_SENIOR_JUROR` 71, `BADGE_AIRP_ARBITER` 72, `BADGE_AIRP_TRIBUNAL`
+73) that collides with nothing; the registry-wide allocation table now lives in
+`src/access/IdentityBadge.sol`. That is one contract removed from the collision, not a fix for the
+namespace design — the rest of §3.2 still stands.
 
 ### 3.3 Upgradeability
 
@@ -564,12 +575,17 @@ Test suite size, measured:
 
 ```bash
 # Count only TRACKED files, so the number reproduces on the clone you receive.
-git ls-files 'test/**/*.sol' | xargs grep -hoE 'function (test|testFuzz|test_)[A-Za-z0-9_]*' | wc -l   # 1828
+git ls-files 'test/**/*.sol' | xargs grep -hoE 'function (test|testFuzz|test_)[A-Za-z0-9_]*' | wc -l   # 1805
 git ls-files 'test/**/*.sol' | xargs grep -hoE 'function invariant_[A-Za-z0-9_]*' | wc -l              #   12
 ```
 
-→ **1840 test functions** across 80 tracked test files. (A working tree that still holds the three untracked source files of §1.4 also carries 2 untracked test files and reports 1,995; that number does not reproduce on a clone and should be ignored.) The suite reports 0 failures on the default
-profile as of 2026-07-27; verify with `forge test`. Fuzzing is configured at `runs = 100000`,
+→ **1,817 test functions** across 79 tracked test files. (This is DOWN from 1,840 across 80: the KI-25
+remediation deleted tests that asserted the pre-fix behaviour, and its replacements are not committed
+yet. A working tree that still holds this branch's untracked source files also carries 5 untracked test
+files — including the three AIRP suites the KI-25 work added — and reports 2,045 test functions; that
+number does not reproduce on a clone and should be ignored.) The suite reports **2,082 passed, 0
+failed** across 77 suites on the default profile in the working tree described in §5.10; verify with
+`forge test`. Fuzzing is configured at `runs = 100000`,
 `max_test_rejects = 65536`, `seed = 0x333`; invariants at `runs = 256`, `depth = 500`,
 `fail_on_revert = true`.
 
@@ -672,7 +688,116 @@ delegated authorization path — it is the most dangerous unaudited file in the 
 **+193 nSLOC (+2.9% on the 6,593 base)**. We would rather pay for it now than ship it unaudited.
 **Please quote it as a line item.**
 
-### 5.10 Documentation defects we know about
+### 5.10 AIRP was rebuilt after this document was written — read KI-25 before reviewing `src/recovery/`
+
+An externally reported defect, **TAGIT-VDP-2026-001**, was confirmed and remediated on branch
+`meta/t19-ops-scripts` after the scope freeze. It is material to how you should read
+`src/recovery/TAGITRecovery.sol`, `src/interfaces/IRecovery.sol` and the recovery path in
+`src/core/TAGITCore.sol`. The full write-up is `KNOWN-ISSUES.md` **KI-25**; the summary:
+
+`TAGITRecovery.executeResolution()` ran a complete bonded dispute — 100e18 TAGIT bond,
+badge-weighted voting, 66% threshold, 3-vote minimum, 7-day period, **50% slashing of a losing
+claimant** — and never moved the NFT. The pre-fix source said so in a comment. A winning claimant got
+nothing but their bond back; a losing claimant was really slashed for a process that structurally
+could never have delivered the asset. Quarantine was decorative, a sub-quorum case was permanently
+locked with its bond, and the vote weighting read the **transferable** `CapabilityBadge` (§5.7), so
+one badge walked through three addresses produced a unanimous verdict.
+
+**The security claim to falsify.** The remediation makes AIRP an adjudicator rather than a custodian:
+
+> **TAGITRecovery holds ZERO capabilities in TAGITCore and makes ZERO state-changing calls into
+> TAGITCore.** It calls only `getAsset`, `preFlagState`, `getResolveApprovalStatus`,
+> `RESOLVE_QUORUM` and `IERC721.ownerOf` — all `view`.
+
+That is a one-sentence claim you can attack with a grep. The read-only surface is pinned by
+`src/interfaces/ITAGITCoreRecovery.sol` (which declares no state-changing function, deliberately), the
+invariant is machine-checked by `test_trustBoundary_recoveryHoldsNoCapability`, and the deploy script
+`script/deploy/UpgradeRecoveryVerdict.s.sol` aborts if TAGITRecovery ever holds a capability. **If you
+can break that claim, that is the highest-value finding in this file.**
+
+Custody now moves only through `TAGITCore.resolve()` and its 2-of-3 human quorum. A case is admitted
+only over an asset that is **already** `FLAGGED` (so AIRP never creates a freeze it cannot release), an
+approved verdict lands in a new non-terminal `ENFORCING` status with the bond still escrowed, and
+`finalizeResolution()` observes what Core actually did before settling. **Slashing** — 50%, on the
+`REJECTED` path — happens **only** on an actual adverse vote; every machinery failure refunds 100%.
+Vote weight moved to the soulbound `IdentityBadge`.
+
+Two economic rules sit on top of that and are **not** slashing; price them separately (KI-25 items 12
+and 13):
+
+- A case that expires having drawn **fewer than two** votes (`FEE_EXEMPT_MIN_VOTES`) pays a **10%
+  anti-squat fee** (`SQUAT_FEE_RATE`) to the treasury and keeps the rest, emitting
+  `AntiSquatFeeCharged`. Opening a case takes an asset's only dispute slot for the whole voting
+  period; a 100% refund on no engagement made squatting free and infinitely repeatable. The threshold
+  is **two, not zero**: `vote()` excludes only the claimant and the current holder, so one juror seat a
+  griefer controls could buy the exemption one vote at a time (KI-25 item 14). A case that drew **two**
+  votes is still below `MINIMUM_VOTES`, still `EXPIRES`, and still refunds **in full** — voter apathy
+  is not claimant conduct. **Two colluding seats can still exempt a decoy; that residual is disclosed
+  in KI-25 item 12 and we want you to price it.**
+- A `REJECTED` case **keeps** its token's dispute slot for a bounded **appeal window** (default 7 days,
+  governor-settable within `[1 day, 30 days]`) so a third party cannot front-run the freed slot and
+  grief away an appeal right the claimant just paid a 50% slash to earn. The stale link is released
+  **lazily** by the next `initiateRecovery`, so no keeper is required. `isQuarantined()` therefore
+  stays true across that window. The window counts **unpaused seconds only**: `appeal()` is
+  `whenNotPaused`, so a pause outlasting a wall-clock window would have consumed a right the claimant
+  had already paid for (KI-25 item 15). `appealDeadlineEffective(caseId)` is the instant the contract
+  enforces; `appealDeadline(caseId)` is the raw value recorded at rejection, and the two differ by
+  accrued pause credit. **The cost this buys is that a rejected griefer holds a token's dispute slot
+  for 14 days at defaults rather than 7, at the same 50%-of-bond price — price that too.**
+
+**Scope deltas you should price:**
+
+| Item | Change |
+|---|---|
+| `src/interfaces/ITAGITCoreRecovery.sol` | **New file**, 37 lines. View-only interface. |
+| `src/recovery/TAGITRecovery.sol` | Substantially rewritten. **885 → 1,861 LOC** (§1.3.1 row 17 shows the frozen 885). Runtime 12,709 → **17,709** B (EIP-170 margin **6,867**); §5.1 shows the frozen pre-change 12,709. |
+| `src/interfaces/IRecovery.sol` | **288 → 558 LOC.** `CaseStatus` gains members 6/7/8 (appended); **13 new errors, 9 new events, 8 new views** and 3 new state-changing functions (`expireEnforcement`, `finalizeResolution`, `abandonEnforcement`); `QuarantineReleased` and **8 declared-but-unreachable errors deleted** (see KI-25 "ABI/indexer impact"). Recount: `grep -c '^\s*error ' src/interfaces/IRecovery.sol` reads **25** against **20** at `HEAD`, and `grep -c '^\s*event '` reads **26** against **18**. |
+| `src/core/TAGITCore.sol` | **Exactly one** new member: `preFlagState(uint256) view`. Runtime 22,601 → **22,664** B (**+63**), EIP-170 margin **1,912**. `forge inspect TAGITCore storage-layout` is **byte-identical** before and after. |
+| `src/governance/TAGITGovernor.sol` | `_countVote` empty override replaced with an explicit revert (KI-29). |
+| Tests | **37** tests in `test/recovery/TAGITRecoveryVerdict.t.sol`, plus **36** of its own in `test/recovery/TAGITRecoveryRegression.t.sol` — **73** when that suite runs, since it inherits the verdict fixture. Whole suite: **2,082 passed, 0 failed** across 77 suites. |
+
+`TAGITRecovery`'s storage is strictly append-only — slots 0–19 unchanged, eight new slots 20–27
+(`_enforcementWindow`, `_enforcementEndsAt`, `_caseRound`, `_appealWindow`, `_appealDeadline`,
+`_pausedAt`, `_pauseCredit`, `_pauseCreditAtRejection`), `__gap[37] -> [29]`, still ending at slot 56
+for an unchanged 57-slot footprint — and is pinned by `test_storageUpgradeSafety_v1LayoutToV2`, which
+upgrades a proxy from a faithful reproduction of the v1 layout and compares raw slots.
+
+**A second remediation round followed.** Two further independent adversarial reviews found eight
+defects in the FIRST cut of the KI-25 fix — including a reintroduced permanent bond lock in `appeal()`
+and the badge-namespace error above. All eight are fixed and each is pinned by an inverted PoC in
+`test/recovery/TAGITRecoveryRegression.t.sol`. KI-25 items 4-9 in `KNOWN-ISSUES.md` describe them.
+**Read that list before reviewing `appeal()`, the active-case guard, or `_getVoteWeight`.**
+
+**And a third.** A later review proved two more, both rooted in the SAME line — the `EXPIRED` branch
+refunding 100% below `MINIMUM_VOTES`, which is itself the fix for the original permanent lock and
+which made a decoy case **free**: (a) zero-cost, infinitely repeatable case-slot squatting, closed by
+the 10% anti-squat fee on a low-engagement expiry, and (b) the appeal right being griefable away,
+closed by the bounded appeal window. Both are KI-25 items **12 and 13**. This is the shape of finding
+we most want more of: not a broken check, but a **remediation whose own economics were wrong**. Note in
+particular that (a) was a regression in cost-to-grief that a passing test suite reported as a fix.
+
+**And a fourth, entirely inside those two economic rules.** KI-25 items **14, 15 and 16**: (a) the
+anti-squat fee was keyed on `voteCount == 0`, so **one** vote from a single juror seat a griefer
+controls exempted every decoy and squatting was free again — a **spec** defect, since the code did
+exactly what the spec said; the threshold is now `FEE_EXEMPT_MIN_VOTES = 2`; (b) `appeal()` is
+`whenNotPaused` while the new appeal deadline was absolute wall-clock, so a pause spanning the window —
+including one the **circuit breaker trips by itself**, which no cooldown clears — permanently destroyed
+an appeal right the claimant had paid a 50% slash to earn; the window now counts unpaused seconds; and
+(c) `setMinimumStake` had no floor, so any value below 10 wei truncated the fee to zero with no revert
+and no event, silently un-pricing the squat while every document still claimed 10%. **Two of the three
+were defects in what the specification asked for, not in how it was implemented. That is the class we
+are least able to catch ourselves and most want you to hunt.**
+
+**Four adjacent findings were deliberately NOT absorbed** into that fix and remain open —
+`KNOWN-ISSUES.md` KI-26 through KI-29: the `approveResolve` first-approver-binds-recipient deadlock, the
+`TAGITRecovery` proxy owner still being a hot EOA rather than the Timelock, empty `RESOLVER`/`FLAGGER`
+rosters that leave the whole path inert, and the governor counting hook. Our reasoning for each
+deferral is in that file; please tell us where you disagree.
+
+**Exposure:** `nextCaseId()` read **1** on the live deployment — zero cases were ever opened, so there is
+no migration burden and no live case to preserve.
+
+### 5.11 Documentation defects we know about
 
 - `CLAUDE.md:371-378` and `:384-391` document BIDGES identity and capability IDs that **do not match
   production** (§3.2). `security/PRIVILEGE-MATRIX.md` §9 lists these as defects; `CLAUDE.md` has not been

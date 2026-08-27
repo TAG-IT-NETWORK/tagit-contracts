@@ -240,6 +240,14 @@ and `_update` to enforce soulbound behaviour (`src/access/IdentityBadge.sol:196`
 
 ### 5.4 Identity badge ID namespace collides across contracts
 
+> **Scope of this section.** The table and the on-chain reads below describe the **deployed** Base
+> Sepolia implementation. On branch `meta/t19-ops-scripts`, `TAGITRecovery` has been moved OFF this
+> namespace onto a dedicated, documented **70-79** range (`BADGE_AIRP_JUROR` 70,
+> `BADGE_AIRP_SENIOR_JUROR` 71, `BADGE_AIRP_ARBITER` 72, `BADGE_AIRP_TRIBUNAL` 73) — so the
+> `TAGITRecovery` column below is historical for ids 1/2/10/20 and the registry-wide allocation table
+> now lives in `src/access/IdentityBadge.sol`. Every other collision in the table is unchanged and the
+> section's conclusion stands. See `KNOWN-ISSUES.md` KI-25 item 5.
+
 There is no single registry of identity badge IDs. Each contract declares its own, and they disagree:
 
 | ID | `TAGITRecovery` | `TAGITPrograms` | `TAGITGovernor` | `RobotTypes` | agent stack | deploy script |
@@ -278,6 +286,11 @@ should assume there may be others we have not detected, and §8.3 explains why w
 mainnet.** We consider it a live privilege-escalation surface, not a naming nit.
 
 ### 5.5 Recovery vote weight reads the wrong badge contract
+
+> **Scope of this section.** Describes the **deployed** implementation. On branch
+> `meta/t19-ops-scripts` `_getVoteWeight` reads `hasIdentity()` on the soulbound `IdentityBadge`, and on
+> AIRP-specific ids 70-73 rather than the shared 1/2/10/20 — reading the soulbound registry on the
+> shared ids would have made every KYC'd account an AIRP juror. See `KNOWN-ISSUES.md` KI-25 item 5.
 
 `TAGITRecovery._getVoteWeight` (`src/recovery/TAGITRecovery.sol:856-876`) computes AIRP recovery voting
 power via `access.hasCapability(voter, BADGE_GOVERNANCE|MANUFACTURER|CERTIFIED_VERIFIER|VERIFIER)` —
