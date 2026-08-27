@@ -10,6 +10,7 @@ import {IRecovery} from "../../src/interfaces/IRecovery.sol";
 import {TAGITCore} from "../../src/core/TAGITCore.sol";
 import {TAGITAccess} from "../../src/access/TAGITAccess.sol";
 import {CapabilityBadge} from "../../src/access/CapabilityBadge.sol";
+import {IdentityBadge} from "../../src/access/IdentityBadge.sol";
 import {TAGITToken} from "../../src/token/TAGITToken.sol";
 
 /**
@@ -44,6 +45,7 @@ contract TAGITRecoveryTest is Test {
     TAGITCore public core;
     TAGITAccess public access;
     CapabilityBadge public capabilityBadge;
+    IdentityBadge public identityBadge;
     TAGITToken public token;
 
     // ============================================
@@ -60,6 +62,9 @@ contract TAGITRecoveryTest is Test {
     address public certifiedVerifier;
     address public governanceVoter;
     address public randomUser;
+    address public resolverA;
+    address public resolverB;
+    address public thirdParty;
 
     // ============================================
     // CONSTANTS
@@ -74,10 +79,13 @@ contract TAGITRecoveryTest is Test {
     uint256 constant ORACLE_PK = 0xA11CE;
 
     // Badge IDs
-    uint256 public constant BADGE_VERIFIER = 1;
-    uint256 public constant BADGE_CERTIFIED_VERIFIER = 2;
-    uint256 public constant BADGE_MANUFACTURER = 10;
-    uint256 public constant BADGE_GOVERNANCE = 20;
+    // AIRP jury seats live in the reserved 70-79 IdentityBadge range. They are NOT
+    // KYC_L1/L2 (1/2), MANUFACTURER (10) or GOV_MIL (20): reusing those ids would make
+    // every KYC'd account in the protocol an AIRP juror able to slash a claimant's bond.
+    uint256 public constant BADGE_AIRP_JUROR = 70;
+    uint256 public constant BADGE_AIRP_SENIOR_JUROR = 71;
+    uint256 public constant BADGE_AIRP_ARBITER = 72;
+    uint256 public constant BADGE_AIRP_TRIBUNAL = 73;
 
     // TAGITCore capabilities
     bytes32 public constant MINTER_CAPABILITY = keccak256("MINTER");
@@ -85,6 +93,7 @@ contract TAGITRecoveryTest is Test {
     bytes32 public constant ACTIVATOR_CAPABILITY = keccak256("ACTIVATOR");
     bytes32 public constant CLAIMER_CAPABILITY = keccak256("CLAIMER");
     bytes32 public constant FLAGGER_CAPABILITY = keccak256("FLAGGER");
+    bytes32 public constant RESOLVER_CAPABILITY = keccak256("RESOLVER");
 
     // ============================================
     // SETUP
@@ -102,6 +111,9 @@ contract TAGITRecoveryTest is Test {
         certifiedVerifier = makeAddr("certifiedVerifier");
         governanceVoter = makeAddr("governanceVoter");
         randomUser = makeAddr("randomUser");
+        resolverA = makeAddr("resolverA");
+        resolverB = makeAddr("resolverB");
+        thirdParty = makeAddr("thirdParty");
 
         vm.startPrank(owner);
 
@@ -115,6 +127,10 @@ contract TAGITRecoveryTest is Test {
         access = new TAGITAccess();
         capabilityBadge = new CapabilityBadge();
         access.setCapabilityBadge(address(capabilityBadge));
+
+        // Voting weight is read from the SOULBOUND IdentityBadge, never CapabilityBadge
+        identityBadge = new IdentityBadge();
+        access.setIdentityBadge(address(identityBadge));
 
         // Set access controller on TAGITCore
         core.setAccessController(address(access));
@@ -143,11 +159,22 @@ contract TAGITRecoveryTest is Test {
         capabilityBadge.grantCapability(manufacturer, uint256(CLAIMER_CAPABILITY));
         capabilityBadge.grantCapability(manufacturer, uint256(FLAGGER_CAPABILITY));
 
-        // Grant voting badges
-        capabilityBadge.grantCapability(verifier, BADGE_VERIFIER);
-        capabilityBadge.grantCapability(certifiedVerifier, BADGE_CERTIFIED_VERIFIER);
-        capabilityBadge.grantCapability(manufacturer, BADGE_MANUFACTURER);
-        capabilityBadge.grantCapability(governanceVoter, BADGE_GOVERNANCE);
+        // Grant voting badges on the SOULBOUND IdentityBadge (grantIdentity reverts
+        // BadgeAlreadyGranted on a repeat, so grant each (account, badgeId) exactly once)
+        identityBadge.grantIdentity(verifier, BADGE_AIRP_JUROR);
+        identityBadge.grantIdentity(certifiedVerifier, BADGE_AIRP_SENIOR_JUROR);
+        identityBadge.grantIdentity(manufacturer, BADGE_AIRP_ARBITER);
+        identityBadge.grantIdentity(governanceVoter, BADGE_AIRP_TRIBUNAL);
+
+        // Two independent human resolvers satisfy TAGITCore's 2-of-3 quorum.
+        // TAGITRecovery deliberately receives NO capability at all.
+        capabilityBadge.grantCapability(resolverA, uint256(RESOLVER_CAPABILITY));
+        capabilityBadge.grantCapability(resolverB, uint256(RESOLVER_CAPABILITY));
+
+        // Fixture accommodation: several tests flag many assets in one window. AIRP itself
+        // consumes ZERO of Core's flag budget — this only keeps the fixture from colliding
+        // with Core's own NIST IR-4 mass-flagging breaker.
+        core.setFlagCircuitBreakerThreshold(500);
 
         // Transfer tokens to claimant for stake bonds
         token.transfer(claimant, 10_000 ether);
@@ -178,7 +205,17 @@ contract TAGITRecoveryTest is Test {
     // HELPER FUNCTIONS
     // ============================================
 
+    /// @notice Mint, claim, and FLAG an asset. AIRP only accepts already-frozen assets,
+    ///         so every case fixture ends FLAGGED with _preFlagState == CLAIMED.
     function _mintAndClaimAsset(address to) internal returns (uint256 tokenId) {
+        tokenId = _mintAndClaimAssetUnflagged(to);
+
+        vm.prank(manufacturer);
+        core.flag(tokenId);
+    }
+
+    /// @notice The pre-flag fixture, for negative tests that need a sellable asset
+    function _mintAndClaimAssetUnflagged(address to) internal returns (uint256 tokenId) {
         vm.prank(manufacturer);
         tokenId = core.mint(manufacturer, keccak256("metadata"));
 
@@ -191,6 +228,17 @@ contract TAGITRecoveryTest is Test {
         core.activate(tokenId);
         core.claim(tokenId, to);
         vm.stopPrank();
+    }
+
+    /// @notice Drive TAGITCore's 2-of-3 human resolver quorum to deliver `tokenId` to `to`.
+    ///         Note these are EOAs with RESOLVER_CAPABILITY — never the Recovery contract.
+    function _resolversDeliver(uint256 tokenId, address to) internal {
+        vm.prank(resolverA);
+        core.approveResolve(tokenId, to);
+        vm.prank(resolverB);
+        core.approveResolve(tokenId, to);
+        vm.prank(resolverA);
+        core.resolve(tokenId, to);
     }
 
     function _initiateRecovery(uint256 tokenId) internal returns (uint256 caseId) {
@@ -487,11 +535,23 @@ contract TAGITRecoveryTest is Test {
 
         uint256 claimantBalanceBefore = token.balanceOf(claimant);
 
+        // An approved verdict does NOT move the asset — it enters ENFORCING and the
+        // bond stays escrowed until TAGITCore's resolver quorum actually delivers.
         recovery.executeResolution(caseId);
 
         IRecovery.RecoveryCase memory recoveryCase = recovery.getCase(caseId);
+        assertEq(uint8(recoveryCase.status), uint8(IRecovery.CaseStatus.ENFORCING));
+        assertTrue(recovery.isQuarantined(tokenId));
+        assertEq(token.balanceOf(claimant), claimantBalanceBefore, "bond must stay escrowed");
+
+        // Two independent RESOLVER holders approve, one executes
+        _resolversDeliver(tokenId, claimant);
+        recovery.finalizeResolution(caseId);
+
+        recoveryCase = recovery.getCase(caseId);
         assertEq(uint8(recoveryCase.status), uint8(IRecovery.CaseStatus.RESOLVED));
         assertFalse(recovery.isQuarantined(tokenId));
+        assertEq(core.ownerOf(tokenId), claimant);
 
         // Stake returned to claimant
         assertEq(token.balanceOf(claimant), claimantBalanceBefore + MINIMUM_STAKE);
@@ -516,7 +576,21 @@ contract TAGITRecoveryTest is Test {
 
         IRecovery.RecoveryCase memory recoveryCase = recovery.getCase(caseId);
         assertEq(uint8(recoveryCase.status), uint8(IRecovery.CaseStatus.REJECTED));
-        assertFalse(recovery.isQuarantined(tokenId));
+
+        // PREMISE UPDATED. This used to assert isQuarantined() went false the instant the
+        // case was rejected, because the REJECTED branch released the token link there and
+        // then. That release is exactly what let a third party front-run the freed slot and
+        // grief away the claimant's appeal right. A REJECTED case now KEEPS the slot for the
+        // length of its appeal window, and the asset is genuinely still FLAGGED throughout,
+        // so reporting it as quarantined is the truthful answer.
+        assertTrue(recovery.isQuarantined(tokenId), "the case still owns the slot during its appeal window");
+        assertEq(recovery.getActiveCaseForToken(tokenId), caseId);
+        assertEq(recovery.appealDeadline(caseId), block.timestamp + recovery.appealWindow());
+
+        // The link survives the window lapsing: cleanup is LAZY, done by the next
+        // initiateRecovery, so no keeper is required and no slot can be left locked.
+        vm.warp(recovery.appealDeadline(caseId) + 1);
+        assertEq(recovery.getActiveCaseForToken(tokenId), caseId, "stale link until someone claims the slot");
 
         // 50% stake slashed to treasury
         uint256 slashAmount = (MINIMUM_STAKE * 5000) / 10000;
@@ -539,7 +613,9 @@ contract TAGITRecoveryTest is Test {
         recovery.executeResolution(caseId);
     }
 
-    function test_executeResolution_revert_quorumNotReached() public {
+    /// @dev Was: executeResolution reverted QuorumNotReached forever, permanently locking
+    ///      the bond and _tokenToCase. It now terminates the case as EXPIRED, full refund.
+    function test_executeResolution_belowQuorumExpiresInsteadOfReverting() public {
         uint256 tokenId = _mintAndClaimAsset(holder);
         uint256 caseId = _initiateRecovery(tokenId);
 
@@ -549,8 +625,13 @@ contract TAGITRecoveryTest is Test {
 
         vm.warp(block.timestamp + VOTING_DURATION + 1);
 
-        vm.expectRevert(abi.encodeWithSelector(IRecovery.QuorumNotReached.selector, caseId, 2, 3));
+        uint256 claimantBalanceBefore = token.balanceOf(claimant);
         recovery.executeResolution(caseId);
+
+        IRecovery.RecoveryCase memory recoveryCase = recovery.getCase(caseId);
+        assertEq(uint8(recoveryCase.status), uint8(IRecovery.CaseStatus.EXPIRED));
+        assertEq(token.balanceOf(claimant), claimantBalanceBefore + MINIMUM_STAKE, "no slash on apathy");
+        assertEq(recovery.totalStakesHeld(), 0);
     }
 
     // ============================================
@@ -606,10 +687,13 @@ contract TAGITRecoveryTest is Test {
         vm.prank(claimant);
         recovery.appeal(caseId, EVIDENCE_HASH_2);
 
-        // Balance should decrease by 2x stake (appeal bond)
-        // Note: Original stake was partially slashed, so we're adding 2x original
+        // The recorded bond is REPLACED, not accumulated: round one's bond was already
+        // disbursed in full (50% slashed, 50% returned) before the case became appealable,
+        // so recording 3x while holding 2x would make every round-two exit path panic.
         IRecovery.RecoveryCase memory recoveryCase = recovery.getCase(caseId);
-        assertEq(recoveryCase.stakeBond, MINIMUM_STAKE + expectedAppealBond);
+        assertEq(recoveryCase.stakeBond, expectedAppealBond, "bond is SET to 2x, never accumulated");
+        assertEq(recovery.totalStakesHeld(), expectedAppealBond, "ledger matches what was collected");
+        assertEq(token.balanceOf(address(recovery)), expectedAppealBond, "the contract really holds what it records");
     }
 
     function test_appeal_revert_notClaimant() public {
@@ -731,7 +815,7 @@ contract TAGITRecoveryTest is Test {
     // ============================================
 
     function test_version() public view {
-        assertEq(recovery.version(), "1.0.0");
+        assertEq(recovery.version(), "2.0.0");
     }
 
     function test_getActiveCaseForToken() public {
