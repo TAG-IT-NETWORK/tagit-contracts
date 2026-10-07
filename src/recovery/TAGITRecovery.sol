@@ -334,12 +334,25 @@ contract TAGITRecovery is
     ///      leaves and why it is bounded.
     mapping(uint256 => uint256) private _pauseCreditAtRejection;
 
+    /// @notice caseId => the _pauseCredit reading when the case (re-)entered VOTING, PLUS ONE (slot 28)
+    /// @dev Same offset-by-one convention as `_pauseCreditAtRejection`, for the same reason:
+    ///      a case opened by an implementation that predates this slot reads 0 and keeps the
+    ///      wall-clock deadline it was given. Written by initiateRecovery() and appeal(), the
+    ///      two places a voting window begins; read by _votingEndsAtEffective().
+    ///
+    ///      Without it the VOTING window — the one every case passes through — was the only
+    ///      window without pause credit: vote() is whenNotPaused but executeResolution() is
+    ///      deliberately not, so a pause spanning the window made every vote revert, let the
+    ///      wall-clock deadline lapse, and then let anyone EXPIRE the case and charge the
+    ///      claimant the anti-squat fee for engagement that had been impossible.
+    mapping(uint256 => uint256) private _pauseCreditAtVotingStart;
+
     /// @notice Storage gap for future upgrades
     /// @dev Reduced from 37: -2 (_enforcementWindow, _enforcementEndsAt) -1 (_caseRound)
     ///      -2 (_appealWindow, _appealDeadline) -3 (_pausedAt, _pauseCredit,
-    ///      _pauseCreditAtRejection). The contract still ends at slot 56 — 57 slots, the
-    ///      footprint it has always had.
-    uint256[29] private __gap;
+    ///      _pauseCreditAtRejection) -1 (_pauseCreditAtVotingStart). The contract still
+    ///      ends at slot 56 — 57 slots, the footprint it has always had.
+    uint256[28] private __gap;
 
     // ============================================
     // MODIFIERS
@@ -558,6 +571,9 @@ contract TAGITRecovery is
             votesAgainst: 0,
             voteCount: 0
         });
+        // The voting window counts unpaused seconds (see _votingEndsAtEffective); stamp
+        // the pause-credit baseline at the instant it opens, offset by one.
+        _pauseCreditAtVotingStart[caseId] = _creditNow() + 1;
 
         // Link token to active case
         _tokenToCase[tokenId] = caseId;
@@ -639,8 +655,12 @@ contract TAGITRecovery is
         // Voting period must not have ended. The error is VotingPeriodEnded, not
         // VotingStillActive: the old name asserted the exact opposite of the condition
         // it fired on. VotingStillActive keeps its correct meaning in executeResolution().
-        if (block.timestamp > recoveryCase.votingEndsAt) {
-            revert VotingPeriodEnded(caseId, recoveryCase.votingEndsAt);
+        // The deadline is the EFFECTIVE one — recorded wall-clock plus every second the
+        // contract spent paused since the window opened — so a pause can no longer close
+        // a window that nobody was able to vote in.
+        uint256 votingEndsAt = _votingEndsAtEffective(caseId);
+        if (block.timestamp > votingEndsAt) {
+            revert VotingPeriodEnded(caseId, votingEndsAt);
         }
 
         // Cannot vote twice IN THIS ROUND. Keying on the round is what lets an appealed
@@ -727,9 +747,11 @@ contract TAGITRecovery is
             revert InvalidCaseStatus(caseId, recoveryCase.status, CaseStatus.VOTING);
         }
 
-        // Voting period must have ended
-        if (block.timestamp <= recoveryCase.votingEndsAt) {
-            revert VotingStillActive(caseId, recoveryCase.votingEndsAt);
+        // Voting period must have ended — measured in unpaused seconds, the exact complement
+        // of vote()'s check, so a case can never be expired while its jurors are locked out.
+        uint256 votingEndsAt = _votingEndsAtEffective(caseId);
+        if (block.timestamp <= votingEndsAt) {
+            revert VotingStillActive(caseId, votingEndsAt);
         }
 
         // ============================================
@@ -1082,6 +1104,8 @@ contract TAGITRecovery is
         recoveryCase.status = CaseStatus.APPEALED;
         recoveryCase.evidenceHash = newEvidenceHash;
         recoveryCase.votingEndsAt = uint48(block.timestamp + votingDuration);
+        // A fresh voting window gets a fresh pause-credit baseline, exactly like round one.
+        _pauseCreditAtVotingStart[caseId] = _creditNow() + 1;
         // SET, never accumulate. Round one's bond has already been disbursed in full.
         recoveryCase.stakeBond = appealBond;
         recoveryCase.votesFor = 0;
@@ -1225,6 +1249,21 @@ contract TAGITRecovery is
     }
 
     /**
+     * @notice Get the instant a case's voting window closes, AFTER pause credit
+     * @dev THE NUMBER THE CONTRACT ACTUALLY ENFORCES. getCase().votingEndsAt is the raw
+     *      wall-clock instant recorded when the window opened; this is that instant pushed
+     *      forward by every second the contract has spent paused since — including a pause
+     *      still in progress. vote() and executeResolution() both consult the private helper
+     *      behind this getter, so an off-chain consumer reading this sees exactly what the
+     *      chain will do. A case that predates pause credit reports its wall-clock deadline.
+     * @param caseId The recovery case ID
+     * @return The effective voting deadline timestamp
+     */
+    function votingEndsAtEffective(uint256 caseId) external view returns (uint256) {
+        return _votingEndsAtEffective(caseId);
+    }
+
+    /**
      * @notice Get the appeal window this contract actually applies
      * @dev Returns the EFFECTIVE value, not the raw slot, for the same reason
      *      enforcementWindow() does: a proxy upgraded from an implementation that predates
@@ -1325,7 +1364,7 @@ contract TAGITRecovery is
      * @return Version string
      */
     function version() external pure returns (string memory) {
-        return "2.0.0";
+        return "2.4.0";
     }
 
     /**
@@ -1670,7 +1709,17 @@ contract TAGITRecovery is
      * @return The credit, in seconds, including a pause still in progress
      */
     function _pauseCreditSince(uint256 caseId) private view returns (uint256) {
-        uint256 mark = _pauseCreditAtRejection[caseId];
+        return _creditSinceMark(_pauseCreditAtRejection[caseId]);
+    }
+
+    /**
+     * @notice Seconds of pause time accrued since an offset-by-one credit stamp was taken
+     * @dev Shared by the appeal-window and voting-window deadlines so both measure unpaused
+     *      seconds the same way. A stamp of 0 means "never recorded" and yields 0 credit.
+     * @param mark The stored `_creditNow() + 1` reading, or 0
+     * @return The credit, in seconds, including a pause still in progress
+     */
+    function _creditSinceMark(uint256 mark) private view returns (uint256) {
         if (mark == 0) return 0;
         return _creditNow() - (mark - 1);
     }
@@ -1718,6 +1767,24 @@ contract TAGITRecovery is
         uint256 recorded = _appealDeadline[caseId];
         if (recorded == 0) return 0;
         return recorded + _pauseCreditSince(caseId);
+    }
+
+    /**
+     * @notice The instant a case's voting window actually closes
+     * @dev THE SINGLE SOURCE OF TRUTH for the voting deadline, consulted by vote(), by
+     *      executeResolution() and by the public votingEndsAtEffective(): the two checks are
+     *      exact complements by construction. The window measures UNPAUSED seconds — the
+     *      recorded wall-clock `votingEndsAt` plus every second the contract has spent paused
+     *      since the window opened (initiateRecovery or appeal). Credit is never more than
+     *      the wall time elapsed since the stamp, so this can only refuse to count time in
+     *      which vote() was unreachable; it can never shorten a window.
+     *
+     *      A case opened before this upgrade has no stamp and keeps its wall-clock deadline.
+     * @param caseId The recovery case ID
+     * @return The effective voting deadline
+     */
+    function _votingEndsAtEffective(uint256 caseId) private view returns (uint256) {
+        return uint256(_cases[caseId].votingEndsAt) + _creditSinceMark(_pauseCreditAtVotingStart[caseId]);
     }
 
     /**

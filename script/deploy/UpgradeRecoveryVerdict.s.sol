@@ -153,7 +153,7 @@ contract UpgradeRecoveryVerdict is Script {
         // NOTE: the Recovery proxy owner is still an EOA on Base Sepolia (see G1 in the PR).
         // Once ownership moves to the Timelock this call becomes a schedule/execute pair.
         UUPSUpgradeable(recoveryProxy).upgradeToAndCall(address(newImpl), "");
-        console2.log("4. TAGITRecovery upgraded. version() should now read 2.0.0");
+        console2.log("4. TAGITRecovery upgraded. version() should now read 2.4.0");
         console2.log("");
         console2.log("POST-DEPLOY (the code is INERT without these):");
         console2.log(" - Grant RESOLVER_CAPABILITY to THREE independent human addresses");

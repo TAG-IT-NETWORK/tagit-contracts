@@ -1242,7 +1242,7 @@ contract TAGITRecoveryVerdictTest is Test {
         assertEq(v2.appealWindow(), APPEAL_WINDOW, "getter reports the EFFECTIVE window, not 0");
         assertEq(v2.appealDeadline(caseId), 0, "a v1 case has no appeal deadline on record");
 
-        assertEq(v2.version(), "2.0.0");
+        assertEq(v2.version(), "2.4.0");
     }
 
     function _assertV2ConfigPreserved(TAGITRecovery v2, uint256 nextBefore) internal view {

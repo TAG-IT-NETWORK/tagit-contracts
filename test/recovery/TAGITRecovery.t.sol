@@ -815,7 +815,7 @@ contract TAGITRecoveryTest is Test {
     // ============================================
 
     function test_version() public view {
-        assertEq(recovery.version(), "2.0.0");
+        assertEq(recovery.version(), "2.4.0");
     }
 
     function test_getActiveCaseForToken() public {
@@ -888,8 +888,12 @@ contract TAGITRecoveryTest is Test {
         recovery.initiateRecovery(tokenId, EVIDENCE_HASH);
         uint256 gasUsed = gasBefore - gasleft();
 
-        // Gas target: < 365,000 (includes SafeERC20 transferFrom + storage writes + NFT lookup)
-        assertLt(gasUsed, 365000, "initiateRecovery() exceeds gas target");
+        // Gas target: < 390,000 (includes SafeERC20 transferFrom + storage writes + NFT lookup).
+        // Raised from 365,000 for the voting-window pause-credit stamp (review R-1): one
+        // additional cold SSTORE (~22k) into `_pauseCreditAtVotingStart`, which is what lets
+        // a pause stop eating the claimant's window. Packing the stamp into RecoveryCase
+        // would avoid it but changes getCase()'s ABI tuple for every consumer.
+        assertLt(gasUsed, 390000, "initiateRecovery() exceeds gas target");
     }
 
     function test_gas_vote() public {

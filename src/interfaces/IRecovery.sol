@@ -471,6 +471,20 @@ interface IRecovery {
     function appealDeadlineEffective(uint256 caseId) external view returns (uint256);
 
     /**
+     * @notice Get the instant a case's voting window closes, AFTER pause credit
+     * @dev THE NUMBER THE CONTRACT ENFORCES. getCase().votingEndsAt is the raw wall-clock
+     *      instant recorded when the window opened; this is that instant pushed forward by
+     *      every second the contract has spent paused since, because vote() is whenNotPaused
+     *      while executeResolution() is not — without the credit a pause spanning the window
+     *      expired the case and charged the claimant the anti-squat fee for engagement that
+     *      had been impossible. vote() and executeResolution() read the same value, so they
+     *      are exact complements.
+     * @param caseId The recovery case ID
+     * @return The effective voting deadline timestamp
+     */
+    function votingEndsAtEffective(uint256 caseId) external view returns (uint256);
+
+    /**
      * @notice Get the appeal window this contract actually applies
      * @dev Returns the EFFECTIVE value, not the raw slot — a proxy upgraded from an earlier
      *      implementation has never written it, so the raw slot reads 0 while the contract

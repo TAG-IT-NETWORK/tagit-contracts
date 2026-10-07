@@ -1447,7 +1447,14 @@ Mechanism:
    too — see item 4; pinned by `test_regression_pausedContractStillReleasesAnAppealedBond`. A pause
    could nonetheless still destroy an appeal *right* once item 13 put a wall-clock deadline on it,
    precisely because `appeal()` is `whenNotPaused` — that is item 15, and the window now counts
-   **unpaused seconds only**.
+   **unpaused seconds only**. The VOTING window — the one every case passes through — now does
+   too (independent review finding R-1, 2026-10-07): `vote()` is `whenNotPaused` while
+   `executeResolution()` is not, so a pause spanning the window made every vote revert, let the
+   wall-clock deadline lapse, and then let anyone EXPIRE the case and charge the claimant the 10%
+   anti-squat fee (item 12) for engagement that had been impossible. `_pauseCreditAtVotingStart`
+   (slot 28, same offset-by-one convention as slot 27) stamps a baseline whenever
+   `initiateRecovery` or `appeal` opens a window, and `votingEndsAtEffective()` is the single value
+   both `vote()` and `executeResolution()` enforce. Pinned by `test/recovery/TAGITRecoveryVotingPauseCredit.t.sol`.
 7. **Appeals open a NEW voting round.** `_caseRound[caseId]` increments and the vote records are keyed
    by `(caseId, round)`. Resetting the tally alone was not enough: the per-voter records are keyed by
    address, so every round-one juror stayed locked out and an appealed case could never reach
@@ -1458,7 +1465,15 @@ Mechanism:
    `_tokenToCase`, and then erase the live case's link and switch `isQuarantined()` off — at **zero
    cost**, because at the time a decoy with no votes EXPIRED with a 100% refund. That refund was
    itself a defect and is now items 12 and 14: an expiry that drew **fewer than two** votes costs 10%,
-   so the decoy is no longer free even where a guard does not stop it outright. Independently, every clear of
+   so the decoy is no longer free even where a guard does not stop it outright. **Residual, priced
+   and accepted (independent review R-2/R-3, 2026-10-07):** a decoy that jurors REJECT holds the
+   token's single dispute slot for the whole appeal window, and the lazy release in
+   `initiateRecovery` is first-come-first-served, so a determined squatter can keep AIRP closed for
+   one asset at 50 TAGIT per 14 days (10 TAGIT per 7 days if nobody votes); and a REJECTED window
+   outlives its dispute — after Core's resolvers have resolved and the asset is flagged again, a new
+   claimant is refused for the remainder of the old window (up to `APPEAL_WINDOW_MAX`). Both are
+   bounded liveness limits, not custody risks: AIRP is advisory and Core's human quorum needs no
+   AIRP case to act. Independently, every clear of
    `_tokenToCase` now goes through `_unlinkToken()`, which only clears a link that still points at the
    terminating case. Pinned by `test_regression_secondCaseCannotOpenWhileFirstIsEnforcing` and
    `test_regression_terminalPathNeverUnlinksAnotherCasesToken`.
@@ -1697,8 +1712,9 @@ Measured on this branch, `FOUNDRY_PROFILE=deploy forge build --sizes`:
 `forge inspect TAGITCore storage-layout` is **byte-identical** before and after. `TAGITRecovery`'s
 layout is strictly append-only: slots 0–19 are unchanged, `_enforcementWindow`, `_enforcementEndsAt`
 and `_caseRound` occupy slots 20–22, `_appealWindow` and `_appealDeadline` occupy slots 23–24 (item
-13), `_pausedAt`, `_pauseCredit` and `_pauseCreditAtRejection` occupy slots 25–27 (item 15), and
-`__gap` shrinks `[37] -> [29]` in lockstep so the contract still ends at slot 56 — a 57-slot
+13), `_pausedAt`, `_pauseCredit` and `_pauseCreditAtRejection` occupy slots 25–27 (item 15),
+`_pauseCreditAtVotingStart` occupies slot 28 (item 6, voting-window credit), and
+`__gap` shrinks `[37] -> [28]` in lockstep so the contract still ends at slot 56 — a 57-slot
 footprint, unchanged. Because a v1 proxy has never written `_enforcementWindow`, the
 contract reads it through a zero-fallback (`_window()`) rather than a `reinitializer(2)` — a missed
 reinitializer call would make every `ENFORCING` case instantly expirable, and a fallback cannot be

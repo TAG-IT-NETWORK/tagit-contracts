@@ -750,7 +750,7 @@ and 13):
 | Item | Change |
 |---|---|
 | `src/interfaces/ITAGITCoreRecovery.sol` | **New file**, 37 lines. View-only interface. |
-| `src/recovery/TAGITRecovery.sol` | Substantially rewritten. **885 → 1,861 LOC** (§1.3.1 row 17 shows the frozen 885). Runtime 12,709 → **17,709** B (EIP-170 margin **6,867**); §5.1 shows the frozen pre-change 12,709. |
+| `src/recovery/TAGITRecovery.sol` | Substantially rewritten. **885 → 1,946 LOC** (§1.3.1 row 17 shows the frozen 885). Runtime 12,709 → **17,845** B under the `deploy` profile (EIP-170 margin **6,731**); §5.1 shows the frozen pre-change 12,709. |
 | `src/interfaces/IRecovery.sol` | **288 → 558 LOC.** `CaseStatus` gains members 6/7/8 (appended); **13 new errors, 9 new events, 8 new views** and 3 new state-changing functions (`expireEnforcement`, `finalizeResolution`, `abandonEnforcement`); `QuarantineReleased` and **8 declared-but-unreachable errors deleted** (see KI-25 "ABI/indexer impact"). Recount: `grep -c '^\s*error ' src/interfaces/IRecovery.sol` reads **25** against **20** at `HEAD`, and `grep -c '^\s*event '` reads **26** against **18**. |
 | `src/core/TAGITCore.sol` | **Exactly one** new member: `preFlagState(uint256) view`. Runtime 22,601 → **22,664** B (**+63**), EIP-170 margin **1,912**. `forge inspect TAGITCore storage-layout` is **byte-identical** before and after. |
 | `src/governance/TAGITGovernor.sol` | `_countVote` empty override replaced with an explicit revert (KI-29). |
