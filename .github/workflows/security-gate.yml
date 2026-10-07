@@ -19,6 +19,8 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.7.1
 
       # Deploy profile (via-ir) — the shipped codegen; TAGITCore only fits
       # EIP-170 under it (see foundry.toml [profile.deploy] comment).
@@ -38,6 +40,8 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.7.1
 
       - name: Run tests
         run: forge test -v --fuzz-runs 10000
@@ -60,6 +64,8 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.7.1
 
       - name: Build for Slither
         run: forge build
@@ -82,6 +88,8 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.7.1
 
       - name: Gas snapshot
         run: forge snapshot
