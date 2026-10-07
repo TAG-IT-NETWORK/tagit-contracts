@@ -62,8 +62,16 @@ abstract contract ForkBase is Test {
     /// @notice Fork ID for Base Sepolia
     uint256 public baseSepoliaFork;
 
-    /// @notice Block number pinned for reproducibility
-    uint256 public constant FORK_BLOCK = 44917834;
+    /// @notice Fallback fork block, used when FORK_BLOCK is not in the environment.
+    /// @dev The public Base Sepolia RPC prunes history older than ~1.8M blocks, so
+    ///      a hard-coded pin goes stale within weeks (this is what broke the daily
+    ///      job from 2026-09-07: block 44917834 vs earliest available 46000000).
+    ///      CI exports FORK_BLOCK = head - 64 on every run; set it locally for a
+    ///      reproducible session, and bump this default whenever it gets pruned.
+    uint256 public constant DEFAULT_FORK_BLOCK = 47_800_000;
+
+    /// @notice Block the fork was actually created at (FORK_BLOCK env or default)
+    uint256 public forkBlock;
 
     // ============================================
     // TEST ACTORS
@@ -93,7 +101,8 @@ abstract contract ForkBase is Test {
 
         // Create fork - try environment variable first, fallback to public RPC
         string memory rpcUrl = _getRpcUrl();
-        baseSepoliaFork = vm.createFork(rpcUrl, FORK_BLOCK);
+        forkBlock = vm.envOr("FORK_BLOCK", DEFAULT_FORK_BLOCK);
+        baseSepoliaFork = vm.createFork(rpcUrl, forkBlock);
         vm.selectFork(baseSepoliaFork);
 
         // Verify we are on Base Sepolia — the only live chain

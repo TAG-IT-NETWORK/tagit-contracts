@@ -25,6 +25,8 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.7.1
 
       - name: Install Slither
         # Pinned for reproducible results (detector set + severities are version-dependent).
@@ -57,6 +59,8 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.7.1
 
       - name: Install dependencies
         run: forge install
@@ -78,6 +82,8 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.7.1
 
       - name: Install dependencies
         run: forge install
@@ -108,6 +114,8 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.7.1
 
       - name: Install Halmos
         run: pip install halmos
@@ -135,6 +143,8 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.7.1
 
       - name: Install dependencies
         run: forge install
@@ -163,6 +173,8 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.7.1
 
       - name: Install dependencies
         run: forge install
