@@ -7,8 +7,9 @@
 # the job had failed 40 consecutive scheduled runs with
 # "403 OPT_SEPOLIA is not enabled for this app" (KI-06).
 #
-# Both halves are now fixed: ForkBase.t.sol asserts chainid 84532, pins a Base
-# Sepolia block, and reads BASE_SEPOLIA_RPC_URL. Every address and CCIP selector
+# Both halves are now fixed: ForkBase.t.sol asserts chainid 84532, forks at the
+# FORK_BLOCK this workflow computes (or a recent default), and reads
+# BASE_SEPOLIA_RPC_URL. Every address and CCIP selector
 # in it was verified live against the chain.
 #
 # The BASE_SEPOLIA_RPC_URL repo secret is still worth adding — the public
@@ -43,6 +44,20 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: v1.7.1
+
+      # The public Base Sepolia RPC prunes history older than ~1.8M blocks
+      # (error 4444 "pruned history unavailable"), so a block pinned in source
+      # goes stale within weeks — that is why this job was red from 2026-09-07.
+      # Pick head-64 at run time instead; ForkBase.t.sol reads FORK_BLOCK.
+      - name: Pick a recent fork block
+        env:
+          BASE_SEPOLIA_RPC_URL: ${{ secrets.BASE_SEPOLIA_RPC_URL }}
+        run: |
+          RPC="${BASE_SEPOLIA_RPC_URL:-https://sepolia.base.org}"
+          HEAD=$(cast block-number --rpc-url "$RPC")
+          FORK_BLOCK=$((HEAD - 64))
+          echo "FORK_BLOCK=$FORK_BLOCK" >> "$GITHUB_ENV"
+          echo "Forking Base Sepolia at block $FORK_BLOCK (head $HEAD)"
 
       - name: Run fork tests
         env:
