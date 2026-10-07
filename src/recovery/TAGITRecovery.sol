@@ -657,10 +657,15 @@ contract TAGITRecovery is
         // it fired on. VotingStillActive keeps its correct meaning in executeResolution().
         // The deadline is the EFFECTIVE one — recorded wall-clock plus every second the
         // contract spent paused since the window opened — so a pause can no longer close
-        // a window that nobody was able to vote in.
-        uint256 votingEndsAt = _votingEndsAtEffective(caseId);
+        // a window that nobody was able to vote in. Credit can only EXTEND a window, so
+        // the three extra SLOADs behind it are paid only once the recorded deadline has
+        // passed; a vote inside the recorded window costs exactly what it did before.
+        uint256 votingEndsAt = recoveryCase.votingEndsAt;
         if (block.timestamp > votingEndsAt) {
-            revert VotingPeriodEnded(caseId, votingEndsAt);
+            votingEndsAt = _votingEndsAtEffective(caseId);
+            if (block.timestamp > votingEndsAt) {
+                revert VotingPeriodEnded(caseId, votingEndsAt);
+            }
         }
 
         // Cannot vote twice IN THIS ROUND. Keying on the round is what lets an appealed
