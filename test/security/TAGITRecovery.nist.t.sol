@@ -60,6 +60,7 @@ contract TAGITRecoveryNistTest is Test {
     bytes32 public constant BINDER_CAPABILITY = keccak256("BINDER");
     bytes32 public constant ACTIVATOR_CAPABILITY = keccak256("ACTIVATOR");
     bytes32 public constant CLAIMER_CAPABILITY = keccak256("CLAIMER");
+    bytes32 public constant FLAGGER_CAPABILITY = keccak256("FLAGGER");
 
     // ============================================
     // SETUP
@@ -111,6 +112,13 @@ contract TAGITRecoveryNistTest is Test {
         capabilityBadge.grantCapability(manufacturer, uint256(BINDER_CAPABILITY));
         capabilityBadge.grantCapability(manufacturer, uint256(ACTIVATOR_CAPABILITY));
         capabilityBadge.grantCapability(manufacturer, uint256(CLAIMER_CAPABILITY));
+        capabilityBadge.grantCapability(manufacturer, uint256(FLAGGER_CAPABILITY));
+
+        // Fixture accommodation, NOT production tuning: the breaker tests below open ~50
+        // AIRP cases, which now need ~50 pre-flagged assets, and Core's own flag breaker
+        // is 50/hour. AIRP consumes ZERO of Core's flag budget under this design — this
+        // only stops the fixture's own flagging from colliding with the assertion under test.
+        core.setFlagCircuitBreakerThreshold(500);
 
         // Transfer tokens to attacker for stake bonds
         token.transfer(attacker, 1_000_000 ether);
@@ -137,6 +145,7 @@ contract TAGITRecoveryNistTest is Test {
         oracleSignature = abi.encodePacked(r, s, v);
     }
 
+    /// @notice Mint, claim, and FLAG an asset — AIRP only accepts already-frozen assets
     function _mintAndClaimAsset(address to) internal returns (uint256 tokenId) {
         vm.prank(manufacturer);
         tokenId = core.mint(manufacturer, keccak256("metadata"));
@@ -149,6 +158,7 @@ contract TAGITRecoveryNistTest is Test {
         vm.startPrank(manufacturer);
         core.activate(tokenId);
         core.claim(tokenId, to);
+        core.flag(tokenId);
         vm.stopPrank();
     }
 

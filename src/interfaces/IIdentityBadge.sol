@@ -12,11 +12,14 @@ pragma solidity ^0.8.20;
  * - Revocable: Owner can revoke badges
  * - Single badge per type: One account = one badge per ID
  *
- * Badge Categories:
- * 1-9:   KYC levels (L1, L2, L3)
- * 10-19: Business entities (Manufacturer, Retailer)
- * 20-29: Government/Military (GOV_MIL, LAW_ENFORCEMENT)
- * 30+:   Reserved for future use
+ * Badge Categories — ONE flat, protocol-wide registry (see IdentityBadge.sol for the full
+ * allocation table). A range must never be reused for a second purpose:
+ * 1-9:   KYC levels (L1=1, L2=2, L3=3)
+ * 10-19: Business entities (Manufacturer=10, Retailer=11)
+ * 20-29: Government/Military (GOV_MIL=20, LAW_ENFORCEMENT=21)
+ * 30-39: Robot classes; 40-49: Regulatory; 50-69: Loyalty tiers
+ * 70-79: AIRP jury seats (TAGITRecovery)
+ * 80+:   Reserved for future use
  */
 interface IIdentityBadge {
     // ============================================

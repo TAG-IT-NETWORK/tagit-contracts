@@ -93,6 +93,17 @@ contract TAGITGovernor is
     uint8 public constant VOTE_ABSTAIN = 2;
 
     // ============================================
+    // CUSTOM ERRORS
+    // ============================================
+
+    /// @notice The inherited OpenZeppelin counting path was reached, which must never happen
+    /// @dev TAGITGovernor tallies through _recordHouseVote() from its own _castVote()
+    ///      override. _countVote() is an abstract hook this contract is only required to
+    ///      implement; a call arriving here means a refactor rerouted voting through the
+    ///      base counting module, where it would be silently dropped.
+    error CountVoteUnsupported(uint256 proposalId, address account);
+
+    // ============================================
     // STORAGE
     // ============================================
 
@@ -420,21 +431,30 @@ contract TAGITGovernor is
     }
 
     /**
-     * @dev Required override for counting module
+     * @dev Required override for the OpenZeppelin counting module.
+     *
+     *      UNREACHABLE BY CONSTRUCTION: TAGITGovernor overrides _castVote() and tallies
+     *      every vote through _recordHouseVote(), so the base Governor counting path is
+     *      never entered. The hook is abstract in GovernorUpgradeable, so it cannot simply
+     *      be deleted — the contract would not compile.
+     *
+     *      It reverts rather than doing nothing. An empty body means a future refactor
+     *      that routes voting back through the OZ counting path would silently record no
+     *      votes at all; reverting makes that failure loud and immediate.
+     * @custom:security Fail-closed: reverts instead of silently discarding a vote
      */
     function _countVote(
         uint256 proposalId,
         address account,
-        uint8 support,
-        uint256 weight,
+        uint8, /*support*/
+        uint256, /*weight*/
         bytes memory /*params*/
     )
         internal
         virtual
         override
     {
-        // Not used - we override _castVote directly for house tracking
-        // This is required by the interface but we handle voting in _castVote
+        revert CountVoteUnsupported(proposalId, account);
     }
 
     /**

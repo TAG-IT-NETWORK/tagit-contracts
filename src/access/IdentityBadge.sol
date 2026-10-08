@@ -17,11 +17,16 @@ import {IIdentityBadge} from "../interfaces/IIdentityBadge.sol";
  * - One badge per type: Each account can have one badge per badge ID
  * - Zero-trust: All badge checks are explicit and verifiable on-chain
  *
- * Badge Categories (from CLAUDE.md):
- * 1-9:   KYC levels (KYC_L1, KYC_L2, KYC_L3)
- * 10-19: Business entities (MANUFACTURER, RETAILER)
- * 20-29: Government/Military (GOV_MIL, LAW_ENFORCEMENT)
- * 30+:   Reserved for future use
+ * Badge Categories — ONE flat, protocol-wide registry. A badge id means the same thing to
+ * every contract that reads it, so a range must never be reused for a second purpose:
+ * 1-9:   KYC levels (KYC_L1=1, KYC_L2=2, KYC_L3=3)
+ * 10-19: Business entities (MANUFACTURER=10, RETAILER=11)
+ * 20-29: Government/Military (GOV_MIL=20, LAW_ENFORCEMENT=21)
+ * 30-39: Robot classes (RobotTypes: CHEF=30 .. MEDICAL=35); TAGITGovernor reads DEV=30
+ * 40-49: Regulatory (TAGITGovernor: REGULATORY=40)
+ * 50-69: Loyalty tiers (TAGITPrograms: BASIC_VERIFIER=50, CERTIFIED_VERIFIER=51, GOVERNANCE=60)
+ * 70-79: AIRP jury seats (TAGITRecovery: JUROR=70, SENIOR_JUROR=71, ARBITER=72, TRIBUNAL=73)
+ * 80+:   Reserved for future use
  *
  * Security:
  * - Soulbound enforced via _update() override (blocks ALL transfers)
