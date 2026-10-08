@@ -1,18 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Test, console2} from "@forge-std/Test.sol";
+import {Test} from "@forge-std/Test.sol";
 import {TAGITCore} from "../../src/core/TAGITCore.sol";
 import {TAGITAccess} from "../../src/access/TAGITAccess.sol";
 import {IdentityBadge} from "../../src/access/IdentityBadge.sol";
 import {CapabilityBadge} from "../../src/access/CapabilityBadge.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /**
  * @title TAGITCoreTokenURITest
- * @notice Tests for PATCH-04: tokenURI authorization gate
- * @dev Verifies ITAR-compliant metadata access control
+ * @notice tokenURI is uniform: every caller receives `baseURI + tokenId`.
+ * @dev Replaces the PATCH-04 suite. The on-chain caller gate (asset owner / VIEWER /
+ *      AUDITOR else `_redactedURI`) hid every product from block explorers and
+ *      marketplaces, which read tokenURI from arbitrary addresses, while the metadata
+ *      service behind the base URI already enforces per-item redaction. These tests pin
+ *      the new contract: no caller-dependent output, no redacted branch, the legacy
+ *      setter still owner-only and inert.
  */
 contract TAGITCoreTokenURITest is Test {
     TAGITCore public tagitCore;
@@ -34,6 +38,7 @@ contract TAGITCoreTokenURITest is Test {
     uint256 constant CAP_AUDITOR = uint256(keccak256("AUDITOR"));
 
     string constant REDACTED_URI = "ipfs://redacted-metadata";
+    string constant BASE_URI = "https://api.tagit.network/v1/meta/";
 
     function setUp() public {
         owner = makeAddr("owner");
@@ -58,89 +63,84 @@ contract TAGITCoreTokenURITest is Test {
         vm.prank(owner);
         tagitCore.setAccessController(address(tagitAccess));
 
-        // Set trusted oracle
         address oracle = vm.addr(ORACLE_PK);
         vm.prank(owner);
         tagitCore.setTrustedOracle(oracle);
 
-        // Set redacted URI
+        // The legacy redacted URI is still settable; it must never surface.
         vm.prank(owner);
         tagitCore.setRedactedURI(REDACTED_URI);
 
-        // Grant capabilities
+        vm.prank(owner);
+        tagitCore.setBaseURI(BASE_URI);
+
         capabilityBadge.grantCapability(manufacturer, CAP_MINT);
         capabilityBadge.grantCapability(viewer, CAP_VIEWER);
         capabilityBadge.grantCapability(auditor, CAP_AUDITOR);
 
-        // Mint a token to consumer
         vm.prank(manufacturer);
         tagitCore.mint(consumer, keccak256("metadata-1"));
     }
 
-    // ============================================
-    // ORACLE HELPER
-    // ============================================
-
-    function _oracleSign(uint256 tokenId, bytes32 tagHash)
-        internal
-        returns (bytes memory challengeResponse, bytes memory oracleSignature)
-    {
-        challengeResponse = abi.encodePacked("challenge", tokenId);
-        bytes32 messageHash = keccak256(abi.encodePacked(tokenId, tagHash, challengeResponse));
-        bytes32 ethHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ORACLE_PK, ethHash);
-        oracleSignature = abi.encodePacked(r, s, v);
+    function _expected(uint256 tokenId) internal pure returns (string memory) {
+        return string.concat(BASE_URI, vm.toString(tokenId));
     }
 
     // ============================================
-    // AUTHORIZATION CHECKS
+    // UNIFORM OUTPUT — the property that puts products on explorers
     // ============================================
 
-    function test_tokenURI_ownerGetsFullURI() public {
-        vm.prank(consumer);
-        string memory uri = tagitCore.tokenURI(1);
-        // ERC721 default tokenURI returns empty when no base URI is set
-        // The key test is that it does NOT return _redactedURI
-        assertTrue(keccak256(bytes(uri)) != keccak256(bytes(REDACTED_URI)), "Owner should get full URI, not redacted");
+    function test_tokenURI_isIdenticalForEveryCaller() public {
+        address[6] memory callers = [consumer, viewer, auditor, manufacturer, unauthorized, address(0)];
+        for (uint256 i = 0; i < callers.length; i++) {
+            vm.prank(callers[i]);
+            assertEq(tagitCore.tokenURI(1), _expected(1), "tokenURI must not depend on msg.sender");
+        }
     }
 
-    function test_tokenURI_viewerGetsFullURI() public {
-        vm.prank(viewer);
-        string memory uri = tagitCore.tokenURI(1);
-        assertTrue(keccak256(bytes(uri)) != keccak256(bytes(REDACTED_URI)), "Viewer should get full URI, not redacted");
-    }
-
-    function test_tokenURI_auditorGetsFullURI() public {
-        vm.prank(auditor);
-        string memory uri = tagitCore.tokenURI(1);
-        assertTrue(keccak256(bytes(uri)) != keccak256(bytes(REDACTED_URI)), "Auditor should get full URI, not redacted");
-    }
-
-    function test_tokenURI_unauthorizedGetsRedactedURI() public {
+    function test_tokenURI_neverReturnsTheRedactedURI() public {
         vm.prank(unauthorized);
         string memory uri = tagitCore.tokenURI(1);
-        assertEq(uri, REDACTED_URI, "Unauthorized caller should get redacted URI");
+        assertTrue(keccak256(bytes(uri)) != keccak256(bytes(REDACTED_URI)), "redacted branch must be gone");
+        assertEq(uri, _expected(1));
     }
 
-    function test_tokenURI_manufacturerWithoutViewerGetsRedacted() public {
-        // Manufacturer has MINTER capability but not VIEWER or AUDITOR
-        vm.prank(manufacturer);
-        string memory uri = tagitCore.tokenURI(1);
-        assertEq(uri, REDACTED_URI, "Manufacturer without viewer cap should get redacted URI");
-    }
-
-    // ============================================
-    // setRedactedURI
-    // ============================================
-
-    function test_setRedactedURI_byOwner() public {
-        string memory newRedacted = "ipfs://new-redacted";
+    function test_tokenURI_followsBaseURIChanges() public {
         vm.prank(owner);
-        tagitCore.setRedactedURI(newRedacted);
+        tagitCore.setBaseURI("https://example.invalid/meta/");
+        vm.prank(unauthorized);
+        assertEq(tagitCore.tokenURI(1), "https://example.invalid/meta/1");
+    }
+
+    function test_tokenURI_emptyBaseURIReturnsEmpty() public {
+        vm.prank(owner);
+        tagitCore.setBaseURI("");
+        vm.prank(unauthorized);
+        assertEq(bytes(tagitCore.tokenURI(1)).length, 0, "ERC-721 default: empty base => empty URI");
+    }
+
+    function test_tokenURI_withoutAccessControllerIsStillUniform() public {
+        vm.prank(owner);
+        tagitCore.setAccessController(address(0));
 
         vm.prank(unauthorized);
-        string memory uri = tagitCore.tokenURI(1);
-        assertEq(uri, newRedacted, "Should return updated redacted URI");
+        string memory a = tagitCore.tokenURI(1);
+        vm.prank(consumer);
+        string memory b = tagitCore.tokenURI(1);
+        assertEq(a, b);
+        assertEq(a, _expected(1));
+    }
+
+    // ============================================
+    // LEGACY SETTER — owner-only, inert
+    // ============================================
+
+    function test_setRedactedURI_byOwner_hasNoEffectOnTokenURI() public {
+        vm.prank(owner);
+        tagitCore.setRedactedURI("ipfs://new-redacted");
+
+        vm.prank(unauthorized);
+        assertEq(tagitCore.tokenURI(1), _expected(1), "legacy redacted URI must not surface");
     }
 
     function test_setRedactedURI_revert_byNonOwner() public {
@@ -159,37 +159,8 @@ contract TAGITCoreTokenURITest is Test {
         tagitCore.tokenURI(999);
     }
 
-    function test_tokenURI_noAccessControllerBypasses() public {
-        // When accessController is address(0), only owner check applies
-        vm.prank(owner);
-        tagitCore.setAccessController(address(0));
-
-        // Non-owner, non-viewer should get redacted (since they are not asset owner)
-        vm.prank(unauthorized);
-        string memory uri = tagitCore.tokenURI(1);
-        assertEq(uri, REDACTED_URI, "Without controller, non-owner gets redacted");
-
-        // Asset owner still gets full URI
-        vm.prank(consumer);
-        string memory ownerUri = tagitCore.tokenURI(1);
-        assertTrue(
-            keccak256(bytes(ownerUri)) != keccak256(bytes(REDACTED_URI)),
-            "Asset owner should still get full URI without controller"
-        );
-    }
-
-    function test_tokenURI_emptyRedactedURI() public {
-        // Set empty redacted URI
-        vm.prank(owner);
-        tagitCore.setRedactedURI("");
-
-        vm.prank(unauthorized);
-        string memory uri = tagitCore.tokenURI(1);
-        assertEq(bytes(uri).length, 0, "Should return empty string as redacted URI");
-    }
-
     // ============================================
-    // CAPABILITY CONSTANTS
+    // CAPABILITY CONSTANTS (still exported for other consumers)
     // ============================================
 
     function test_viewerCapabilityConstant() public view {
