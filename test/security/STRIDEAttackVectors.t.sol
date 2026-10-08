@@ -839,70 +839,53 @@ contract STRIDEAttackVectors is Test {
     // ================================================================
 
     /**
-     * @notice I01: Unauthorized caller gets redacted URI
-     * @dev An address that is not the owner, VIEWER, or AUDITOR receives the redacted URI
+     * @notice I01: tokenURI discloses nothing beyond `baseURI + tokenId`, to anyone
+     * @dev The former PATCH-04 caller gate returned `_redactedURI` to non-owners without
+     *      VIEWER/AUDITOR. It is retired: metadata is never on-chain, the real URI is
+     *      `baseURI + tokenId` by construction and `baseURI` is public, so the gate gave no
+     *      confidentiality — it only hid products from explorers. Per-item redaction is
+     *      enforced by the metadata service behind the base URI. The information-disclosure
+     *      property to pin is therefore: the chain exposes exactly the URI, nothing more,
+     *      and the legacy redacted value never surfaces.
      */
-    function test_I01_tokenURI_unauthorizedRedacted() public {
-        // Mint an asset to user1
+    function test_I01_tokenURI_exposesOnlyTheCanonicalURI() public {
+        vm.prank(coreOwner);
+        tagitCore.setBaseURI("https://api.tagit.network/v1/meta/");
+
         vm.prank(manufacturer);
         uint256 tokenId = tagitCore.mint(user1, METADATA_1);
 
-        // Attacker (no role) calls tokenURI — should get redacted
         vm.prank(attacker);
         string memory uri = tagitCore.tokenURI(tokenId);
-        assertEq(uri, "ipfs://REDACTED", "Unauthorized caller should receive redacted URI");
+        assertEq(uri, string.concat("https://api.tagit.network/v1/meta/", vm.toString(tokenId)));
+        assertTrue(
+            keccak256(bytes(uri)) != keccak256(bytes("ipfs://REDACTED")), "legacy redacted URI must never surface"
+        );
     }
 
     /**
-     * @notice I02: Each role type gets the correct tokenURI response
-     * @dev Owner gets full URI, VIEWER gets full, AUDITOR gets full, random gets redacted
+     * @notice I02: tokenURI is independent of the caller's role
+     * @dev Owner, VIEWER, AUDITOR, a capability-rich manufacturer and an attacker all read
+     *      the same value — there is no privileged "full-detail" path left on-chain.
      */
-    function test_I02_tokenURI_allRolesChecked() public {
-        // Mint an asset to user1
+    function test_I02_tokenURI_identicalForEveryRole() public {
+        vm.prank(coreOwner);
+        tagitCore.setBaseURI("https://api.tagit.network/v1/meta/");
+
         vm.prank(manufacturer);
         uint256 tokenId = tagitCore.mint(user1, METADATA_1);
 
-        // Grant VIEWER to user2
         capabilityBadge.grantCapability(user2, uint256(tagitCore.VIEWER_CAPABILITY()));
-
-        // Grant AUDITOR to resolver3 (reusing address for convenience)
         capabilityBadge.grantCapability(resolver3, uint256(tagitCore.AUDITOR_CAPABILITY()));
 
-        // Owner (user1) — should get full URI (ERC721 default baseURI is empty, so returns "")
         vm.prank(user1);
         string memory ownerUri = tagitCore.tokenURI(tokenId);
-        // Full URI is the super.tokenURI() which is empty string for default ERC721
-        // The key point: it is NOT the redacted URI
-        assertTrue(
-            keccak256(bytes(ownerUri)) != keccak256(bytes("ipfs://REDACTED")), "Owner should NOT get redacted URI"
-        );
 
-        // VIEWER (user2) — should get full URI
-        vm.prank(user2);
-        string memory viewerUri = tagitCore.tokenURI(tokenId);
-        assertTrue(
-            keccak256(bytes(viewerUri)) != keccak256(bytes("ipfs://REDACTED")), "VIEWER should NOT get redacted URI"
-        );
-
-        // AUDITOR (resolver3) — should get full URI
-        vm.prank(resolver3);
-        string memory auditorUri = tagitCore.tokenURI(tokenId);
-        assertTrue(
-            keccak256(bytes(auditorUri)) != keccak256(bytes("ipfs://REDACTED")), "AUDITOR should NOT get redacted URI"
-        );
-
-        // Manufacturer with all capabilities but who is NOT the owner — should get full URI via VIEWER/AUDITOR cap
-        vm.prank(manufacturer);
-        string memory mfgUri = tagitCore.tokenURI(tokenId);
-        assertTrue(
-            keccak256(bytes(mfgUri)) != keccak256(bytes("ipfs://REDACTED")),
-            "Manufacturer with VIEWER cap should NOT get redacted URI"
-        );
-
-        // Attacker with no role — should get redacted
-        vm.prank(attacker);
-        string memory attackerUri = tagitCore.tokenURI(tokenId);
-        assertEq(attackerUri, "ipfs://REDACTED", "Attacker should get redacted URI");
+        address[4] memory others = [user2, resolver3, manufacturer, attacker];
+        for (uint256 i = 0; i < others.length; i++) {
+            vm.prank(others[i]);
+            assertEq(tagitCore.tokenURI(tokenId), ownerUri, "tokenURI must not depend on the caller's role");
+        }
     }
 
     // ================================================================

@@ -1413,50 +1413,40 @@ contract TAGITCore is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPS
     }
 
     // ============================================
-    // TOKEN URI AUTHORIZATION (PATCH-04)
+    // TOKEN URI (PATCH-04 caller gate retired 2026-10-08)
     // ============================================
 
     /**
-     * @notice Returns token metadata URI with authorization gate
-     * @dev Returns full URI only to asset owner, VIEWER_CAPABILITY holders, or AUDITOR_CAPABILITY holders.
-     *      Unauthorized callers receive _redactedURI (ITAR compliance for defense assets).
+     * @notice Returns the token metadata URI — the same URI for every caller
+     * @dev Resolves to `_baseURI() + tokenId` (ERC-721 default composition). Per-item
+     *      redaction — owner-restricted items, unpublished drafts — is enforced by the
+     *      metadata service behind the base URI (`visibilityGate("meta")` in
+     *      tagit-services), the single visibility policy it already shares with
+     *      verify.tagit.network, ratings and owner actions.
+     *
+     *      PATCH-04 previously gated this function on msg.sender (asset owner, VIEWER or
+     *      AUDITOR capability) and handed `_redactedURI` to everyone else. Block explorers
+     *      and marketplace indexers read tokenURI from arbitrary addresses, so the gate hid
+     *      EVERY product behind one placeholder — while adding no protection the service
+     *      layer does not already provide: no metadata is stored on-chain, the real URI
+     *      is `baseURI + tokenId` by construction, and `baseURI` is public. Defense/ITAR
+     *      assets are scoped to the private ledger by architecture, not by this function.
+     *      `_redactedURI` and setRedactedURI() are retained for storage-layout and ABI
+     *      compatibility and are no longer consulted.
      * @param tokenId The token ID to query
-     * @return Token metadata URI (full or redacted based on caller authorization)
-     * @custom:security ITAR compliance — defense asset metadata not accessible without authorization
-     * @custom:security NIST 800-53 AC-6 — least privilege
+     * @return Token metadata URI
+     * @custom:security Metadata access control is enforced at the API boundary (NIST 800-53 AC-6)
      */
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
-        _requireOwned(tokenId);
-
-        // Check if caller is authorized to view full metadata
-        bool isAuthorized = _assets[tokenId].owner == msg.sender;
-
-        if (!isAuthorized && address(accessController) != address(0)) {
-            // Check VIEWER_CAPABILITY
-            try accessController.requireCapability(msg.sender, uint256(VIEWER_CAPABILITY)) {
-                isAuthorized = true;
-            } catch {}
-
-            // Check AUDITOR_CAPABILITY if not already authorized
-            if (!isAuthorized) {
-                try accessController.requireCapability(msg.sender, uint256(AUDITOR_CAPABILITY)) {
-                    isAuthorized = true;
-                } catch {}
-            }
-        }
-
-        if (!isAuthorized) {
-            return _redactedURI;
-        }
-
         return super.tokenURI(tokenId);
     }
 
     /**
-     * @notice Set the redacted URI returned to unauthorized callers
-     * @dev Only owner can update. Used for ITAR compliance on defense asset metadata.
-     * @param redactedURI The redacted/minimal metadata URI
-     * @custom:security Owner-only — goes through TimelockController 48hr delay
+     * @notice Set the legacy redacted URI
+     * @dev Retained for ABI and storage-layout compatibility only: tokenURI() no longer
+     *      consults `_redactedURI` (see tokenURI). Writing it has no observable effect.
+     * @param redactedURI The value to store
+     * @custom:security Owner-only — goes through TimelockController
      */
     function setRedactedURI(string calldata redactedURI) external onlyOwner {
         _redactedURI = redactedURI;

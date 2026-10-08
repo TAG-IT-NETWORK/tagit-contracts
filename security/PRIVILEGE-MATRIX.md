@@ -141,7 +141,7 @@ Implementation (EIP-1967 slot, read live): `0x2377B7f33aFf34c58DDF6DeA7eD4dCaD61
 | `resolve`, resolution vote | `requiresCapability(RESOLVER_CAPABILITY)` — `:1080`, `:1147` | **A1** (badge balance 2) | resolve flags, set `newOwner` | launder a flagged asset to a chosen address | none |
 | `recycle` | `requiresCapability(RECYCLER_CAPABILITY)` — `:1234` | **A1** | terminal-state assets | destroy provenance | none |
 | `setMetadataHash` | asset owner **or** `MINTER_CAPABILITY` — `:1358-1363` | **A1** via capability | rewrite metadata integrity hash for **any** token | break the integrity guarantee the product sells | none |
-| `tokenURI` full-detail path | `VIEWER_CAPABILITY` or `AUDITOR_CAPABILITY` — `:1436`, `:1442` | **nobody** — both badge balances are 0 for A1 | read unredacted metadata | n/a | n/a |
+| `tokenURI` | none — uniform `baseURI + tokenId` for every caller (PATCH-04 caller gate retired 2026-10-08; per-item redaction is enforced by the metadata service behind the base URI) | everyone | read the canonical metadata URI | n/a — no metadata is on-chain and the URI was derivable from the public `baseURI` regardless | n/a |
 
 ### 4.1 `pause()` does not exist on TAGITCore
 
