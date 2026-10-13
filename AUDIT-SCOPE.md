@@ -215,19 +215,23 @@ Chain-level configuration (from `deployment-addresses.json → networks["base-se
 
 ### 2.2 Proxy → implementation map (13 proxies)
 
-**All 13 proxies were read against their live EIP-1967 implementation slots on 2026-07-27 and match the
-values below.** The manifest was corrected the same day: the `TAGITCore` implementation had been
+**All 13 proxies were read against their live EIP-1967 implementation slots on 2026-07-27 and again on
+2026-10-13; the values below match chain.** `TAGITCore` and `TAGITRecovery` changed on 2026-10-08:
+TAGITCore v2 (#44 `preFlagState`, #47 public `tokenURI`) was executed through the Timelock in tx
+`0xfeff583a76ab58871c53dbb5ef98ed9bee29ef9f0a1eb13eac57ff790b59e256`, and TAGITRecovery v2.4.0 was upgraded by
+its owner EOA in tx `0x83ca36459bc414adbf5b11c9b88dff427f8ae450abd72f428a23882588d66fd7`; the other eleven are
+unchanged. The manifest was corrected on 2026-07-27: the `TAGITCore` implementation had been
 recorded incorrectly and is now the value read from chain. Every address in `deployment-addresses.json`
 is now canonical EIP-55.
 
 | Contract | Proxy | Implementation | Proxy kind |
 |---|---|---|---|
-| TAGITCore | `0x3aDc7EFDb58Ae85483eFf5D4966D916185f31d1D` | `0x2377B7f33aFf34c58DDF6DeA7eD4dCaD616CA14C` | UUPS |
+| TAGITCore | `0x3aDc7EFDb58Ae85483eFf5D4966D916185f31d1D` | `0x17517Fd578b91D11811EaCa7c3AE5C693b2A78a0` | UUPS |
 | TAGITToken | `0x5f98B83cD7Aef769cc51D2FB739BA49D561170DE` | `0xA412b5C203F74e88F434C405E694528f04CaCf59` | UUPS |
 | TAGITStaking | `0xB22F5688559D07e3a12DBB89f0481b967407F267` | `0x06861990fD9EDA0d47c8f005b09ddA502977b2Ef` | UUPS |
 | TAGITGovernor | `0xCF67DF870EccBB7838c3ab7876467c89d84dce89` | `0x1FB00D79E6Baff059E1C5FA034e4D59b766E0D44` | UUPS |
 | TAGITTreasury | `0xa4a3720d705334f409DD24836CC75d642125f759` | `0x3837A9bFc98F624bE5587a7F10980Cca5f68c4C8` | ERC-1967, **no upgrade entrypoint** (§5.6) |
-| TAGITRecovery | `0x6BC3C69367E586810A3B317fA9F0406504e95866` | `0xE2f49Bb534894F83421cbd18E747039F3866E14f` | UUPS |
+| TAGITRecovery | `0x6BC3C69367E586810A3B317fA9F0406504e95866` | `0x37272A1B02e0B50dfC2436f1D9F8802CCbcC1B8d` | UUPS |
 | TAGITPrograms | `0x62a3CF048E66BE0119F0ccD97Ec964B726B9a982` | `0x26D0B3B5FF2061fB38ce1aA66433a8F4439e46a8` | UUPS |
 | TAGITPaymaster | `0x6fFFa92efb419E812d5c9C9D0c1B1a0f5c6fFd1C` | `0x4609a869a813E7E596bF5Bf5cBC08F8092Ce6340` | UUPS |
 | TAGITAccountFactory | `0x3ed2c0E92F0e52dC68d04172aD37df4724893aD3` | `0x6122B891f27bd1C492664c6Ca1527E988A5cF8Fa` | UUPS |

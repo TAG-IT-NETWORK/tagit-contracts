@@ -267,7 +267,8 @@
     "base-sepolia": {
       "chainId": 84532,
       "deployedAt": "2026-03-31T00:00:00Z",
-      "note": "PRIMARY / canonical home (as of 2026-06-27). v2 redeployment 2026-03-31; TAGITCore implementation upgraded 2026-05-30 to 0xA7f34FD595eBc397Fe04DcE012dbcf0fbbD2A78D (lifecycle FSM). Some addresses (CCIPAdapter, TAGITAgentIdentity, TAGITCore impl) coincide with op-sepolia entries via deterministic CREATE by the same deployer \u2014 expected, not errors.",
+      "lastUpdated": "2026-10-13T00:00:00Z",
+      "note": "PRIMARY / canonical home (as of 2026-06-27). v2 redeployment 2026-03-31; TAGITCore implementation upgraded 2026-05-30 to 0xA7f34FD595eBc397Fe04DcE012dbcf0fbbD2A78D (lifecycle FSM); upgraded 2026-10-08 to 0x17517Fd578b91D11811EaCa7c3AE5C693b2A78a0 (v2: #44 preFlagState + #47 public tokenURI; Timelock execute tx 0xfeff583a76ab58871c53dbb5ef98ed9bee29ef9f0a1eb13eac57ff790b59e256). TAGITRecovery implementation upgraded 2026-10-08 to v2.4.0 0x37272A1B02e0B50dfC2436f1D9F8802CCbcC1B8d (tx 0x83ca36459bc414adbf5b11c9b88dff427f8ae450abd72f428a23882588d66fd7). Some addresses (CCIPAdapter, TAGITAgentIdentity, TAGITCore impl) coincide with op-sepolia entries via deterministic CREATE by the same deployer \u2014 expected, not errors.",
       "deployer": "0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D",
       "contracts": {
         "IdentityBadge": {
@@ -287,7 +288,7 @@
         },
         "TAGITCore": {
           "proxy": "0x3aDc7EFDb58Ae85483eFf5D4966D916185f31d1D",
-          "implementation": "0x2377B7f33aFf34c58DDF6DeA7eD4dCaD616CA14C",
+          "implementation": "0x17517Fd578b91D11811EaCa7c3AE5C693b2A78a0",
           "type": "UUPS"
         },
         "TAGITToken": {
@@ -312,7 +313,7 @@
         },
         "TAGITRecovery": {
           "proxy": "0x6BC3C69367E586810A3B317fA9F0406504e95866",
-          "implementation": "0xE2f49Bb534894F83421cbd18E747039F3866E14f",
+          "implementation": "0x37272A1B02e0B50dfC2436f1D9F8802CCbcC1B8d",
           "type": "UUPS"
         },
         "TAGITPrograms": {

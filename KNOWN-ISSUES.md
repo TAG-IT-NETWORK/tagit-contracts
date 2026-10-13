@@ -279,13 +279,15 @@ value Hacken's view on which model is correct before we implement it.
 **Description.**
 `TAGITCore` exceeds the EIP-170 24,576-byte runtime limit under the default profile. Per the
 comment at `foundry.toml:11-13`, it measures **26,076 bytes** under legacy codegen — 1,500 bytes
-over the limit — and **22,601 bytes** under `FOUNDRY_PROFILE=deploy` (via-ir). The deployed
-implementation confirms the via-ir figure exactly:
+over the limit — and **22,601 bytes** under `FOUNDRY_PROFILE=deploy` (via-ir). The v1
+implementation `0x2377B7f33aFf34c58DDF6DeA7eD4dCaD616CA14C` measured exactly that. The v2
+implementation live since 2026-10-08 (`preFlagState` +63 B, `tokenURI` caller gate retired −522 B;
+see the scope-delta table in `AUDIT-SCOPE.md`) reads **22,142 bytes** (EIP-170 margin 2,434):
 
 ```
-$ C=$(cast code 0x2377B7f33aFf34c58DDF6DeA7eD4dCaD616CA14C --rpc-url https://sepolia.base.org)
+$ C=$(cast code 0x17517Fd578b91D11811EaCa7c3AE5C693b2A78a0 --rpc-url https://sepolia.base.org)
 $ echo $(( (${#C} - 2) / 2 ))
-22601
+22142
 ```
 
 The test suite runs on the default profile (`via_ir = false`, `foundry.toml:8`). Production ships

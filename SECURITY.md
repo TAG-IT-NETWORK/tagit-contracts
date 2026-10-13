@@ -43,7 +43,7 @@ The addresses that most reports will concern:
 | Contract | Address | Notes |
 |---|---|---|
 | `TAGITCore` (proxy) | `0x3aDc7EFDb58Ae85483eFf5D4966D916185f31d1D` | UUPS |
-| `TAGITCore` (implementation) | `0x2377B7f33aFf34c58DDF6DeA7eD4dCaD616CA14C` | read from the live EIP-1967 slot |
+| `TAGITCore` (implementation) | `0x17517Fd578b91D11811EaCa7c3AE5C693b2A78a0` | read from the live EIP-1967 slot |
 | `TimelockController` | `0xfdA2478dB73064eF770f4e5E5b97BC83801126e1` | `getMinDelay()` returns **60** |
 | Deployer EOA | `0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D` | holds PROPOSER + EXECUTOR, is `trustedOracle`, owns ~20 contracts |
 
