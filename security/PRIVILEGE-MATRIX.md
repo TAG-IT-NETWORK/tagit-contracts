@@ -120,7 +120,7 @@ timelock.
 
 ## 4. TAGITCore — proxy `0x3aDc7EFDb58Ae85483eFf5D4966D916185f31d1D`
 
-Implementation (EIP-1967 slot, read live): `0x2377B7f33aFf34c58DDF6DeA7eD4dCaD616CA14C`.
+Implementation (EIP-1967 slot, read live): `0x17517Fd578b91D11811EaCa7c3AE5C693b2A78a0`.
 `src/core/TAGITCore.sol` — `Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard`.
 
 | Function | Guard (source) | Current holder (verified) | What it can do | Worst case if key compromised | Timelock/multisig in the way? |

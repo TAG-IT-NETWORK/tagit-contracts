@@ -225,7 +225,7 @@ console.log('State:', asset[2]); // 4 = CLAIMED
 | Contract | Address |
 |----------|---------|
 | TAGITCore (proxy) | `0x3aDc7EFDb58Ae85483eFf5D4966D916185f31d1D` |
-| TAGITCore (impl) | `0x2377B7f33aFf34c58DDF6DeA7eD4dCaD616CA14C` |
+| TAGITCore (impl) | `0x17517Fd578b91D11811EaCa7c3AE5C693b2A78a0` |
 | TimelockController | `0xfdA2478dB73064eF770f4e5E5b97BC83801126e1` |
 | TAGITAccess | `0xb56A1D91995C212342FaA843468F03521340A1D6` |
 | IdentityBadge | `0xebdAC9A0663c02a7297681b078aaD893EF345030` |
@@ -259,7 +259,7 @@ in that file as deployment history. Do not integrate against them.
 All contracts are verified and source code is available:
 
 - [TAGITCore (proxy)](https://sepolia.basescan.org/address/0x3aDc7EFDb58Ae85483eFf5D4966D916185f31d1D#code)
-- [TAGITCore (impl)](https://sepolia.basescan.org/address/0x2377B7f33aFf34c58DDF6DeA7eD4dCaD616CA14C#code)
+- [TAGITCore (impl)](https://sepolia.basescan.org/address/0x17517Fd578b91D11811EaCa7c3AE5C693b2A78a0#code)
 - [TimelockController](https://sepolia.basescan.org/address/0xfdA2478dB73064eF770f4e5E5b97BC83801126e1#code)
 - [TAGITAccess](https://sepolia.basescan.org/address/0xb56A1D91995C212342FaA843468F03521340A1D6#code)
 - [IdentityBadge](https://sepolia.basescan.org/address/0xebdAC9A0663c02a7297681b078aaD893EF345030#code)
