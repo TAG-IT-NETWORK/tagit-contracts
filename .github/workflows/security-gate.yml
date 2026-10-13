@@ -7,6 +7,7 @@ on:
       - 'src/**'
       - 'test/**'
       - 'foundry.toml'
+      - '.github/workflows/**'
 
 jobs:
   build:
@@ -49,33 +50,13 @@ jobs:
       - name: Run security patch tests
         run: forge test --match-path "test/security/*" -vv --fuzz-runs 100000
 
-  slither:
-    name: Slither Analysis
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    needs: build
-    permissions:
-      contents: read
-      security-events: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: v1.7.1
-
-      - name: Build for Slither
-        run: forge build
-
-      - name: Run Slither
-        uses: crytic/slither-action@v0.4.0
-        with:
-          slither-args: >-
-            --filter-paths "test|script|lib"
-            --exclude naming-convention,solc-version,pragma
+  # Slither runs as the REQUIRED gate in .github/workflows/security.yml
+  # (job "Slither Static Analysis"): `slither . --config-file slither.config.json
+  # --exclude-dependencies --fail-high` — the single source of truth, failing only on
+  # HIGH-severity findings. The duplicate job that used to live here ran a second,
+  # inconsistent Slither config without --fail-high, so it failed on every PR over the
+  # ~175 pre-existing low/informational findings (KI-13) and, being continue-on-error,
+  # could never block anyway. Removed to end the permanent-red noise.
 
   gas-check:
     name: Gas Snapshot
