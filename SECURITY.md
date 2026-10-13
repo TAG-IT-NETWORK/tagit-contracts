@@ -44,8 +44,10 @@ The addresses that most reports will concern:
 |---|---|---|
 | `TAGITCore` (proxy) | `0x3aDc7EFDb58Ae85483eFf5D4966D916185f31d1D` | UUPS |
 | `TAGITCore` (implementation) | `0x17517Fd578b91D11811EaCa7c3AE5C693b2A78a0` | read from the live EIP-1967 slot |
-| `TimelockController` | `0xfdA2478dB73064eF770f4e5E5b97BC83801126e1` | `getMinDelay()` returns **60** |
-| Deployer EOA | `0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D` | holds PROPOSER + EXECUTOR, is `trustedOracle`, owns ~20 contracts |
+| `TimelockController` | `0xfdA2478dB73064eF770f4e5E5b97BC83801126e1` | `getMinDelay()` returns **60**; owner of `TAGITCore`, `TAGITAccess`, `CapabilityBadge` and, since 2026-10-13, `TAGITRecovery` |
+| Deployer EOA | `0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D` | owns 19 of the 27 contracts (read 2026-10-13); holds **no** Timelock role and is **not** `trustedOracle` |
+| Ceremony key A | `0xA155a6ce930cAcbBDfe830e802DA324555A9fAD4` | PROPOSER + EXECUTOR + CANCELLER on the Timelock (read 2026-10-13; the deployer EOA holds none) |
+| Relayer key B | `0x8aE1E82C00145d5e08b8E63DF35cA455F0aabe23` | `TAGITCore.trustedOracle()` (read 2026-10-13) |
 
 The full list, including all proxy/implementation pairs, is in `deployment-addresses.json`.
 

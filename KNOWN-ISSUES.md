@@ -74,9 +74,9 @@ lower severity with reasoning — we are not quietly dropping it.
 | KI-22 | Low | `IntegrationFactory` enforces no minimum fee rate; the live signer set is 1-of-3 with two unowned addresses |
 | KI-23 | Informational | `src/core/TAGITCoreDemo.sol` is a hackathon demo contract with no tests and no deployment |
 | KI-24 | Informational | TODO/FIXME/XXX/HACK sweep results |
-| KI-25 | Critical — **REMEDIATED** | TAGIT-VDP-2026-001: AIRP ran a full bonded dispute and never moved the asset. Fixed; four adjacent findings remain open and are listed as KI-26..KI-29 |
+| KI-25 | Critical — **REMEDIATED** | TAGIT-VDP-2026-001: AIRP ran a full bonded dispute and never moved the asset. Fixed; three adjacent findings remain open (KI-26, KI-28, KI-29); KI-27 was remediated 2026-10-13 |
 | KI-26 | Medium | `TAGITCore.approveResolve` first-approver-binds-recipient deadlock — no way to reset a resolve round |
-| KI-27 | Medium | The `TAGITRecovery` proxy owner is the deployer EOA, not the TimelockController |
+| KI-27 | Medium — **REMEDIATED** | The `TAGITRecovery` proxy owner was the deployer EOA, not the TimelockController — transferred to the Timelock 2026-10-13 |
 | KI-28 | Medium | `RESOLVER_CAPABILITY` and `FLAGGER_CAPABILITY` rosters are unpopulated — the whole recovery path is inert |
 | KI-29 | Low | `TAGITGovernor._countVote` was an empty-bodied override of an abstract OZ hook (hardened in the same change) |
 
@@ -1891,7 +1891,7 @@ widen that exposure.
 
 ## KI-27 — The `TAGITRecovery` proxy owner is the deployer EOA, not the TimelockController
 
-**Severity:** Medium. **Status:** Open — an operational precondition of shipping KI-25.
+**Severity:** Medium. **Status:** REMEDIATED 2026-10-13 (see below). It was an operational precondition of shipping KI-25.
 
 `TAGITCore`'s owner is already the TimelockController. `TAGITRecovery`'s is not: the proxy
 (`0x6BC3C69367E586810A3B317fA9F0406504e95866`) is owned by the deployer EOA, so its implementation can
@@ -1901,6 +1901,15 @@ sitting over other people's bonds.
 
 **Required before this leaves testnet:** transfer the Recovery proxy owner to the TimelockController.
 This is the same governance gap as KI-01, applied to a second contract.
+
+**Remediation (2026-10-13).** `transferOwnership(0xfdA2478dB73064eF770f4e5E5b97BC83801126e1)` was called on the proxy by the
+deployer EOA (tx `0x7f83fb4d952496ff54d549b2eec6ffe27b0cf33b6840120e7c0336dae4264252`, block 48077558, 20:30:04 UTC; the EOA is an
+EIP-7702 MetaMask smart account, so the transaction arrives through MetaMask's delegation contract — the proxy still
+emits `OwnershipTransferred(0x458B…Cb3D, 0xfdA2…26e1)`). `owner()` returns the TimelockController on two independent
+RPCs. Every `onlyOwner` entry point on Recovery (`setGovernor`, `setTreasury`, `setCore`, `setToken`, `pause`,
+`unpause`, `forceResetCircuitBreaker`, `_authorizeUpgrade`) now requires a 60-second Timelock proposal from the
+proposer key; none of them is called by any off-chain component, so no operational path changed. Cost accepted: an
+emergency `pause()` is now a ceremony rather than an instant call.
 
 ---
 

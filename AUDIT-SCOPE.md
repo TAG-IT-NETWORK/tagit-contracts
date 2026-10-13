@@ -793,11 +793,12 @@ and no event, silently un-pricing the squat while every document still claimed 1
 were defects in what the specification asked for, not in how it was implemented. That is the class we
 are least able to catch ourselves and most want you to hunt.**
 
-**Four adjacent findings were deliberately NOT absorbed** into that fix and remain open —
+**Four adjacent findings were deliberately NOT absorbed** into that fix —
 `KNOWN-ISSUES.md` KI-26 through KI-29: the `approveResolve` first-approver-binds-recipient deadlock, the
-`TAGITRecovery` proxy owner still being a hot EOA rather than the Timelock, empty `RESOLVER`/`FLAGGER`
-rosters that leave the whole path inert, and the governor counting hook. Our reasoning for each
-deferral is in that file; please tell us where you disagree.
+`TAGITRecovery` proxy owner being a hot EOA rather than the Timelock (**closed 2026-10-13**: ownership
+transferred to the TimelockController, tx `0x7f83fb4d952496ff54d549b2eec6ffe27b0cf33b6840120e7c0336dae4264252`), empty
+`RESOLVER`/`FLAGGER` rosters that leave the whole path inert, and the governor counting hook. Three remain
+open; our reasoning for each deferral is in that file; please tell us where you disagree.
 
 **Exposure:** `nextCaseId()` read **1** on the live deployment — zero cases were ever opened, so there is
 no migration burden and no live case to preserve.
