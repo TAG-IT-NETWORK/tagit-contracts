@@ -54,7 +54,7 @@ lower severity with reasoning — we are not quietly dropping it.
 | KI-02 | High | `TAGITTreasury.emergencySweep` is unexecutable on the live deployment: 1 registered signer vs `REQUIRED_SIGNERS = 6` |
 | KI-03 | High | ERC-721 transfers are globally disabled while `supportsInterface(0x80ac58cd)` returns true; two integration paths are dead and are tested only against mocks |
 | KI-04 | High | The bytecode the test suite exercises is not the bytecode that is deployed (legacy codegen vs via-ir) |
-| KI-05 | High | `TAGITPaymaster` reads the sponsored selector from a hardcoded calldata offset — spoofable (unconfirmed, no PoC) |
+| KI-05 | High | `TAGITPaymaster` reads the sponsored selector from a hardcoded calldata offset — spoofable (**CONFIRMED** with PoC; **remediated** in code, on-chain upgrade pending) |
 | KI-06 | High | No passing fork / live-chain tests; the fork suite targets a chain we have never deployed to |
 | KI-07 | Medium | `TAGITAccount.exportAllAssets` transfers nothing and emits a success event |
 | KI-08 | Medium | Emergency-sweep signatures never expire and do not bind an amount (residual after PATCH-08) |
@@ -321,7 +321,7 @@ reports the 13 failures explicitly rather than hiding them behind a profile swit
 
 ## KI-05 — `TAGITPaymaster` reads the sponsored selector from a hardcoded calldata offset
 
-**Severity:** High (unconfirmed — no proof-of-concept written)
+**Severity:** High (**CONFIRMED** — reproduced with a proof-of-concept; **remediated** in code, on-chain upgrade pending)
 
 **Location:** `src/account/TAGITPaymaster.sol:190-210`
 
@@ -354,19 +354,27 @@ calls. Per-operation exposure is bounded by `config.maxGas * tx.gasprice` (line 
 `(user, selector, day)`, so an attacker controlling many accounts scales linearly against the
 paymaster's EntryPoint deposit.
 
-**We are explicitly not claiming this is proven.** We identified it by reading the code on
-2026-07-27. We have not written an exploit test, we have not confirmed the account's `execute`
-decodes the way we assume, and we have not measured how much of the deposit is reachable. We are
-disclosing it at the confidence level we actually have.
+**Confirmed (2026-10-13).** Originally identified by reading the code on 2026-07-27 and disclosed
+unproven. An external reporter (**Fakher**, TAGIT-VDP-2026-002) submitted a working Foundry
+proof-of-concept against `a5a45ff`, answering the invitation below; we reproduced it independently
+with our own test. A crafted `execute` op with the `bytes` offset word set to `0xA0`, a sponsored
+decoy selector at `[132:136]`, and the real unsponsored call at the true offset is approved by the
+paymaster (`validationData == 0`), while the identical selector at the canonical offset `0x60` is
+refused — the offset word is the only difference. The account's `execute` does decode with the real
+offset, exactly as the original note assumed.
 
-**Status.** Open, unconfirmed. No test exists. Not previously reported by any tool — Slither,
-Mythril, Halmos and the EVMbench run all missed it, which is itself informative about the coverage
-of our tooling.
+**Status.** **Confirmed and remediated in code; on-chain upgrade pending.** Reproduced with a
+regression suite (`test/security/KI05SelectorOffsetBypass.t.sol`). Not previously reported by any
+tool — Slither, Mythril, Halmos and the EVMbench run all missed it, which is itself informative
+about the coverage of our tooling. Because `TAGITPaymaster` is upgradeable and already deployed,
+this is not closed until the implementation upgrade is executed on Base Sepolia.
 
-**Planned remediation.**
-Decode the `bytes` argument properly (`abi.decode` on the calldata slice, or read the offset word
-and bounds-check it) instead of indexing a constant. We would like this specific function
-prioritised in your review, since our own confidence in the surrounding parsing logic is now low.
+**Remediation (shipped in code).**
+`_validatePaymasterUserOp` now decodes the `execute(address,uint256,bytes)` arguments the same way
+the account does — `abi.decode(userOp.callData[4:], (address, uint256, bytes))` — and takes the
+selector from the real inner call, instead of indexing the fixed position `[132:136]`. The
+sponsorship check and the account can no longer be pointed at different calls, and a malformed
+encoding reverts in validation before any gas is sponsored. Credit: **Fakher**.
 
 ---
 

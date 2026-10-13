@@ -191,15 +191,20 @@ contract TAGITPaymaster is
         bytes4 executeSelector = bytes4(keccak256("execute(address,uint256,bytes)"));
 
         if (accountSelector == executeSelector && userOp.callData.length >= 100) {
-            // ABI: 4 (selector) + 32 (address) + 32 (value) + 32 (offset) = 100
-            // The func data starts after the offset pointer
-            // Simplified: assume func bytes are at fixed position after offset (68 + 32 = 100)
-            // The first 32 bytes after offset is length, then data
-            // For sponsorship, we check the target function's selector
-            // At position 100 is the length, at 132 starts the actual func data
-            if (userOp.callData.length >= 136) {
-                // 100 + 32 (length) + 4 (selector)
-                selector = bytes4(userOp.callData[132:136]);
+            // KI-05 fix: the inner `bytes func` argument is ABI-encoded, so the
+            // position of its selector is set by the caller-supplied offset word —
+            // it is NOT the fixed index [132:136] the old code assumed (that only
+            // holds for the canonical offset 0x60). A caller could set a larger
+            // offset, park a sponsored decoy selector at [132:136], and place the
+            // real, unsponsored call where TAGITAccount.execute() actually decodes
+            // it, so the paymaster sponsored a call the allowlist exists to refuse.
+            // Decode the arguments exactly as the account does, so the sponsorship
+            // check and the account can never be pointed at different calls. A
+            // malformed encoding reverts here, which rejects the operation before
+            // any gas is sponsored.
+            (,, bytes memory func) = abi.decode(userOp.callData[4:], (address, uint256, bytes));
+            if (func.length >= 4) {
+                selector = bytes4(func);
             }
         }
 
