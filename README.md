@@ -92,7 +92,7 @@ contracts. Principal entry points:
 | `TAGITCore` proxy | `0x3aDc7EFDb58Ae85483eFf5D4966D916185f31d1D` |
 | `TAGITCore` implementation | `0x17517Fd578b91D11811EaCa7c3AE5C693b2A78a0` |
 | `TAGITAccess` (BIDGES facade) | `0xb56A1D91995C212342FaA843468F03521340A1D6` |
-| `TimelockController` (owner of `TAGITCore`) | `0xfdA2478dB73064eF770f4e5E5b97BC83801126e1` |
+| `TimelockController` (owner of `TAGITCore` and `TAGITRecovery`) | `0xfdA2478dB73064eF770f4e5E5b97BC83801126e1` |
 
 ### Privilege, stated plainly
 
