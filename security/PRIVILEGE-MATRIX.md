@@ -18,7 +18,7 @@ cast chain-id                                  # -> 84532
 cast call <addr> 'owner()(address)'
 cast call 0xfdA2478dB73064eF770f4e5E5b97BC83801126e1 'getMinDelay()(uint256)'
 cast call 0xfdA2478dB73064eF770f4e5E5b97BC83801126e1 'hasRole(bytes32,address)(bool)' \
-     $(cast keccak "PROPOSER_ROLE") 0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D
+     $(cast keccak "PROPOSER_ROLE") 0xA155a6ce930cAcbBDfe830e802DA324555A9fAD4   # true; false for A1 — see §3 addendum
 cast call 0xb05d22706B08A3F6409601de520cf7A6dbCB573d 'balanceOf(address,uint256)(uint256)' \
      0x458B4d0c3a55006965Fd13D6af7B8509De51Cb3D $(cast to-dec $(cast keccak "MINTER"))
 ```
@@ -90,6 +90,13 @@ four `RoleGranted` events emitted at deployment (blocks 39611546–39611547, tx
 Exactly four `RoleGranted` events were emitted at deployment: DEFAULT_ADMIN→self, and
 PROPOSER/EXECUTOR/CANCELLER→A1. Each of those three roles has, as far as we can establish, exactly one
 member and it is the same key.
+
+> **Re-read 2026-10-13 (block 48077611, `hasRole` on two RPCs).** The three operational roles are no longer on A1:
+> `PROPOSER_ROLE`, `EXECUTOR_ROLE` and `CANCELLER_ROLE` all return **true** for the ceremony key
+> `0xA155a6ce930cAcbBDfe830e802DA324555A9fAD4` and **false** for A1; `DEFAULT_ADMIN_ROLE` is still the timelock itself.
+> The table above is the deployment-time state. The timelock now owns four contracts — `TAGITCore`, `TAGITAccess`,
+> `CapabilityBadge` and, since 2026-10-13 (tx `0x7f83fb4d952496ff54d549b2eec6ffe27b0cf33b6840120e7c0336dae4264252`, KI-27), `TAGITRecovery` —
+> and A1 owns 19 of the 27 (§1's "22 of 27" was read at block 44702050).
 
 **What this role set can do:** schedule and execute any call the timelock is authorised to make. Today
 that is: everything `onlyOwner` on `TAGITCore` (upgrade, `setAccessController`, `setTrustedOracle`,
