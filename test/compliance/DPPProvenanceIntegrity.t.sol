@@ -13,9 +13,7 @@ import {TAGITCore} from "../../src/core/TAGITCore.sol";
  */
 contract DPPProvenanceIntegrity is DPPComplianceBase {
     // Redeclared for vm.expectEmit.
-    event MetadataHashUpdated(
-        uint256 indexed tokenId, bytes32 previousHash, bytes32 newHash, address indexed updater
-    );
+    event MetadataHashUpdated(uint256 indexed tokenId, bytes32 previousHash, bytes32 newHash, address indexed updater);
 
     bytes32 private constant CUSTODY_SIG =
         keccak256("CustodyTransfer(uint256,uint8,uint8,address,address,uint256,bytes32)");
