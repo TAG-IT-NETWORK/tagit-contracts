@@ -7,6 +7,7 @@
 | `key-ceremony-1-generate.sh` | T01 step 1 — generate KEY_A/KEY_B into the macOS Keychain |
 | `key-ceremony-2-grant.sh` | T01 step 2 — grant capabilities to KEY_B; opt-in oracle flip |
 | `key-ceremony-3-strip-old.sh` | T01 step 3 — revoke the old shared hot key's capabilities |
+| `timelock-revoke-capabilities.sh` | revoke capabilities from an address through the Timelock (dry run unless `--send`) |
 
 ## Key ceremony runbook (T01 / SECRETS.md step 0)
 
@@ -112,3 +113,44 @@ lives only in the macOS Keychain and (transiently) environment variables.
 | `TAGITCore.owner()` | Timelock `0xfdA2478dB73064eF770f4e5E5b97BC83801126e1`, minDelay 60 s |
 | Old key Timelock roles | PROPOSER + EXECUTOR + CANCELLER (not admin; Timelock self-admins) |
 | Old key capabilities | MINTER BINDER RECYCLER CLAIMER ACTIVATOR FLAGGER RESOLVER (not VIEWER/AUDITOR) |
+
+## Revoking capabilities through the Timelock
+
+Since the key ceremony the CapabilityBadge is owned by the Timelock, so a
+capability can only be revoked by scheduling the revoke there and executing it
+after the delay. `timelock-revoke-capabilities.sh` does that as one operation
+(`batchRevokeCapabilities`), two transactions.
+
+```sh
+# 1. DRY RUN — reads only, sends nothing, reads no key. Checks every condition,
+#    simulates the revoke as the Timelock would make it, prints the operation.
+bash timelock-revoke-capabilities.sh <ACCOUNT> MINTER BINDER
+
+# 2. For real, with KEY_A (Timelock proposer + executor) from the Keychain:
+CEREMONY_SENDER_KEYCHAIN_SERVICE=tagit-ceremony-key-a \
+CEREMONY_SENDER_KEYCHAIN_ACCOUNT=deployer \
+    bash timelock-revoke-capabilities.sh <ACCOUNT> MINTER BINDER --send
+```
+
+It refuses, sending nothing, when: the RPC is not chain 84532; the badge is not
+owned by the Timelock; `<ACCOUNT>` is `TAGITCore.trustedOracle` (the services
+signer — `ALLOW_SIGNER=1` to override); a capability would be revoked that the
+services signer does not hold itself (`REVOKE_UNCOVERED=1` to override); the
+simulated revoke reverts; or the sender lacks the Timelock roles. Capabilities
+the account does not hold are skipped.
+
+If a run stops between schedule and execute, the operation stays scheduled.
+Finish it with the salt the run printed:
+`SALT=0x... bash timelock-revoke-capabilities.sh <same arguments> --execute-only`.
+
+Rehearse on a local fork first — no key involved:
+
+```sh
+anvil --fork-url https://sepolia.base.org --port 8546 --block-time 2 &
+cast rpc anvil_impersonateAccount <KEY_A address> --rpc-url http://127.0.0.1:8546
+cast rpc anvil_setBalance <KEY_A address> 0xDE0B6B3A7640000 --rpc-url http://127.0.0.1:8546
+RPC_URL=http://127.0.0.1:8546 TIMELOCK_SENDER_UNLOCKED=<KEY_A address> \
+    bash timelock-revoke-capabilities.sh <ACCOUNT> MINTER BINDER --send
+```
+
+`TIMELOCK_SENDER_UNLOCKED` is refused for any RPC that is not on this machine.
